@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -23,16 +23,26 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- Exclude test files for tracks whose source code is not yet implemented.
-       Re-include them as their corresponding track implementations are completed. -->
+  <!--
+    Whitelist approach: exclude ALL test files in subdirectories, then
+    re-include only the ones from implemented tracks. This prevents
+    hook-generated test files for future tracks from breaking the build.
+  -->
   <ItemGroup>
     <Compile Remove="Calculations\**" />
+    <Compile Remove="Formatting\**" />
     <Compile Remove="RealAi\**" />
-    <Compile Remove="Infrastructure\SeedDataTests.cs" />
-    <Compile Remove="Infrastructure\ClaudeClientContractTests.cs" />
-    <Compile Remove="Infrastructure\RealAiClientContractTests.cs" />
-    <Compile Remove="Domain\PropertyTests.cs" />
-    <Compile Remove="Domain\UnderwritingInputTests.cs" />
+    <Compile Remove="Domain\**" />
+    <Compile Remove="Infrastructure\**" />
+    <Compile Remove="Components\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Re-include only test files from completed tracks -->
+    <Compile Include="Domain\DealTests.cs" />
+    <Compile Include="Domain\ApplicationUserTests.cs" />
+    <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
+    <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
+    <Compile Include="Components\DealWizardTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

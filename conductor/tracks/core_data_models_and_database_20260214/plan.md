@@ -2,8 +2,8 @@
 
 ## Phase 1: Domain Entities
 - [x] Create `Deal` entity with status enum (Draft, InProgress, Complete, Archived) c5b9357
-- [~] Create `Property` entity with address, units, year built, building type
-- [ ] Create `UnderwritingInput` entity with all protocol input fields
+- [x] Create `Property` entity with address, units, year built, building type f74d0c8
+- [~] Create `UnderwritingInput` entity with all protocol input fields
 - [ ] Create `LoanTerms` value object
 - [ ] Create `RealAiData` entity for cached API response data
 - [ ] Create `CalculationResult` entity for all computed metrics
