@@ -15,6 +15,7 @@
 - [x] Handle empty/irrelevant results with fallback text
 - [x] Track source URLs for attribution
 - [x] Write tests for parsing logic and cache behavior
+[checkpoint: pending]
 
 ## Phase 3: Integration
 - [ ] Wire market data into report assembly (Sections 4 and 5)
