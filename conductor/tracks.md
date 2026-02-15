@@ -17,8 +17,8 @@
 
 ---
 
-## [ ] Track: Deal Entry UI
-*Link: [./conductor/tracks/deal_entry_ui_20260214/](./conductor/tracks/deal_entry_ui_20260214/)*
+## [x] Track: Deal Entry UI (completed 2026-02-15)
+*Link: [./conductor/archive/deal_entry_ui_20260214/](./conductor/archive/deal_entry_ui_20260214/)*
 
 ---
 
