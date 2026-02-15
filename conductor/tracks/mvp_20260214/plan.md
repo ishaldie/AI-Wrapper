@@ -10,12 +10,12 @@
 - [x] Verify: `uvicorn app.main:app` starts and serves a health check endpoint
 
 ## Phase 2: Claude Integration Service
-- [ ] Write tests for the generation service (mock Anthropic client)
-- [ ] Create `app/services/ai_generator.py` — Anthropic client wrapper with streaming support
-- [ ] Create `app/models/document.py` — Pydantic models for document request/response
-- [ ] Create `app/services/prompts.py` — prompt template builder for meeting notes
-- [ ] Implement SSE streaming endpoint in a router
-- [ ] Verify: tests pass, streaming endpoint returns mock data
+- [x] Write tests for the generation service (mock Anthropic client)
+- [x] Create `app/services/ai_generator.py` — Anthropic client wrapper with streaming support
+- [x] Create `app/models/document.py` — Pydantic models for document request/response
+- [x] Create `app/services/prompts.py` — prompt template builder for meeting notes
+- [x] Implement SSE streaming endpoint in a router
+- [x] Verify: tests pass (9/9), streaming endpoint returns mock data
 
 ## Phase 3: Meeting Notes Form & UI
 - [ ] Write tests for the meeting notes API endpoint
