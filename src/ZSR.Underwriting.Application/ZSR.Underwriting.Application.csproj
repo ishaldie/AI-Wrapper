@@ -15,4 +15,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Exclude stubs from tracks not yet implemented -->
+  <ItemGroup>
+    <Compile Remove="DTOs\Report\**" />
+    <Compile Remove="Calculations\**" />
+    <Compile Remove="Formatting\**" />
+  </ItemGroup>
+
 </Project>

@@ -1,7 +1,7 @@
 # Plan: Market Data Enrichment
 
 ## Phase 1: Web Search Service
-- [~] Create `IWebSearchService` interface in Domain
+- [x] Create `IWebSearchService` interface in Domain `6eb14df`
 - [ ] Implement `WebSearchService` in Infrastructure (using Bing API or scraping)
 - [ ] Create search query builder per protocol patterns (employers, pipeline, rates)
 - [ ] Configure API key and rate limiting

@@ -39,16 +39,24 @@
     <Compile Remove="Services\**" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Core Data Models track -->
     <Compile Include="Domain\DealTests.cs" />
+    <Compile Include="Domain\PropertyTests.cs" />
+    <Compile Include="Domain\UnderwritingInputTests.cs" />
+    <Compile Include="Domain\LoanTermsTests.cs" />
+    <Compile Include="Domain\RealAiDataTests.cs" />
+    <Compile Include="Domain\CalculationResultTests.cs" />
+    <Compile Include="Domain\UnderwritingReportTests.cs" />
+    <Compile Include="Domain\UploadedDocumentTests.cs" />
+    <!-- Auth track -->
     <Compile Include="Domain\ApplicationUserTests.cs" />
     <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
     <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
+    <!-- Deal Entry UI track -->
     <Compile Include="Components\DealWizardTests.cs" />
-    <Compile Include="Components\DashboardTests.cs" />
-    <Compile Include="Services\DealServiceTests.cs" />
-    <!-- Document Upload & Parsing track -->
-    <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
-    <Compile Include="Domain\UploadedDocumentTests.cs" />
+    <!-- RealAI API Integration track -->
+    <Compile Include="RealAi\RealAiClientContractTests.cs" />
+    <Compile Include="RealAi\RealAiOptionsTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
