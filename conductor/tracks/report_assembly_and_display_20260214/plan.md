@@ -1,10 +1,10 @@
 # Plan: Report Assembly & Display
 
 ## Phase 1: Report Assembly Service
-- [ ] Create `IReportAssembler` interface in Application layer
+- [~] Create `IReportAssembler` interface in Application layer
 - [ ] Implement `ReportAssembler` that combines calculations, RealAI data, and AI prose
-- [ ] Create `ReportSection` DTOs for each of the 10 sections
-- [ ] Create formatting helpers (currency, percentage, multiples per protocol)
+- [x] Create `ReportSection` DTOs for each of the 10 sections fbe66da
+- [x] Create formatting helpers (currency, percentage, multiples per protocol) 928539b
 - [ ] Write unit tests for assembly logic and formatting
 
 ## Phase 2: Blazor Report Viewer

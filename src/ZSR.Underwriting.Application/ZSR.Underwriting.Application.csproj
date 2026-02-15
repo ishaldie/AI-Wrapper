@@ -15,9 +15,6 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <!-- Exclude stubs from tracks not yet implemented -->
-  <ItemGroup>
-    <Compile Remove="Calculations\**" />
-  </ItemGroup>
+  <!-- All source files compile by default via SDK convention -->
 
 </Project>

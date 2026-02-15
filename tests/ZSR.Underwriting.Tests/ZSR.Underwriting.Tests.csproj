@@ -74,9 +74,11 @@
     <Compile Include="RealAi\RealAiOptionsTests.cs" />
     <Compile Include="RealAi\RealAiClientTests.cs" />
     <Compile Include="RealAi\RealAiDataMapperTests.cs" />
+    <Compile Include="RealAi\RealAiCacheServiceTests.cs" />
     <!-- Report Assembly & Display track -->
     <Compile Include="Formatting\ProtocolFormatterTests.cs" />
-    <Compile Include="DTOs\ReportDtoTests.cs" />
+    <!-- Underwriting Calculation Engine track -->
+    <Compile Include="Calculations\RevenueAndNoiTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

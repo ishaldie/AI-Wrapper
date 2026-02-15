@@ -26,4 +26,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Exclude files from incomplete tracks -->
+  <ItemGroup>
+    <Compile Remove="Services\ReportAssembler.cs" />
+  </ItemGroup>
+
 </Project>
