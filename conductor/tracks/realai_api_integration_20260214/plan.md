@@ -7,17 +7,17 @@
 - [x] Configure Polly retry policy (3 retries, exponential backoff)
 - [x] Register client in DI with typed HttpClient
 - [x] Write tests with mocked HTTP responses
-[checkpoint: pending]
+[checkpoint: 40d5111]
 
 ## Phase 2: Data Retrieval & Mapping
-- [ ] Implement property data query (address lookup)
-- [ ] Implement tenant metrics query (FICO, HHI, RTI at subject/zip/metro)
-- [ ] Implement market data query (cap rates, growth, migration, permits)
-- [ ] Implement sales comps query
-- [ ] Implement time series query (rent trends, occupancy trends)
-- [ ] Create response DTOs matching RealAI API structure
-- [ ] Create mapper: RealAI DTOs → `RealAiData` entity
-- [ ] Write unit tests for all mappers
+- [x] Implement property data query (address lookup)
+- [x] Implement tenant metrics query (FICO, HHI, RTI at subject/zip/metro)
+- [x] Implement market data query (cap rates, growth, migration, permits)
+- [x] Implement sales comps query
+- [x] Implement time series query (rent trends, occupancy trends)
+- [~] Create response DTOs matching RealAI API structure
+- [~] Create mapper: RealAI DTOs → `RealAiData` entity
+- [~] Write unit tests for all mappers
 
 ## Phase 3: Caching & Error Handling
 - [ ] Implement in-memory cache with 24-hour TTL per deal
