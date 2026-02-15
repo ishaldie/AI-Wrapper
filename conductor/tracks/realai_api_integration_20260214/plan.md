@@ -3,10 +3,10 @@
 ## Phase 1: HTTP Client Setup
 - [x] Create `IRealAiClient` interface in Domain with method signatures
 - [x] Create `RealAiOptions` configuration class (base URL, API key, timeout)
-- [ ] Implement `RealAiClient` in Infrastructure using `HttpClient`
-- [ ] Configure Polly retry policy (3 retries, exponential backoff)
-- [ ] Register client in DI with typed HttpClient
-- [ ] Write tests with mocked HTTP responses
+- [x] Implement `RealAiClient` in Infrastructure using `HttpClient`
+- [x] Configure Polly retry policy (3 retries, exponential backoff)
+- [x] Register client in DI with typed HttpClient
+- [x] Write tests with mocked HTTP responses
 
 ## Phase 2: Data Retrieval & Mapping
 - [ ] Implement property data query (address lookup)

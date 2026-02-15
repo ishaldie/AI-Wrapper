@@ -49,6 +49,7 @@
     <Compile Include="Domain\CalculationResultTests.cs" />
     <Compile Include="Domain\UnderwritingReportTests.cs" />
     <Compile Include="Domain\UploadedDocumentTests.cs" />
+    <Compile Include="Infrastructure\AppDbContextTests.cs" />
     <!-- Auth track -->
     <Compile Include="Domain\ApplicationUserTests.cs" />
     <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
@@ -59,6 +60,10 @@
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Services\DocumentUploadServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />
+    <!-- RealAI API Integration track -->
+    <Compile Include="RealAi\RealAiClientContractTests.cs" />
+    <Compile Include="RealAi\RealAiOptionsTests.cs" />
+    <Compile Include="RealAi\RealAiClientTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

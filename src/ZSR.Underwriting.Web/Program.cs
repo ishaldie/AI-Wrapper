@@ -1,9 +1,14 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http;
 using MudBlazor.Services;
+using Polly;
+using Polly.Extensions.Http;
 using Serilog;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Interfaces;
+using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Data;
 using ZSR.Underwriting.Infrastructure.Services;
 using ZSR.Underwriting.Web.Components;
@@ -59,6 +64,25 @@ try
         options.ExpireTimeSpan = TimeSpan.FromDays(14);
         options.SlidingExpiration = true;
     });
+
+    // Add RealAI client with Polly retry policy
+    builder.Services.Configure<RealAiOptions>(
+        builder.Configuration.GetSection(RealAiOptions.SectionName));
+
+    builder.Services.AddHttpClient<IRealAiClient, RealAiClient>((sp, client) =>
+    {
+        var options = builder.Configuration
+            .GetSection(RealAiOptions.SectionName)
+            .Get<RealAiOptions>() ?? new RealAiOptions();
+        client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+        client.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
+        client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+    })
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
