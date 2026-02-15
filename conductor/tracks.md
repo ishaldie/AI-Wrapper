@@ -22,8 +22,8 @@
 
 ---
 
-## [~] Track: Document Upload & Parsing
-*Link: [./conductor/tracks/document_upload_and_parsing_20260214/](./conductor/tracks/document_upload_and_parsing_20260214/)*
+## [x] Track: Document Upload & Parsing (completed 2026-02-15)
+*Link: [./conductor/archive/document_upload_and_parsing_20260214/](./conductor/archive/document_upload_and_parsing_20260214/)*
 
 ---
 
