@@ -11,6 +11,7 @@ using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Data;
 using ZSR.Underwriting.Infrastructure.Parsing;
+using ZSR.Underwriting.Infrastructure.Repositories;
 using ZSR.Underwriting.Infrastructure.Services;
 using ZSR.Underwriting.Web.Components;
 
@@ -84,6 +85,10 @@ try
         .WaitAndRetryAsync(
             retryCount: 3,
             sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+
+    // Add repository layer
+    builder.Services.AddScoped<IDealRepository, DealRepository>();
+    builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();

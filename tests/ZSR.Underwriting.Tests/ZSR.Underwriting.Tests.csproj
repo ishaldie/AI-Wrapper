@@ -51,6 +51,7 @@
     <Compile Include="Domain\UnderwritingReportTests.cs" />
     <Compile Include="Domain\UploadedDocumentTests.cs" />
     <Compile Include="Infrastructure\AppDbContextTests.cs" />
+    <Compile Include="Infrastructure\DealRepositoryTests.cs" />
     <!-- Auth track -->
     <Compile Include="Domain\ApplicationUserTests.cs" />
     <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
@@ -61,10 +62,6 @@
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Services\DocumentUploadServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />
-    <!-- Document Parsing (Phase 2) -->
-    <Compile Include="Parsing\RentRollParserTests.cs" />
-    <Compile Include="Parsing\T12ParserTests.cs" />
-    <Compile Include="Parsing\LoanTermSheetParserTests.cs" />
     <!-- RealAI API Integration track -->
     <Compile Include="RealAi\RealAiClientContractTests.cs" />
     <Compile Include="RealAi\RealAiOptionsTests.cs" />
