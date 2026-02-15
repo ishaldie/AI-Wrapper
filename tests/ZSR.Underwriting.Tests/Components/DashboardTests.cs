@@ -42,10 +42,54 @@ public class DashboardTests : IAsyncLifetime
     {
         var cut = _ctx.Render<Dashboard>();
 
-        // Wait for async load to complete
         cut.WaitForState(() => cut.Markup.Contains("Welcome"));
 
         Assert.Contains("ZSR Underwriting", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_ShowsTotalDealsCount()
+    {
+        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var cut = _ctx.Render<Dashboard>();
+
+        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
+
+        // Should show total count of 4 deals
+        Assert.Contains("4", cut.Markup);
+        Assert.Contains("Total Deals", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_ShowsActiveDealsCount()
+    {
+        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var cut = _ctx.Render<Dashboard>();
+
+        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
+
+        Assert.Contains("Active", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_ShowsCompletedDealsCount()
+    {
+        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var cut = _ctx.Render<Dashboard>();
+
+        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
+
+        Assert.Contains("Completed", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_EmptyState_ShowsZeroCounts()
+    {
+        var cut = _ctx.Render<Dashboard>();
+
+        cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
+
+        Assert.Contains("0", cut.Markup);
     }
 
     private class StubDealService : IDealService
@@ -55,6 +99,25 @@ public class DashboardTests : IAsyncLifetime
         public Task<DealInputDto?> GetDealAsync(Guid id) => Task.FromResult<DealInputDto?>(null);
         public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
             => Task.FromResult<IReadOnlyList<DealSummaryDto>>(new List<DealSummaryDto>());
+        public Task SetStatusAsync(Guid id, string status) => Task.CompletedTask;
+    }
+
+    private class StubDealServiceWithData : IDealService
+    {
+        public Task<Guid> CreateDealAsync(DealInputDto input) => Task.FromResult(Guid.NewGuid());
+        public Task UpdateDealAsync(Guid id, DealInputDto input) => Task.CompletedTask;
+        public Task<DealInputDto?> GetDealAsync(Guid id) => Task.FromResult<DealInputDto?>(null);
+        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
+        {
+            var deals = new List<DealSummaryDto>
+            {
+                new() { Id = Guid.NewGuid(), PropertyName = "Sunset Apts", Status = "Draft", PurchasePrice = 5_000_000m, UpdatedAt = DateTime.UtcNow },
+                new() { Id = Guid.NewGuid(), PropertyName = "Oak Manor", Status = "InProgress", PurchasePrice = 3_000_000m, UpdatedAt = DateTime.UtcNow.AddHours(-1) },
+                new() { Id = Guid.NewGuid(), PropertyName = "Pine Ridge", Status = "Complete", PurchasePrice = 7_000_000m, UpdatedAt = DateTime.UtcNow.AddHours(-2) },
+                new() { Id = Guid.NewGuid(), PropertyName = "Elm Court", Status = "InProgress", PurchasePrice = 4_000_000m, UpdatedAt = DateTime.UtcNow.AddHours(-3) },
+            };
+            return Task.FromResult<IReadOnlyList<DealSummaryDto>>(deals);
+        }
         public Task SetStatusAsync(Guid id, string status) => Task.CompletedTask;
     }
 }

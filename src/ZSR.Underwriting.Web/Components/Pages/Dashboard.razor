@@ -15,12 +15,36 @@
 }
 else
 {
-    <MudText Typo="Typo.body1">Welcome to ZSR Underwriting.</MudText>
+    <MudText Typo="Typo.body1" Class="mb-4">Welcome to ZSR Underwriting.</MudText>
+
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudText Typo="Typo.h3">@_deals.Count</MudText>
+                <MudText Typo="Typo.subtitle1" Color="Color.Default">Total Deals</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudText Typo="Typo.h3" Color="Color.Warning">@ActiveCount</MudText>
+                <MudText Typo="Typo.subtitle1">Active</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" sm="4">
+            <MudPaper Class="pa-4" Elevation="2">
+                <MudText Typo="Typo.h3" Color="Color.Success">@CompletedCount</MudText>
+                <MudText Typo="Typo.subtitle1">Completed</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
     private bool _loading = true;
     private List<DealSummaryDto> _deals = new();
+
+    private int ActiveCount => _deals.Count(d => d.Status is "Draft" or "InProgress");
+    private int CompletedCount => _deals.Count(d => d.Status == "Complete");
 
     protected override async Task OnInitializedAsync()
     {

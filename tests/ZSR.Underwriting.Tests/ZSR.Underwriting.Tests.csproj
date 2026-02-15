@@ -35,14 +35,21 @@
     <Compile Remove="Domain\**" />
     <Compile Remove="Infrastructure\**" />
     <Compile Remove="Components\**" />
+    <Compile Remove="DTOs\**" />
+    <Compile Remove="Services\**" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Re-include only test files from completed tracks -->
+    <!-- Re-include only test files from completed tracks (deal_entry_ui + auth) -->
     <Compile Include="Domain\DealTests.cs" />
     <Compile Include="Domain\ApplicationUserTests.cs" />
     <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
     <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
     <Compile Include="Components\DealWizardTests.cs" />
+    <Compile Include="Components\DashboardTests.cs" />
+    <Compile Include="Services\DealServiceTests.cs" />
+    <!-- Report Assembly & Display track -->
+    <Compile Include="Formatting\ProtocolFormatterTests.cs" />
+    <Compile Include="DTOs\ReportDtoTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

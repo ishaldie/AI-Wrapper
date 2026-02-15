@@ -2,7 +2,7 @@
 
 ## Phase 1: Dashboard Home
 - [x] Create `Dashboard.razor` home page
-- [ ] Implement summary statistics cards (total, active, completed deals)
+- [x] Implement summary statistics cards (total, active, completed deals)
 - [ ] Create recent activity feed component
 - [ ] Add "New Deal" action button linking to deal wizard
 - [ ] Write bUnit tests for dashboard components
