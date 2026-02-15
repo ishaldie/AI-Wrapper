@@ -1,24 +1,18 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 
-from app.main import BASE_DIR
-
 router = APIRouter(tags=["documents"])
-templates = Jinja2Templates(directory=BASE_DIR / "templates")
+_templates_dir = Path(__file__).resolve().parent.parent / "templates"
+templates = Jinja2Templates(directory=_templates_dir)
 
 
 @router.get("/")
 async def landing_page(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 @router.get("/meeting-notes")
 async def meeting_notes_form(request: Request):
-    return templates.TemplateResponse(
-        "meeting_notes_form.html", {"request": request}
-    )
-
-
-@router.get("/result")
-async def result_page(request: Request):
-    return templates.TemplateResponse("result.html", {"request": request})
+    return templates.TemplateResponse(request, "meeting_notes_form.html")

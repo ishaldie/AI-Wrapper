@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from httpx import ASGITransport, AsyncClient
@@ -76,3 +76,19 @@ async def test_generate_meeting_notes_streams_response(client):
         body = response.text
         assert "data: # Meeting" in body
         assert "data: [DONE]" in body
+
+
+@pytest.mark.anyio
+async def test_landing_page(client):
+    response = await client.get("/")
+    assert response.status_code == 200
+    assert "Meeting Notes" in response.text
+    assert "Coming soon" in response.text
+
+
+@pytest.mark.anyio
+async def test_meeting_notes_form_page(client):
+    response = await client.get("/meeting-notes")
+    assert response.status_code == 200
+    assert "Meeting Title" in response.text
+    assert "Generate Meeting Notes" in response.text

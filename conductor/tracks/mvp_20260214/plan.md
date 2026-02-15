@@ -18,13 +18,13 @@
 - [x] Verify: tests pass (9/9), streaming endpoint returns mock data
 
 ## Phase 3: Meeting Notes Form & UI
-- [~] Write tests for the meeting notes API endpoint
-- [~] Create `app/routers/documents.py` — routes for form display and generation
-- [~] Create base HTML template (`app/templates/base.html`) with Tailwind CSS and HTMX
-- [~] Create landing page template (`app/templates/index.html`) with document type cards
-- [~] Create meeting notes input form template (`app/templates/meeting_notes_form.html`)
-- [~] Create generation/result template (`app/templates/result.html`) with SSE streaming display
-- [~] Add "Copy to Clipboard" JavaScript functionality
+- [x] Write tests for the meeting notes API endpoint
+- [x] Create `app/routers/documents.py` — routes for form display and generation
+- [x] Create base HTML template (`app/templates/base.html`) with Tailwind CSS and HTMX
+- [x] Create landing page template (`app/templates/index.html`) with document type cards
+- [x] Create meeting notes input form template (`app/templates/meeting_notes_form.html`)
+- [x] Create generation/result template — integrated into meeting_notes_form.html with inline SSE streaming
+- [x] Add "Copy to Clipboard" JavaScript functionality
 - [ ] Verify: full flow works end-to-end in browser
 
 ## Phase 4: Polish & Validation

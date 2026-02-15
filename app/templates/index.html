@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}AI Wrappers — Document Generator{% endblock %}
+
+{% block content %}
+<div class="text-center mb-10">
+    <h1 class="text-3xl font-bold text-gray-800 mb-3">Create Professional Documents</h1>
+    <p class="text-gray-600 text-lg">Select a document type to get started.</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Meeting Notes - Active -->
+    <a href="/meeting-notes" class="block bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-blue-300 transition-all">
+        <div class="text-3xl mb-3">📝</div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Meeting Notes</h2>
+        <p class="text-sm text-gray-600">Generate structured meeting notes with agenda, discussion points, and action items.</p>
+    </a>
+
+    <!-- Coming Soon Cards -->
+    <div class="block bg-gray-100 rounded-lg border border-gray-200 p-6 opacity-60 cursor-not-allowed">
+        <div class="text-3xl mb-3">📊</div>
+        <h2 class="text-lg font-semibold text-gray-500 mb-2">Business Report</h2>
+        <p class="text-sm text-gray-400">Coming soon</p>
+    </div>
+
+    <div class="block bg-gray-100 rounded-lg border border-gray-200 p-6 opacity-60 cursor-not-allowed">
+        <div class="text-3xl mb-3">📋</div>
+        <h2 class="text-lg font-semibold text-gray-500 mb-2">Proposal</h2>
+        <p class="text-sm text-gray-400">Coming soon</p>
+    </div>
+
+    <div class="block bg-gray-100 rounded-lg border border-gray-200 p-6 opacity-60 cursor-not-allowed">
+        <div class="text-3xl mb-3">📄</div>
+        <h2 class="text-lg font-semibold text-gray-500 mb-2">SOP</h2>
+        <p class="text-sm text-gray-400">Coming soon</p>
+    </div>
+
+    <div class="block bg-gray-100 rounded-lg border border-gray-200 p-6 opacity-60 cursor-not-allowed">
+        <div class="text-3xl mb-3">📧</div>
+        <h2 class="text-lg font-semibold text-gray-500 mb-2">Memo</h2>
+        <p class="text-sm text-gray-400">Coming soon</p>
+    </div>
+
+    <div class="block bg-gray-100 rounded-lg border border-gray-200 p-6 opacity-60 cursor-not-allowed">
+        <div class="text-3xl mb-3">📑</div>
+        <h2 class="text-lg font-semibold text-gray-500 mb-2">Executive Summary</h2>
+        <p class="text-sm text-gray-400">Coming soon</p>
+    </div>
+</div>
+{% endblock %}
