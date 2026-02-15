@@ -67,6 +67,7 @@
     <Compile Include="Services\WebSearchServiceTests.cs" />
     <Compile Include="Services\MarketSearchQueryBuilderTests.cs" />
     <Compile Include="Services\WebSearchConfigTests.cs" />
+    <Compile Include="DTOs\MarketContextDtoTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
