@@ -1,8 +1,8 @@
 # Plan: Core Data Models & Database
 
 ## Phase 1: Domain Entities
-- [~] Create `Deal` entity with status enum (Draft, InProgress, Complete, Archived)
-- [ ] Create `Property` entity with address, units, year built, building type
+- [x] Create `Deal` entity with status enum (Draft, InProgress, Complete, Archived) c5b9357
+- [~] Create `Property` entity with address, units, year built, building type
 - [ ] Create `UnderwritingInput` entity with all protocol input fields
 - [ ] Create `LoanTerms` value object
 - [ ] Create `RealAiData` entity for cached API response data
