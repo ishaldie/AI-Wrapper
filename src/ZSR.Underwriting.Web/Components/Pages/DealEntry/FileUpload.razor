@@ -1,0 +1,132 @@
+@using Microsoft.AspNetCore.Components.Forms
+@using ZSR.Underwriting.Application.Constants
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
+@inject IDocumentUploadService UploadService
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h6" Class="mb-3">Document Upload</MudText>
+
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudSelect T="DocumentType" @bind-Value="_selectedDocType"
+                   Label="Document Type"
+                   Variant="Variant.Outlined">
+            <MudSelectItem T="DocumentType" Value="DocumentType.RentRoll">Rent Roll</MudSelectItem>
+            <MudSelectItem T="DocumentType" Value="DocumentType.T12PAndL">T12 P and L</MudSelectItem>
+            <MudSelectItem T="DocumentType" Value="DocumentType.OfferingMemorandum">Offering Memorandum</MudSelectItem>
+            <MudSelectItem T="DocumentType" Value="DocumentType.Appraisal">Appraisal</MudSelectItem>
+            <MudSelectItem T="DocumentType" Value="DocumentType.PhaseIPCA">Phase I PCA</MudSelectItem>
+            <MudSelectItem T="DocumentType" Value="DocumentType.LoanTermSheet">Loan Term Sheet</MudSelectItem>
+        </MudSelect>
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <InputFile OnChange="OnInputFileChanged" accept=".pdf,.xlsx,.csv,.docx" />
+        @if (_uploading)
+        {
+            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="ml-2" />
+        }
+    </MudItem>
+</MudGrid>
+
+@if (_documents.Count > 0)
+{
+    <MudText Typo="Typo.subtitle1" Class="mt-4 mb-2">Uploaded Documents</MudText>
+    <MudSimpleTable Dense="true" Hover="true" Striped="true">
+        <thead>
+            <tr>
+                <th>File Name</th>
+                <th>Type</th>
+                <th>Size</th>
+                <th>Uploaded</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var doc in _documents)
+        {
+            <tr>
+                <td>@doc.FileName</td>
+                <td>@doc.DocumentType</td>
+                <td>@FormatFileSize(doc.FileSize)</td>
+                <td>@doc.UploadedAt.ToString("g")</td>
+                <td>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeleteDocument(doc.DocumentId))" />
+                </td>
+            </tr>
+        }
+        </tbody>
+    </MudSimpleTable>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid DealId { get; set; }
+
+    private DocumentType _selectedDocType = DocumentType.RentRoll;
+    private bool _uploading;
+    private List<FileUploadResultDto> _documents = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (DealId != Guid.Empty)
+        {
+            var docs = await UploadService.GetDocumentsForDealAsync(DealId);
+            _documents = docs.ToList();
+        }
+    }
+
+    private async Task OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+
+        if (!FileUploadConstants.IsValidExtension(file.Name))
+        {
+            Snackbar.Add("Invalid file type. Allowed: PDF, XLSX, CSV, DOCX", Severity.Error);
+            return;
+        }
+
+        if (!FileUploadConstants.IsValidFileSize(file.Size))
+        {
+            Snackbar.Add("File exceeds 25 MB limit.", Severity.Error);
+            return;
+        }
+
+        _uploading = true;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: FileUploadConstants.MaxFileSizeBytes);
+            var result = await UploadService.UploadDocumentAsync(DealId, stream, file.Name, _selectedDocType);
+            _documents.Insert(0, result);
+            Snackbar.Add("File uploaded successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add("Upload failed: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _uploading = false;
+        }
+    }
+
+    private async Task DeleteDocument(Guid documentId)
+    {
+        await UploadService.DeleteDocumentAsync(documentId);
+        _documents.RemoveAll(d => d.DocumentId == documentId);
+        Snackbar.Add("Document removed.", Severity.Info);
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return (bytes / 1024.0).ToString("F1") + " KB";
+        return (bytes / (1024.0 * 1024.0)).ToString("F1") + " MB";
+    }
+}
