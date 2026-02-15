@@ -19,8 +19,9 @@
 - [x] Write unit tests for each parser with sample files `6d20972`
 
 ## Phase 3: Override Integration
-- [ ] Create `ParsedDataReview.razor` component showing extracted values
-- [ ] Add confirm/reject workflow for parsed data
-- [ ] Apply confirmed overrides to UnderwritingInput entity
-- [ ] Flag overridden fields with source attribution
-- [ ] Write integration tests for override application
+- [x] Create `ParsedDataReview.razor` component showing extracted values `b497cca`
+- [x] Add confirm/reject workflow for parsed data `b497cca`
+- [x] Apply confirmed overrides to UnderwritingInput entity `b497cca`
+- [x] Flag overridden fields with source attribution `b497cca`
+- [x] Write integration tests for override application `b497cca`
+[checkpoint: all-phases-complete — 90+ tests, all 3 phases implemented]
