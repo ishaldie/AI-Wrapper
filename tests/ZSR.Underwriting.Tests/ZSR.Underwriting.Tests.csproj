@@ -57,6 +57,9 @@
     <!-- RealAI API Integration track -->
     <Compile Include="RealAi\RealAiClientContractTests.cs" />
     <Compile Include="RealAi\RealAiOptionsTests.cs" />
+    <!-- Market Data Enrichment track -->
+    <Compile Include="Domain\WebSearchServiceContractTests.cs" />
+    <Compile Include="Services\WebSearchServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
