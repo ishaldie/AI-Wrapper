@@ -1,8 +1,8 @@
 # Plan: Document Upload & Parsing
 
 ## Phase 1: File Upload Infrastructure
-- [ ] Create `IFileStorageService` interface in Domain
-- [ ] Implement `LocalFileStorageService` in Infrastructure
+- [x] Create `IFileStorageService` interface in Domain
+- [x] Implement `LocalFileStorageService` in Infrastructure
 - [ ] Create `FileUpload.razor` component with drag-and-drop
 - [ ] Add document type selector dropdown
 - [ ] Implement file size and format validation

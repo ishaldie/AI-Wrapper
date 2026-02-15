@@ -22,7 +22,7 @@
 
 ---
 
-## [ ] Track: Document Upload & Parsing
+## [~] Track: Document Upload & Parsing
 *Link: [./conductor/tracks/document_upload_and_parsing_20260214/](./conductor/tracks/document_upload_and_parsing_20260214/)*
 
 ---

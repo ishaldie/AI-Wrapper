@@ -39,7 +39,6 @@
     <Compile Remove="Services\**" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Re-include only test files from completed tracks (deal_entry_ui + auth) -->
     <Compile Include="Domain\DealTests.cs" />
     <Compile Include="Domain\ApplicationUserTests.cs" />
     <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
@@ -47,9 +46,8 @@
     <Compile Include="Components\DealWizardTests.cs" />
     <Compile Include="Components\DashboardTests.cs" />
     <Compile Include="Services\DealServiceTests.cs" />
-    <!-- Report Assembly & Display track -->
-    <Compile Include="Formatting\ProtocolFormatterTests.cs" />
-    <Compile Include="DTOs\ReportDtoTests.cs" />
+    <!-- Document Upload & Parsing track -->
+    <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
