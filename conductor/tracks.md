@@ -2,8 +2,8 @@
 
 ---
 
-## [~] Track: Project Setup & Architecture
-*Link: [./conductor/tracks/project_setup_and_architecture_20260214/](./conductor/tracks/project_setup_and_architecture_20260214/)*
+## [x] Track: Project Setup & Architecture (completed 2026-02-15)
+*Link: [./conductor/archive/project_setup_and_architecture_20260214/](./conductor/archive/project_setup_and_architecture_20260214/)*
 
 ---
 
