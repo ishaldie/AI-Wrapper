@@ -2,7 +2,7 @@
 
 ## Phase 1: HTTP Client Setup
 - [x] Create `IRealAiClient` interface in Domain with method signatures
-- [ ] Create `RealAiOptions` configuration class (base URL, API key, timeout)
+- [x] Create `RealAiOptions` configuration class (base URL, API key, timeout)
 - [ ] Implement `RealAiClient` in Infrastructure using `HttpClient`
 - [ ] Configure Polly retry policy (3 retries, exponential backoff)
 - [ ] Register client in DI with typed HttpClient
