@@ -1,0 +1,8 @@
+{
+  "track_id": "core_data_models_and_database_20260214",
+  "type": "feature",
+  "status": "planned",
+  "created_at": "2026-02-14T00:00:00.000Z",
+  "updated_at": "2026-02-14T00:00:00.000Z",
+  "description": "Core Data Models & Database — Domain entities, EF Core configuration, and repository layer for deals and underwriting"
+}

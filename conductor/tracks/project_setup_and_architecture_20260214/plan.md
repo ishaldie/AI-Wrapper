@@ -21,10 +21,10 @@
 - [x] Set up user secrets for API keys
 
 ## Phase 3: Base Application Setup
-- [ ] Configure dependency injection in `Program.cs`
-- [ ] Set up Serilog logging pipeline
-- [ ] Create base Blazor layout (`MainLayout.razor`) with MudBlazor
-- [ ] Create navigation sidebar with placeholder menu items
-- [ ] Create `_Imports.razor` with common using statements
-- [ ] Verify `dotnet build` and `dotnet run` succeed
-- [ ] Write smoke test to verify DI container resolves services
+- [x] Configure dependency injection in `Program.cs`
+- [x] Set up Serilog logging pipeline
+- [x] Create base Blazor layout (`MainLayout.razor`) with MudBlazor
+- [x] Create navigation sidebar with placeholder menu items
+- [x] Create `_Imports.razor` with common using statements
+- [x] Verify `dotnet build` and `dotnet run` succeed
+- [x] Write smoke test to verify DI container resolves services

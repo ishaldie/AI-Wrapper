@@ -1,0 +1,22 @@
+# Plan: Market Data Enrichment
+
+## Phase 1: Web Search Service
+- [ ] Create `IWebSearchService` interface in Domain
+- [ ] Implement `WebSearchService` in Infrastructure (using Bing API or scraping)
+- [ ] Create search query builder per protocol patterns (employers, pipeline, rates)
+- [ ] Configure API key and rate limiting
+- [ ] Write tests with mocked search responses
+
+## Phase 2: Result Parsing & Caching
+- [ ] Create `MarketContext` DTO with structured fields
+- [ ] Implement result parser: extract employer names, project descriptions, rate values
+- [ ] Implement per-deal caching for search results
+- [ ] Handle empty/irrelevant results with fallback text
+- [ ] Track source URLs for attribution
+- [ ] Write tests for parsing logic and cache behavior
+
+## Phase 3: Integration
+- [ ] Wire market data into report assembly (Sections 4 and 5)
+- [ ] Add Fannie Mae rate lookup for loan default assumptions
+- [ ] Add source attribution display in report
+- [ ] Write integration tests for full search → parse → report flow

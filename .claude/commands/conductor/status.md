@@ -1,0 +1,71 @@
+---
+name: Conductor Status
+description: Display current project and track progress from Conductor artifacts; use before starting, resuming, or handing off work.
+---
+
+# Conductor Status
+
+Show current project and track status.
+
+**FIRST: Read all context files before doing anything else.**
+
+Read these files NOW:
+- conductor/product.md
+- conductor/tracks.md
+- All conductor/tracks/*/metadata.json
+- All conductor/tracks/*/plan.md
+
+Also check for recent manual changes:
+- Read conductor/notes/.changelog.json if it exists
+- Shows recent file edits made through the Notepad UI
+- Display as "Recent Manual Changes" section if present
+
+---
+
+## After Reading Context
+
+### Calculate Metrics
+
+For each track, count:
+- Pending tasks: `[ ]`
+- In-progress tasks: `[~]`
+- Completed tasks: `[x]`
+
+### Display Format
+
+```
+📊 Conductor Status
+
+Project: <project-name>
+Tracks: <total> | Tasks: <completed>/<total>
+
+━━━ In Progress ━━━
+🔵 <track-id> (<type>)
+   ████████░░░░░░░░ 50% (4/8 tasks)
+   Current: <current-task-name>
+
+━━━ Planned ━━━
+⚪ <track-id> (<type>)
+   0% (0/6 tasks)
+
+━━━ Completed ━━━
+✅ <track-id> (<type>)
+   Completed: <date>
+
+━━━ Next Actions ━━━
+→ Continue: /project:conductor:implement
+→ New track: /project:conductor:newTrack "description"
+```
+
+### Edge Cases
+
+- No tracks: Suggest creating one
+- Not initialized: Suggest running setup
+
+---
+
+## Critical Rules
+
+1. Always read conductor/ context files FIRST
+2. Follow workflow.md EXACTLY as written
+3. Get user approval before making changes

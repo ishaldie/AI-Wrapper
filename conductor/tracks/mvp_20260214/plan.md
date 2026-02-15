@@ -28,10 +28,10 @@
 - [ ] Verify: full flow works end-to-end in browser
 
 ## Phase 4: Polish & Validation
-- [ ] Add input validation (required fields, reasonable limits)
-- [ ] Add error handling UI (API unavailable, invalid key, generation failure)
-- [ ] Add loading/streaming indicator
-- [ ] Responsive layout check (desktop + tablet)
-- [ ] Run `ruff check` and `ruff format` — fix any issues
+- [~] Add input validation (required fields, reasonable limits)
+- [~] Add error handling UI (API unavailable, invalid key, generation failure)
+- [~] Add loading/streaming indicator
+- [~] Responsive layout check (desktop + tablet)
+- [~] Run `ruff check` and `ruff format` — fix any issues
 - [ ] Run full test suite — all tests pass
 - [ ] Manual end-to-end test with real API key

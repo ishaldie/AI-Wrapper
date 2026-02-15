@@ -1,53 +1,48 @@
-# AI Wrappers — Tech Stack
+# Tech Stack: ZSR Underwriting Wrapper
 
-## Language
-- **Python 3.12+**
+## Framework
+- **ASP.NET 10** (.NET 10 SDK)
+- **Blazor Server** for interactive UI (real-time C# components, no JS framework)
+- **C#** as primary language
 
-## Backend
-- **FastAPI** — async web framework for API endpoints and SSE streaming
-- **Uvicorn** — ASGI server
-- **Pydantic** — request/response validation and settings management
+## Architecture
+- **Clean Architecture** pattern: Domain -> Application -> Infrastructure -> Presentation
+- **Solution structure**:
+  - `ZSR.Underwriting.Domain` — Entities, value objects, interfaces
+  - `ZSR.Underwriting.Application` — Use cases, services, DTOs, calculation engine
+  - `ZSR.Underwriting.Infrastructure` — EF Core, RealAI client, Claude client, file storage
+  - `ZSR.Underwriting.Web` — Blazor Server app, pages, components, layout
+
+## Database
+- **Entity Framework Core** (Code First)
+- **SQL Server** (production) / **SQLite** (development)
+- Migrations managed via `dotnet ef`
 
 ## AI Integration
-- **anthropic** (official Python SDK) — Claude API client
-- Model: `claude-sonnet-4-5-20250929` (default, configurable)
+- **Claude API** (Anthropic) for prose generation, risk analysis, investment decisions
+- Anthropic .NET SDK or direct HTTP client
 
-## Frontend
-- **Jinja2** — server-side HTML templates
-- **HTMX** — dynamic UI interactions without heavy JS framework
-- **Tailwind CSS** (via CDN) — utility-first styling
+## External Integrations
+- **RealAI API** (app.realai.com) — property data, tenant metrics, market data, sales comps
+- **Web search** — supplemental market context (employers, pipeline, rates)
+
+## Authentication
+- **ASP.NET Identity** with cookie-based auth
+- Role-based access: Analyst, Admin
+
+## Key Libraries
+- **MudBlazor** — Blazor component library (tables, forms, charts)
+- **QuestPDF** or **IronPDF** — PDF report generation
+- **FluentValidation** — input validation
+- **Serilog** — structured logging
+- **Polly** — HTTP retry/resilience for external API calls
 
 ## Testing
-- **pytest** — unit and integration tests
-- **pytest-asyncio** — async test support
-- **httpx** — async HTTP client for API testing
+- **xUnit** — unit and integration tests
+- **bUnit** — Blazor component tests
+- **Moq** or **NSubstitute** — mocking
+- Tests in `ZSR.Underwriting.Tests` project
 
-## Development Tools
-- **uv** or **pip** — package management
-- **ruff** — linting and formatting
-- **python-dotenv** — environment variable management
-
-## Deployment (Future)
-- Docker container
-- Environment variables for API keys and config
-
-## Project Structure (Target)
-```
-ai_wrappers/
-├── app/
-│   ├── __init__.py
-│   ├── main.py          # FastAPI app entry point
-│   ├── config.py        # Settings and environment
-│   ├── routers/         # API route handlers
-│   ├── services/        # Business logic (AI generation)
-│   ├── models/          # Pydantic models
-│   ├── templates/       # Jinja2 HTML templates
-│   └── static/          # CSS, JS, images
-├── tests/
-│   ├── test_api.py
-│   └── test_services.py
-├── conductor/           # Conductor workflow files
-├── pyproject.toml
-├── .env.example
-└── .gitignore
-```
+## Target Platform
+- Web (desktop browser, responsive)
+- Hosted on Azure App Service or IIS

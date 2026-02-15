@@ -1,26 +1,29 @@
-# AI Wrappers — Product Definition
+# Product: ZSR Underwriting Wrapper
 
-## Vision
-A web-based business document generator powered by Anthropic's Claude API. Non-technical end users can quickly produce professional business documents — reports, proposals, meeting notes, SOPs, and more — by providing simple inputs and selecting a document type.
+## Purpose
+An AI-powered web application that automates multifamily real estate acquisition underwriting. Users provide a property address, purchase price, and optional deal documents — the system generates a comprehensive 10-section underwriting report with financial analysis, risk assessment, and GO/NO GO investment decision.
+
+## Problem Solved
+Real estate underwriting is time-intensive, requiring analysts to manually pull data from multiple sources, run financial calculations, and write narrative analysis. This wrapper automates the entire process by combining RealAI property data, financial calculation engines, and Claude AI prose generation into a single workflow that produces institutional-quality reports in minutes.
 
 ## Target Users
-- **Primary**: Business professionals, managers, and team leads who need to produce documents frequently but lack time or writing expertise.
-- **Secondary**: Small business owners and freelancers who need professional-quality documents without hiring writers.
+- **Real estate investors** reviewing multifamily acquisition opportunities
+- **Analysts** at ZSR Ventures who need standardized underwriting output
+- **Deal reviewers** who want quick initial screening before deep due diligence
 
-## Core Features
-1. **Document Type Selection** — Users pick from a catalog of business document templates (report, proposal, meeting notes, SOP, memo, executive summary, etc.)
-2. **Guided Input** — A simple form collects key details (topic, audience, tone, key points, length) tailored to each document type.
-3. **AI Generation** — Claude generates a polished, structured document based on the inputs.
-4. **Live Preview & Edit** — Users review the generated document in-browser and can request revisions or manually edit.
-5. **Export** — Download finished documents as Markdown, PDF, or DOCX.
-
-## Non-Functional Requirements
-- Fast generation (streaming responses for perceived speed)
-- Clean, minimal UI suitable for non-technical users
-- Secure API key handling (server-side only, never exposed to client)
-- Responsive design (works on desktop and tablet)
+## Key Features
+- Deal entry with required/optional input collection per the ZSR Underwriting Protocol
+- Document upload and parsing (rent rolls, T12/P&L, OMs, appraisals)
+- RealAI API integration for property, tenant, market, and comp data
+- Full calculation engine: NOI, IRR, DSCR, cap rates, 5-year cash flow projections, sensitivity analysis
+- Claude AI-generated prose: executive summary, risk narratives, investment thesis, GO/NO GO decision
+- 10-section report output with tables, metrics, and formatted analysis
+- Market data enrichment via web search (employers, construction pipeline, rates)
+- Deal pipeline dashboard with status tracking and saved reports
+- PDF export of completed underwriting reports
 
 ## Success Metrics
-- Users can generate a usable business document in under 2 minutes
-- Generated documents require minimal manual editing
-- App is intuitive enough to use without a tutorial
+- **Speed**: Generate a complete underwriting report in under 5 minutes
+- **Accuracy**: Calculations match manual spreadsheet underwriting within 0.1%
+- **Adoption**: All ZSR Ventures deal reviews use the wrapper as the primary screening tool
+- **Coverage**: 90%+ of protocol data points populated automatically (RealAI + calculations)

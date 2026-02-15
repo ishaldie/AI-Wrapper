@@ -1,0 +1,8 @@
+{
+  "track_id": "underwriting_calculation_engine_20260214",
+  "type": "feature",
+  "status": "planned",
+  "created_at": "2026-02-14T00:00:00.000Z",
+  "updated_at": "2026-02-14T00:00:00.000Z",
+  "description": "Underwriting Calculation Engine — All financial formulas: NOI, IRR, DSCR, cap rates, cash flows, sensitivity analysis"
+}

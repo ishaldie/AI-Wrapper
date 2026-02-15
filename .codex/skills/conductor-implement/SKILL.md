@@ -1,0 +1,96 @@
+---
+name: conductor-implement
+description: Execute the active track plan through the TDD task workflow; use during implementation when progressing tasks and checkpoints.. Use when the user asks about conductor implement or mentions $conductor-implement.
+---
+
+# Conductor Implement
+
+Execute tasks from the current track's plan.
+
+**FIRST: Read all context files before doing anything else.**
+
+Read these files NOW:
+- conductor/product.md
+- conductor/tech-stack.md
+- conductor/workflow.md
+- conductor/tracks.md
+
+Then read the active track's files:
+- conductor/tracks/<active-track>/spec.md
+- conductor/tracks/<active-track>/plan.md
+- conductor/tracks/<active-track>/cgx.md
+
+Also check for project notes that may provide additional context:
+- List conductor/notes/ directory for any .md files
+- Read relevant notes for decisions, architecture, or documentation
+- Notes contain user-written context that may inform implementation
+
+---
+
+## After Reading Context
+
+### Find Next Task
+1. Look for in-progress task `[~]`
+2. If none, find first pending task `[ ]`
+
+### Execute TDD Workflow (per workflow.md)
+
+1. **Mark In Progress**
+   - Update plan.md: `[ ]` → `[~]`
+
+2. **Red Phase**
+   - Write failing tests first
+   - Tests must fail for the right reason
+
+3. **Green Phase**
+   - Implement minimum code to pass tests
+   - Run tests to verify
+
+4. **Refactor Phase**
+   - Clean up code
+   - Maintain test coverage (>80%)
+
+5. **Commit**
+   - Conventional commit message
+   - Attach git note with task summary
+
+6. **Mark Complete**
+   - Update plan.md: `[~]` → `[x] <commit-sha>`
+   - Commit plan update
+
+### Phase Completion Protocol
+
+When ALL tasks in a phase are complete:
+
+1. Ensure test coverage for all phase changes
+2. Run full test suite
+3. Present manual verification steps to user
+4. **WAIT for explicit user "yes"**
+5. Create checkpoint commit
+6. Attach verification report as git note
+7. Update plan.md with `[checkpoint: <sha>]`
+
+### CGX Logging (Continuous Improvement)
+
+During implementation, **actively log observations to cgx.md**:
+
+1. **Frustrations** - Any friction, confusion, or repeated attempts
+2. **Good Patterns** - Workflows that worked well (to encode as skills/commands)
+3. **Anti-Patterns** - Mistakes or inefficiencies to prevent
+4. **Missing Capabilities** - Tools or features that would have helped
+5. **Improvement Candidates** - Concrete suggestions for new extensions
+
+Format entries with dates: `- [YYYY-MM-DD] Description`
+
+At track completion, run `/conductor:improve` to analyze and generate improvements.
+
+---
+
+## Critical Rules
+
+1. Always read conductor/ context files FIRST
+2. Follow workflow.md EXACTLY as written
+3. Get user approval before making changes
+4. NEVER skip the Red phase - tests first!
+5. ALWAYS wait for user approval at phase checkpoints
+6. Log observations to cgx.md during implementation

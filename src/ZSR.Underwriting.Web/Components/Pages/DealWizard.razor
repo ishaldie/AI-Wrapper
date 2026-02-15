@@ -1,0 +1,33 @@
+@page "/deals/new"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Web.Components.Pages.DealEntry
+@rendermode InteractiveServer
+
+<PageTitle>New Deal</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">New Deal</MudText>
+
+<MudStepper @bind-ActiveIndex="_activeStep">
+    <MudStep Title="Required Inputs">
+        <ChildContent>
+            <RequiredInputsStep Model="_model" />
+        </ChildContent>
+    </MudStep>
+
+    <MudStep Title="Preferred Inputs">
+        <ChildContent>
+            <PreferredInputsStep Model="_model" />
+        </ChildContent>
+    </MudStep>
+
+    <MudStep Title="Optional Inputs">
+        <ChildContent>
+            <OptionalInputsStep Model="_model" />
+        </ChildContent>
+    </MudStep>
+</MudStepper>
+
+@code {
+    private int _activeStep;
+    private DealInputDto _model = new();
+}

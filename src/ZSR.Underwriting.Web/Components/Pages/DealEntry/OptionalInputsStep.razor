@@ -1,0 +1,36 @@
+@using ZSR.Underwriting.Application.DTOs
+
+<MudText Typo="Typo.h6" Class="mb-3">Optional Inputs</MudText>
+<MudAlert Severity="Severity.Info" Class="mb-3">
+    Fields left blank will use protocol default values shown as placeholders.
+</MudAlert>
+<MudGrid>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Model.HoldPeriodYears"
+                         Label="Hold Period (Years)"
+                         Min="1" Max="30"
+                         Placeholder="5" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Model.CapexBudget"
+                         Label="CapEx Budget ($)"
+                         Min="0m"
+                         Format="N2" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudNumericField @bind-Value="Model.TargetOccupancy"
+                         Label="Target Occupancy (%)"
+                         Min="0m" Max="100m"
+                         Placeholder="95" />
+    </MudItem>
+    <MudItem xs="12" md="6">
+        <MudTextField @bind-Value="Model.ValueAddPlans"
+                      Label="Value-Add Plans"
+                      Lines="3" />
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter, EditorRequired]
+    public DealInputDto Model { get; set; } = default!;
+}
