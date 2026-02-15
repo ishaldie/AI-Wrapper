@@ -69,6 +69,8 @@
     <Compile Include="Services\WebSearchConfigTests.cs" />
     <Compile Include="DTOs\MarketContextDtoTests.cs" />
     <Compile Include="Services\MarketDataServiceTests.cs" />
+    <!-- Underwriting Calculation Engine track -->
+    <Compile Include="Calculations\RevenueAndNoiTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,13 +1,13 @@
 # Plan: Underwriting Calculation Engine
 
 ## Phase 1: Revenue & NOI Calculations
-- [ ] Create `IUnderwritingCalculator` interface in Domain
-- [ ] Implement GPR calculation (rent × units × 12)
-- [ ] Implement vacancy loss (GPR × (1 - occupancy%))
-- [ ] Implement net rent, other income (13.5%), EGI
-- [ ] Implement operating expenses (EGI × OpEx ratio or actuals)
-- [ ] Implement NOI and NOI margin
-- [ ] Write unit tests for each formula with known values
+- [x] Create `IUnderwritingCalculator` interface in Domain
+- [x] Implement GPR calculation (rent x units x 12)
+- [x] Implement vacancy loss (GPR x (1 - occupancy%))
+- [x] Implement net rent, other income (13.5%), EGI
+- [x] Implement operating expenses (EGI x OpEx ratio or actuals)
+- [x] Implement NOI and NOI margin
+- [x] Write unit tests for each formula with known values (19 tests, all passing)
 
 ## Phase 2: Debt & Returns
 - [ ] Implement debt amount (price × LTV%)
