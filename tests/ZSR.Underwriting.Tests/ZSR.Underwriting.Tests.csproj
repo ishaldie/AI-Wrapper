@@ -59,7 +59,6 @@
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Services\DocumentUploadServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />
-    <!-- Other tracks: re-include as implemented -->
   </ItemGroup>
 
   <ItemGroup>
