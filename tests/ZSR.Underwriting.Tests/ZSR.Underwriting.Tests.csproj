@@ -35,6 +35,7 @@
     <Compile Remove="Domain\**" />
     <Compile Remove="Infrastructure\**" />
     <Compile Remove="Components\**" />
+    <Compile Remove="Constants\**" />
     <Compile Remove="DTOs\**" />
     <Compile Remove="Services\**" />
   </ItemGroup>
@@ -54,12 +55,11 @@
     <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
     <!-- Deal Entry UI track -->
     <Compile Include="Components\DealWizardTests.cs" />
-    <!-- RealAI API Integration track -->
-    <Compile Include="RealAi\RealAiClientContractTests.cs" />
-    <Compile Include="RealAi\RealAiOptionsTests.cs" />
-    <!-- Market Data Enrichment track -->
-    <Compile Include="Domain\WebSearchServiceContractTests.cs" />
-    <Compile Include="Services\WebSearchServiceTests.cs" />
+    <!-- Document Upload track -->
+    <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
+    <Compile Include="Services\DocumentUploadServiceTests.cs" />
+    <Compile Include="Constants\FileUploadConstantsTests.cs" />
+    <!-- Other tracks: re-include as implemented -->
   </ItemGroup>
 
   <ItemGroup>
