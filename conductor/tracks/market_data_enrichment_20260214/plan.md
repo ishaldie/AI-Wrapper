@@ -5,7 +5,7 @@
 - [x] Implement `WebSearchService` in Infrastructure (using Bing API or scraping)
 - [x] Create search query builder per protocol patterns (employers, pipeline, rates)
 - [x] Configure API key and rate limiting
-- [ ] Write tests with mocked search responses
+- [x] Write tests with mocked search responses (covered by Tasks 2-4)
 
 ## Phase 2: Result Parsing & Caching
 - [ ] Create `MarketContext` DTO with structured fields
