@@ -39,6 +39,7 @@
     <Compile Remove="DTOs\**" />
     <Compile Remove="Parsing\**" />
     <Compile Remove="Services\**" />
+    <Compile Remove="Validators\**" />
   </ItemGroup>
   <ItemGroup>
     <!-- Core Data Models track -->
@@ -72,6 +73,10 @@
     <Compile Include="RealAi\RealAiClientContractTests.cs" />
     <Compile Include="RealAi\RealAiOptionsTests.cs" />
     <Compile Include="RealAi\RealAiClientTests.cs" />
+    <Compile Include="RealAi\RealAiDataMapperTests.cs" />
+    <!-- Report Assembly & Display track -->
+    <Compile Include="Formatting\ProtocolFormatterTests.cs" />
+    <Compile Include="DTOs\ReportDtoTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

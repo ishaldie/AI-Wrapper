@@ -42,7 +42,7 @@
 
 ---
 
-## [ ] Track: Report Assembly & Display
+## [~] Track: Report Assembly & Display
 *Link: [./conductor/tracks/report_assembly_and_display_20260214/](./conductor/tracks/report_assembly_and_display_20260214/)*
 
 ---
