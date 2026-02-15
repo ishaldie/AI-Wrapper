@@ -1,7 +1,7 @@
 # Plan: Dashboard & Deal Pipeline
 
 ## Phase 1: Dashboard Home
-- [ ] Create `Dashboard.razor` home page
+- [x] Create `Dashboard.razor` home page
 - [ ] Implement summary statistics cards (total, active, completed deals)
 - [ ] Create recent activity feed component
 - [ ] Add "New Deal" action button linking to deal wizard
