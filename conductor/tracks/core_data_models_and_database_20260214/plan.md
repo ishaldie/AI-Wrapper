@@ -19,10 +19,11 @@
 - [x] Configure cascade delete behavior a53edc9
 - [x] Create initial migration e0b35f4
 - [x] Write integration tests for CRUD operations 41ff59f
+[checkpoint: a4976b9]
 
 ## Phase 3: Repository Layer
-- [ ] Create `IDealRepository` interface in Domain
-- [ ] Implement `DealRepository` in Infrastructure
-- [ ] Create `IUnitOfWork` interface
-- [ ] Register repositories in DI container
-- [ ] Write integration tests for repository methods
+- [x] Create `IDealRepository` interface in Domain ba32e50
+- [x] Implement `DealRepository` in Infrastructure ba32e50
+- [x] Create `IUnitOfWork` interface ba32e50
+- [x] Register repositories in DI container ba32e50
+- [x] Write integration tests for repository methods ba32e50
