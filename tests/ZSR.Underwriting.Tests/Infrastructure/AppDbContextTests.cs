@@ -199,4 +199,159 @@ public class AppDbContextTests : IDisposable
         Assert.Single(inProgress);
         Assert.Equal("Deal B", inProgress[0].Name);
     }
+
+    // --- CRUD operations ---
+
+    [Fact]
+    public async Task Can_Create_And_Read_Deal()
+    {
+        var deal = new Deal("CRUD Test Deal");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.Deals.FindAsync(deal.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal("CRUD Test Deal", loaded.Name);
+        Assert.Equal(DealStatus.Draft, loaded.Status);
+    }
+
+    [Fact]
+    public async Task Can_Update_Deal_Status()
+    {
+        var deal = new Deal("Update Test");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        deal.UpdateStatus(DealStatus.Complete);
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.Deals.FindAsync(deal.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal(DealStatus.Complete, loaded.Status);
+    }
+
+    [Fact]
+    public async Task Can_Delete_Deal()
+    {
+        var deal = new Deal("Delete Test");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        _ctx.Deals.Remove(deal);
+        await _ctx.SaveChangesAsync();
+
+        Assert.Null(await _ctx.Deals.FindAsync(deal.Id));
+    }
+
+    [Fact]
+    public async Task Can_Create_And_Read_Property()
+    {
+        var deal = new Deal("Prop CRUD");
+        var prop = new Property("456 Oak Ave", 100) { DealId = deal.Id, YearBuilt = 2005 };
+        deal.Property = prop;
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.Properties.FindAsync(prop.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal("456 Oak Ave", loaded.Address);
+        Assert.Equal(100, loaded.UnitCount);
+        Assert.Equal(2005, loaded.YearBuilt);
+    }
+
+    [Fact]
+    public async Task Can_Update_Property_Optional_Fields()
+    {
+        var deal = new Deal("Prop Update");
+        var prop = new Property("789 Elm St", 25) { DealId = deal.Id };
+        deal.Property = prop;
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        prop.BuildingType = "Garden-style";
+        prop.SquareFootage = 50_000;
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.Properties.FindAsync(prop.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal("Garden-style", loaded.BuildingType);
+        Assert.Equal(50_000, loaded.SquareFootage);
+    }
+
+    [Fact]
+    public async Task Can_Create_And_Read_RealAiData()
+    {
+        var deal = new Deal("RealAi CRUD");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var data = new RealAiData(deal.Id) { InPlaceRent = 1_200m, Occupancy = 94.5m };
+        _ctx.RealAiDataSets.Add(data);
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.RealAiDataSets.FindAsync(data.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal(1_200m, loaded.InPlaceRent);
+        Assert.Equal(94.5m, loaded.Occupancy);
+    }
+
+    [Fact]
+    public async Task Can_Update_CalculationResult_Metrics()
+    {
+        var deal = new Deal("Calc Update");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var calc = new CalculationResult(deal.Id) { NetOperatingIncome = 300_000m };
+        _ctx.CalculationResults.Add(calc);
+        await _ctx.SaveChangesAsync();
+
+        calc.CashOnCashReturn = 0.085m;
+        calc.InternalRateOfReturn = 0.15m;
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.CalculationResults.FindAsync(calc.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal(300_000m, loaded.NetOperatingIncome);
+        Assert.Equal(0.085m, loaded.CashOnCashReturn);
+        Assert.Equal(0.15m, loaded.InternalRateOfReturn);
+    }
+
+    [Fact]
+    public async Task Can_Load_Full_Deal_Aggregate()
+    {
+        var deal = new Deal("Full Aggregate");
+        deal.Property = new Property("100 Main St", 50) { DealId = deal.Id };
+        deal.UnderwritingInput = new UnderwritingInput(10_000_000m) { DealId = deal.Id };
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var calc = new CalculationResult(deal.Id) { NetOperatingIncome = 750_000m };
+        _ctx.CalculationResults.Add(calc);
+        var report = new UnderwritingReport(deal.Id) { ExecutiveSummary = "Strong deal." };
+        _ctx.UnderwritingReports.Add(report);
+        var realAi = new RealAiData(deal.Id) { MarketCapRate = 5.5m };
+        _ctx.RealAiDataSets.Add(realAi);
+        var doc = new UploadedDocument(deal.Id, "rent-roll.pdf", "/uploads/rent-roll.pdf", DocumentType.RentRoll, 2048);
+        _ctx.UploadedDocuments.Add(doc);
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.Deals
+            .Include(d => d.Property)
+            .Include(d => d.UnderwritingInput)
+            .Include(d => d.CalculationResult)
+            .Include(d => d.Report)
+            .Include(d => d.RealAiData)
+            .Include(d => d.UploadedDocuments)
+            .FirstAsync(d => d.Id == deal.Id);
+
+        Assert.NotNull(loaded.Property);
+        Assert.NotNull(loaded.UnderwritingInput);
+        Assert.NotNull(loaded.CalculationResult);
+        Assert.NotNull(loaded.Report);
+        Assert.NotNull(loaded.RealAiData);
+        Assert.Single(loaded.UploadedDocuments);
+        Assert.Equal(10_000_000m, loaded.UnderwritingInput.PurchasePrice);
+        Assert.Equal(5.5m, loaded.RealAiData.MarketCapRate);
+    }
 }

@@ -37,6 +37,7 @@
     <Compile Remove="Components\**" />
     <Compile Remove="Constants\**" />
     <Compile Remove="DTOs\**" />
+    <Compile Remove="Parsing\**" />
     <Compile Remove="Services\**" />
   </ItemGroup>
   <ItemGroup>
