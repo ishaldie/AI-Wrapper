@@ -9,17 +9,17 @@
 - [x] Write bUnit tests for form validation behavior
 
 ## Phase 2: Persistence & Navigation
-- [ ] Create `IDealService` interface in Application layer
-- [ ] Implement `DealService` with create/update/get operations
-- [ ] Wire form submission to DealService (save as Draft)
-- [ ] Create `Deals.razor` list page showing user's deals
-- [ ] Add "Edit" functionality to load existing deal into wizard
-- [ ] Write integration tests for deal CRUD operations
+- [x] Create `IDealService` interface in Application layer
+- [x] Implement `DealService` with create/update/get operations
+- [x] Wire form submission to DealService (save as Draft)
+- [x] Create `Deals.razor` list page showing user's deals
+- [x] Add "Edit" functionality to load existing deal into wizard
+- [x] Write integration tests for deal CRUD operations
 
 ## Phase 3: Defaults & UX Polish
-- [ ] Display protocol default values in optional fields as placeholders
-- [ ] Show assumption summary panel (what defaults will be used)
-- [ ] Add "Run Underwriting" button with status transition
-- [ ] Add form progress indicator (Step 1 of 3)
-- [ ] Add input formatting (currency, percentage)
-- [ ] Write tests for default value application
+- [x] Display protocol default values in optional fields as placeholders
+- [x] Show assumption summary panel (what defaults will be used)
+- [x] Add "Run Underwriting" button with status transition
+- [x] Add form progress indicator (Step 1 of 3)
+- [x] Add input formatting (currency, percentage)
+- [x] Write tests for default value application
