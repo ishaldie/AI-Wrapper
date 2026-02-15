@@ -15,9 +15,10 @@
 - [x] Implement market data query (cap rates, growth, migration, permits)
 - [x] Implement sales comps query
 - [x] Implement time series query (rent trends, occupancy trends)
-- [~] Create response DTOs matching RealAI API structure
-- [~] Create mapper: RealAI DTOs → `RealAiData` entity
-- [~] Write unit tests for all mappers
+- [x] Create response DTOs matching RealAI API structure
+- [x] Create mapper: RealAI DTOs → `RealAiData` entity
+- [x] Write unit tests for all mappers
+[checkpoint: pending]
 
 ## Phase 3: Caching & Error Handling
 - [ ] Implement in-memory cache with 24-hour TTL per deal
