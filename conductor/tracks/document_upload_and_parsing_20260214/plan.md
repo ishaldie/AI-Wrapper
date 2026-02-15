@@ -6,7 +6,7 @@
 - [ ] Create `FileUpload.razor` component with drag-and-drop
 - [ ] Add document type selector dropdown
 - [ ] Implement file size and format validation
-- [ ] Associate uploaded files with Deal entity
+- [x] Associate uploaded files with Deal entity
 - [ ] Write tests for file validation and storage
 
 ## Phase 2: Document Parsing

@@ -48,6 +48,7 @@
     <Compile Include="Services\DealServiceTests.cs" />
     <!-- Document Upload & Parsing track -->
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
+    <Compile Include="Domain\UploadedDocumentTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
