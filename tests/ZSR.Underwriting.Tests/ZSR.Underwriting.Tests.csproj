@@ -71,6 +71,7 @@
     <Compile Include="Services\MarketDataServiceTests.cs" />
     <!-- Underwriting Calculation Engine track -->
     <Compile Include="Calculations\RevenueAndNoiTests.cs" />
+    <Compile Include="Calculations\DebtAndReturnsTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

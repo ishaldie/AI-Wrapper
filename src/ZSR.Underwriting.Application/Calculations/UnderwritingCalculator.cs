@@ -53,4 +53,77 @@ public class UnderwritingCalculator : IUnderwritingCalculator
 
         return Math.Round((noi / egi) * 100m, 1);
     }
+
+    // Phase 2: Debt & Returns
+
+    public decimal CalculateDebtAmount(decimal purchasePrice, decimal ltvPercent)
+    {
+        return purchasePrice * (ltvPercent / 100m);
+    }
+
+    public decimal CalculateAnnualDebtService(decimal debtAmount, decimal interestRatePercent, bool isInterestOnly, int amortizationYears)
+    {
+        if (debtAmount == 0m)
+            return 0m;
+
+        var annualRate = interestRatePercent / 100m;
+
+        if (isInterestOnly || annualRate == 0m)
+            return Math.Round(debtAmount * annualRate, 2);
+
+        // Standard amortization formula: P × [r(1+r)^n / ((1+r)^n - 1)]
+        var monthlyRate = annualRate / 12m;
+        var totalPayments = amortizationYears * 12;
+
+        // Use double for the power calculation, then back to decimal
+        var compoundFactor = (decimal)Math.Pow((double)(1m + monthlyRate), totalPayments);
+        var monthlyPayment = debtAmount * (monthlyRate * compoundFactor) / (compoundFactor - 1m);
+
+        return Math.Round(monthlyPayment * 12m, 2);
+    }
+
+    public decimal CalculateAcquisitionCosts(decimal purchasePrice, decimal acqCostPercent = 0.02m)
+    {
+        return purchasePrice * acqCostPercent;
+    }
+
+    public decimal CalculateEquityRequired(decimal purchasePrice, decimal acquisitionCosts, decimal debtAmount)
+    {
+        return purchasePrice + acquisitionCosts - debtAmount;
+    }
+
+    public decimal CalculateEntryCapRate(decimal noi, decimal purchasePrice)
+    {
+        if (purchasePrice == 0m)
+            return 0m;
+
+        return Math.Round((noi / purchasePrice) * 100m, 1);
+    }
+
+    public decimal CalculateExitCapRate(decimal marketCapRatePercent, decimal spreadPercent = 0.5m)
+    {
+        return marketCapRatePercent + spreadPercent;
+    }
+
+    public decimal CalculateAnnualReserves(int unitCount, decimal reservesPerUnit = 250m)
+    {
+        return unitCount * reservesPerUnit;
+    }
+
+    public decimal CalculateCashOnCash(decimal noi, decimal annualDebtService, decimal annualReserves, decimal equityRequired)
+    {
+        if (equityRequired == 0m)
+            return 0m;
+
+        var cashFlow = noi - annualDebtService - annualReserves;
+        return Math.Round((cashFlow / equityRequired) * 100m, 1);
+    }
+
+    public decimal CalculateDscr(decimal noi, decimal annualDebtService)
+    {
+        if (annualDebtService == 0m)
+            return 0m;
+
+        return Math.Round(noi / annualDebtService, 2);
+    }
 }

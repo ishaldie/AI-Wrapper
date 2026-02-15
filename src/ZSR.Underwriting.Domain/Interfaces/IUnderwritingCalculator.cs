@@ -10,4 +10,15 @@ public interface IUnderwritingCalculator
     decimal CalculateOperatingExpenses(decimal egi, decimal? actualExpenses, decimal opExRatio = 0.5435m);
     decimal CalculateNoi(decimal egi, decimal operatingExpenses);
     decimal CalculateNoiMargin(decimal noi, decimal egi);
+
+    // Phase 2: Debt & Returns
+    decimal CalculateDebtAmount(decimal purchasePrice, decimal ltvPercent);
+    decimal CalculateAnnualDebtService(decimal debtAmount, decimal interestRatePercent, bool isInterestOnly, int amortizationYears);
+    decimal CalculateAcquisitionCosts(decimal purchasePrice, decimal acqCostPercent = 0.02m);
+    decimal CalculateEquityRequired(decimal purchasePrice, decimal acquisitionCosts, decimal debtAmount);
+    decimal CalculateEntryCapRate(decimal noi, decimal purchasePrice);
+    decimal CalculateExitCapRate(decimal marketCapRatePercent, decimal spreadPercent = 0.5m);
+    decimal CalculateAnnualReserves(int unitCount, decimal reservesPerUnit = 250m);
+    decimal CalculateCashOnCash(decimal noi, decimal annualDebtService, decimal annualReserves, decimal equityRequired);
+    decimal CalculateDscr(decimal noi, decimal annualDebtService);
 }

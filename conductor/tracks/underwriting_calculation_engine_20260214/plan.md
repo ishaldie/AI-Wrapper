@@ -7,17 +7,18 @@
 - [x] Implement net rent, other income (13.5%), EGI
 - [x] Implement operating expenses (EGI x OpEx ratio or actuals)
 - [x] Implement NOI and NOI margin
-- [x] Write unit tests for each formula with known values (19 tests, all passing)
+- [x] Write unit tests for each formula with known values (21 tests, all passing)
+- [checkpoint: 2530b77]
 
 ## Phase 2: Debt & Returns
-- [ ] Implement debt amount (price × LTV%)
-- [ ] Implement debt service for IO and amortizing loans
-- [ ] Implement equity required (price + acq costs - debt)
-- [ ] Implement entry cap rate (NOI / price)
-- [ ] Implement exit cap rate (zipcode cap + 50bps)
-- [ ] Implement cash-on-cash ((NOI - debt service - reserves) / equity)
-- [ ] Implement DSCR (NOI / debt service)
-- [ ] Write unit tests for all debt and return calculations
+- [x] Implement debt amount (price × LTV%)
+- [x] Implement debt service for IO and amortizing loans
+- [x] Implement equity required (price + acq costs - debt)
+- [x] Implement entry cap rate (NOI / price)
+- [x] Implement exit cap rate (zipcode cap + 50bps)
+- [x] Implement cash-on-cash ((NOI - debt service - reserves) / equity)
+- [x] Implement DSCR (NOI / debt service)
+- [x] Write unit tests for all debt and return calculations (25 tests, all passing)
 
 ## Phase 3: Multi-Year Projections & IRR
 - [ ] Implement 5-year NOI projection with growth assumptions
