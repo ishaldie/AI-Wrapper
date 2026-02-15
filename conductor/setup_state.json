@@ -1,0 +1,18 @@
+{
+  "project": "AI Wrappers",
+  "type": "greenfield",
+  "last_successful_step": "3.3_initial_track_generated",
+  "initialized_at": "2026-02-14T18:30:00Z",
+  "steps_completed": [
+    "1.1_project_type_analyzed",
+    "1.2_tech_stack_detected",
+    "2.1_product_md",
+    "2.2_product_guidelines_md",
+    "2.3_tech_stack_md",
+    "2.4_code_styleguides",
+    "2.5_workflow_md",
+    "3.1_requirements_gathered",
+    "3.2_track_approved",
+    "3.3_initial_track_generated"
+  ]
+}
