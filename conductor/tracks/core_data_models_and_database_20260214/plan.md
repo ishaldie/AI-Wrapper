@@ -10,14 +10,15 @@
 - [x] Create `UnderwritingReport` entity for assembled report 6064e32
 - [x] Create `UploadedDocument` entity for file references (completed by Document Upload track)
 - [x] Write unit tests for entity validation (83 tests passing across all entities)
+[checkpoint: edfdfe4]
 
 ## Phase 2: EF Core Configuration
-- [ ] Create `AppDbContext` with all DbSets
-- [ ] Configure entity relationships (Deal → Property, Inputs, Results, Report)
-- [ ] Configure indexes on frequently queried fields
-- [ ] Configure cascade delete behavior
-- [ ] Create initial migration
-- [ ] Write integration tests for CRUD operations
+- [x] Create `AppDbContext` with all DbSets a53edc9
+- [x] Configure entity relationships (Deal → Property, Inputs, Results, Report) a53edc9
+- [x] Configure indexes on frequently queried fields a53edc9
+- [x] Configure cascade delete behavior a53edc9
+- [x] Create initial migration e0b35f4
+- [x] Write integration tests for CRUD operations 41ff59f
 
 ## Phase 3: Repository Layer
 - [ ] Create `IDealRepository` interface in Domain
