@@ -27,3 +27,4 @@
 - [x] Create `IUnitOfWork` interface ba32e50
 - [x] Register repositories in DI container ba32e50
 - [x] Write integration tests for repository methods ba32e50
+[checkpoint: f148f29]
