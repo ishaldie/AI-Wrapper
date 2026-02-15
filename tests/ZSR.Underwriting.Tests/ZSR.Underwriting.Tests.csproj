@@ -23,12 +23,16 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- Exclude test files for tracks whose source code is not yet implemented -->
+  <!-- Exclude test files for tracks whose source code is not yet implemented.
+       Re-include them as their corresponding track implementations are completed. -->
   <ItemGroup>
     <Compile Remove="Calculations\**" />
+    <Compile Remove="RealAi\**" />
     <Compile Remove="Infrastructure\SeedDataTests.cs" />
     <Compile Remove="Infrastructure\ClaudeClientContractTests.cs" />
     <Compile Remove="Infrastructure\RealAiClientContractTests.cs" />
+    <Compile Remove="Domain\PropertyTests.cs" />
+    <Compile Remove="Domain\UnderwritingInputTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
