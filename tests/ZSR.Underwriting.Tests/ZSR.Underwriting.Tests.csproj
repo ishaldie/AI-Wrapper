@@ -61,6 +61,10 @@
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Services\DocumentUploadServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />
+    <!-- Document Parsing (Phase 2) -->
+    <Compile Include="Parsing\RentRollParserTests.cs" />
+    <Compile Include="Parsing\T12ParserTests.cs" />
+    <Compile Include="Parsing\LoanTermSheetParserTests.cs" />
     <!-- RealAI API Integration track -->
     <Compile Include="RealAi\RealAiClientContractTests.cs" />
     <Compile Include="RealAi\RealAiOptionsTests.cs" />

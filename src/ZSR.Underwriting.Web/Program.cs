@@ -10,6 +10,7 @@ using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Data;
+using ZSR.Underwriting.Infrastructure.Parsing;
 using ZSR.Underwriting.Infrastructure.Services;
 using ZSR.Underwriting.Web.Components;
 
@@ -89,6 +90,12 @@ try
     builder.Services.AddScoped<ZSR.Underwriting.Domain.Interfaces.IFileStorageService>(sp =>
         new LocalFileStorageService(Path.Combine(builder.Environment.ContentRootPath, "uploads")));
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
+
+    // Add document parsers
+    builder.Services.AddScoped<IDocumentParser, RentRollParser>();
+    builder.Services.AddScoped<IDocumentParser, T12Parser>();
+    builder.Services.AddScoped<IDocumentParser, LoanTermSheetParser>();
+    builder.Services.AddScoped<IDocumentParsingService, DocumentParsingService>();
 
     // Add Blazor services
     builder.Services.AddRazorComponents()
