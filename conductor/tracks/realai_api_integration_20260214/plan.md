@@ -7,6 +7,7 @@
 - [x] Configure Polly retry policy (3 retries, exponential backoff)
 - [x] Register client in DI with typed HttpClient
 - [x] Write tests with mocked HTTP responses
+[checkpoint: pending]
 
 ## Phase 2: Data Retrieval & Mapping
 - [ ] Implement property data query (address lookup)
