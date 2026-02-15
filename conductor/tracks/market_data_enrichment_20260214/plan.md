@@ -4,7 +4,7 @@
 - [x] Create `IWebSearchService` interface in Domain `6eb14df`
 - [x] Implement `WebSearchService` in Infrastructure (using Bing API or scraping)
 - [x] Create search query builder per protocol patterns (employers, pipeline, rates)
-- [ ] Configure API key and rate limiting
+- [x] Configure API key and rate limiting
 - [ ] Write tests with mocked search responses
 
 ## Phase 2: Result Parsing & Caching
