@@ -86,6 +86,10 @@ try
             retryCount: 3,
             sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 
+    // Add RealAI cache service (24-hour TTL per deal)
+    builder.Services.AddMemoryCache();
+    builder.Services.AddSingleton<RealAiCacheService>();
+
     // Add repository layer
     builder.Services.AddScoped<IDealRepository, DealRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

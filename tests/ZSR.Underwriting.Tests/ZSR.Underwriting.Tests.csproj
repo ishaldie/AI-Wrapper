@@ -77,7 +77,6 @@
     <Compile Include="RealAi\RealAiCacheServiceTests.cs" />
     <!-- Report Assembly & Display track -->
     <Compile Include="Formatting\ProtocolFormatterTests.cs" />
-    <!-- Underwriting Calculation Engine track -->
     <Compile Include="Calculations\RevenueAndNoiTests.cs" />
   </ItemGroup>
 

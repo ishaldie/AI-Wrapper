@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Domain.ValueObjects;
 using ZSR.Underwriting.Infrastructure.Services;
@@ -19,7 +20,7 @@ public class RealAiClientTests
         {
             BaseAddress = new Uri("https://app.realai.com/api/")
         };
-        return new RealAiClient(httpClient);
+        return new RealAiClient(httpClient, NullLogger<RealAiClient>.Instance);
     }
 
     // --- GetPropertyDataAsync ---

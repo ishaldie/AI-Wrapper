@@ -18,12 +18,12 @@
 - [x] Create response DTOs matching RealAI API structure
 - [x] Create mapper: RealAI DTOs → `RealAiData` entity
 - [x] Write unit tests for all mappers
-[checkpoint: pending]
+[checkpoint: f1837a7]
 
 ## Phase 3: Caching & Error Handling
-- [ ] Implement in-memory cache with 24-hour TTL per deal
-- [ ] Create `IRealAiCacheService` for cache management
-- [ ] Handle API errors: timeout, 401, 404, 500 → graceful degradation
-- [ ] Flag unavailable data points in `RealAiData` entity
-- [ ] Log all API interactions with Serilog
-- [ ] Write tests for cache hit/miss and error scenarios
+- [x] Implement in-memory cache with 24-hour TTL per deal
+- [x] Create `IRealAiCacheService` for cache management
+- [x] Handle API errors: timeout, 401, 404, 500 → graceful degradation
+- [x] Flag unavailable data points in `RealAiData` entity
+- [x] Log all API interactions with Serilog
+- [x] Write tests for cache hit/miss and error scenarios
