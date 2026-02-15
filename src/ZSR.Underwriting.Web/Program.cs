@@ -101,6 +101,7 @@ try
     builder.Services.AddScoped<IDocumentParser, T12Parser>();
     builder.Services.AddScoped<IDocumentParser, LoanTermSheetParser>();
     builder.Services.AddScoped<IDocumentParsingService, DocumentParsingService>();
+    builder.Services.AddScoped<IOverrideService, OverrideService>();
 
     // Add Blazor services
     builder.Services.AddRazorComponents()

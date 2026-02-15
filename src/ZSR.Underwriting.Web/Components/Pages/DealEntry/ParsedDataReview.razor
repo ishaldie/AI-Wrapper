@@ -1,0 +1,153 @@
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
+@inject IDocumentParsingService ParsingService
+@inject IOverrideService OverrideService
+@inject ISnackbar Snackbar
+
+@if (_parsedResult is null && !_parsing)
+{
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Primary"
+               OnClick="ParseDocument"
+               Disabled="DocumentId == Guid.Empty">
+        Parse Document
+    </MudButton>
+}
+else if (_parsing)
+{
+    <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+    <MudText Typo="Typo.body2" Class="ml-2">Parsing document...</MudText>
+}
+else if (_parsedResult is not null)
+{
+    @if (!_parsedResult.Success)
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-3">@_parsedResult.ErrorMessage</MudAlert>
+    }
+    else
+    {
+        <MudText Typo="Typo.h6" Class="mb-3">Parsed Data Review</MudText>
+        <MudAlert Severity="Severity.Info" Class="mb-3">
+            Review the extracted data below. Click "Apply" to override deal fields, or "Reject" to discard.
+        </MudAlert>
+
+        @if (_parsedResult.DocumentType == DocumentType.RentRoll)
+        {
+            <MudSimpleTable Dense="true" Hover="true" Class="mb-3">
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                    @if (_parsedResult.UnitCount.HasValue) { <tr><td>Unit Count</td><td>@_parsedResult.UnitCount</td></tr> }
+                    @if (_parsedResult.TotalMonthlyRent.HasValue) { <tr><td>Total Monthly Rent</td><td>@_parsedResult.TotalMonthlyRent?.ToString("C")</td></tr> }
+                    @if (_parsedResult.AverageRent.HasValue) { <tr><td>Average Rent</td><td>@_parsedResult.AverageRent?.ToString("C")</td></tr> }
+                    @if (_parsedResult.OccupancyRate.HasValue) { <tr><td>Occupancy Rate</td><td>@(_parsedResult.OccupancyRate?.ToString("F1"))%</td></tr> }
+                </tbody>
+            </MudSimpleTable>
+        }
+        else if (_parsedResult.DocumentType == DocumentType.T12PAndL)
+        {
+            <MudSimpleTable Dense="true" Hover="true" Class="mb-3">
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                    @if (_parsedResult.GrossRevenue.HasValue) { <tr><td>Gross Revenue</td><td>@_parsedResult.GrossRevenue?.ToString("C")</td></tr> }
+                    @if (_parsedResult.TotalExpenses.HasValue) { <tr><td>Total Expenses</td><td>@_parsedResult.TotalExpenses?.ToString("C")</td></tr> }
+                    @if (_parsedResult.NetOperatingIncome.HasValue) { <tr><td>Net Operating Income</td><td>@_parsedResult.NetOperatingIncome?.ToString("C")</td></tr> }
+                </tbody>
+            </MudSimpleTable>
+        }
+        else if (_parsedResult.DocumentType == DocumentType.LoanTermSheet)
+        {
+            <MudSimpleTable Dense="true" Hover="true" Class="mb-3">
+                <thead><tr><th>Field</th><th>Value</th></tr></thead>
+                <tbody>
+                    @if (_parsedResult.LoanAmount.HasValue) { <tr><td>Loan Amount</td><td>@_parsedResult.LoanAmount?.ToString("C")</td></tr> }
+                    @if (_parsedResult.InterestRate.HasValue) { <tr><td>Interest Rate</td><td>@(_parsedResult.InterestRate?.ToString("F2"))%</td></tr> }
+                    @if (_parsedResult.LtvRatio.HasValue) { <tr><td>LTV Ratio</td><td>@(_parsedResult.LtvRatio?.ToString("F1"))%</td></tr> }
+                    @if (_parsedResult.LoanTermYears.HasValue) { <tr><td>Loan Term</td><td>@_parsedResult.LoanTermYears years</td></tr> }
+                    @if (_parsedResult.AmortizationYears.HasValue) { <tr><td>Amortization</td><td>@_parsedResult.AmortizationYears years</td></tr> }
+                    @if (_parsedResult.IsInterestOnly.HasValue) { <tr><td>Interest Only</td><td>@(_parsedResult.IsInterestOnly.Value ? "Yes" : "No")</td></tr> }
+                    @if (_parsedResult.IoTermMonths.HasValue) { <tr><td>IO Period</td><td>@_parsedResult.IoTermMonths months</td></tr> }
+                    @if (!string.IsNullOrEmpty(_parsedResult.PrepaymentTerms)) { <tr><td>Prepayment</td><td>@_parsedResult.PrepaymentTerms</td></tr> }
+                </tbody>
+            </MudSimpleTable>
+        }
+
+        <MudButtonGroup Variant="Variant.Outlined" Class="mt-2">
+            <MudButton Color="Color.Success" OnClick="ApplyOverrides" Disabled="_applying">
+                @if (_applying) { <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-1" /> }
+                Apply to Deal
+            </MudButton>
+            <MudButton Color="Color.Default" OnClick="RejectParsedData">Reject</MudButton>
+        </MudButtonGroup>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public Guid DealId { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid DocumentId { get; set; }
+
+    [Parameter]
+    public EventCallback OnOverridesApplied { get; set; }
+
+    private ParsedDocumentResult? _parsedResult;
+    private bool _parsing;
+    private bool _applying;
+
+    private async Task ParseDocument()
+    {
+        _parsing = true;
+        StateHasChanged();
+
+        try
+        {
+            _parsedResult = await ParsingService.ParseDocumentAsync(DocumentId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Parse error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _parsing = false;
+        }
+    }
+
+    private async Task ApplyOverrides()
+    {
+        if (_parsedResult is null) return;
+
+        _applying = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await OverrideService.ApplyOverridesAsync(DealId, _parsedResult);
+            if (result.Success)
+            {
+                Snackbar.Add($"Applied {result.AppliedOverrides.Count} field override(s).", Severity.Success);
+                await OnOverridesApplied.InvokeAsync();
+            }
+            else
+            {
+                Snackbar.Add($"Failed: {result.ErrorMessage}", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error applying overrides: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _applying = false;
+        }
+    }
+
+    private void RejectParsedData()
+    {
+        _parsedResult = null;
+        Snackbar.Add("Parsed data discarded.", Severity.Info);
+    }
+}

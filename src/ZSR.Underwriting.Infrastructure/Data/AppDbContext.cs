@@ -16,6 +16,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CalculationResult> CalculationResults => Set<CalculationResult>();
     public DbSet<UnderwritingReport> UnderwritingReports => Set<UnderwritingReport>();
     public DbSet<UploadedDocument> UploadedDocuments => Set<UploadedDocument>();
+    public DbSet<FieldOverride> FieldOverrides => Set<FieldOverride>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +79,12 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasMany(e => e.UploadedDocuments)
                 .WithOne(d => d.Deal)
                 .HasForeignKey(d => d.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many: Deal → FieldOverrides
+            entity.HasMany(e => e.FieldOverrides)
+                .WithOne(f => f.Deal)
+                .HasForeignKey(f => f.DealId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -162,6 +169,17 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(256);
             entity.Property(e => e.StoredPath).IsRequired().HasMaxLength(500);
             entity.Property(e => e.DocumentType).HasConversion<string>().HasMaxLength(30);
+            entity.HasIndex(e => e.DealId);
+        });
+
+        // --- FieldOverride ---
+        modelBuilder.Entity<FieldOverride>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FieldName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.OriginalValue).HasMaxLength(500);
+            entity.Property(e => e.NewValue).HasMaxLength(500);
+            entity.Property(e => e.Source).IsRequired().HasMaxLength(200);
             entity.HasIndex(e => e.DealId);
         });
     }

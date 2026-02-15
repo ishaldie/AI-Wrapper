@@ -17,6 +17,7 @@ public class Deal
     public UnderwritingReport? Report { get; set; }
     public RealAiData? RealAiData { get; set; }
     public ICollection<UploadedDocument> UploadedDocuments { get; set; } = new List<UploadedDocument>();
+    public ICollection<FieldOverride> FieldOverrides { get; set; } = new List<FieldOverride>();
 
     // === Temporary flat fields (will migrate to Property/UnderwritingInput entities) ===
     public string PropertyName { get; set; } = string.Empty;
