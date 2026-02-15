@@ -1,13 +1,13 @@
 # MVP Implementation Plan
 
 ## Phase 1: Project Setup
-- [ ] Create `pyproject.toml` with dependencies (fastapi, uvicorn, anthropic, jinja2, python-dotenv, httpx, pytest, pytest-asyncio, ruff)
-- [ ] Create project directory structure (`app/`, `app/routers/`, `app/services/`, `app/models/`, `app/templates/`, `app/static/`, `tests/`)
-- [ ] Create `app/__init__.py` and `app/main.py` with minimal FastAPI app
-- [ ] Create `app/config.py` with Pydantic settings (API key, model name, etc.)
-- [ ] Create `.env.example` with placeholder values
-- [ ] Create `.gitignore` (Python standard + .env)
-- [ ] Verify: `uvicorn app.main:app` starts and serves a health check endpoint
+- [x] Create `pyproject.toml` with dependencies (fastapi, uvicorn, anthropic, jinja2, python-dotenv, httpx, pytest, pytest-asyncio, ruff)
+- [x] Create project directory structure (`app/`, `app/routers/`, `app/services/`, `app/models/`, `app/templates/`, `app/static/`, `tests/`)
+- [x] Create `app/__init__.py` and `app/main.py` with minimal FastAPI app
+- [x] Create `app/config.py` with Pydantic settings (API key, model name, etc.)
+- [x] Create `.env.example` with placeholder values
+- [x] Create `.gitignore` (Python standard + .env) — already created during setup
+- [x] Verify: `uvicorn app.main:app` starts and serves a health check endpoint
 
 ## Phase 2: Claude Integration Service
 - [ ] Write tests for the generation service (mock Anthropic client)
