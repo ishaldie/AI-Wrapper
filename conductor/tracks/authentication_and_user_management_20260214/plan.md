@@ -1,7 +1,7 @@
 # Plan: Authentication & User Management
 
 ## Phase 1: Identity Setup
-- [ ] Add ASP.NET Identity NuGet packages
+- [~] Add ASP.NET Identity NuGet packages
 - [ ] Create `ApplicationUser` entity extending `IdentityUser` in Domain
 - [ ] Configure Identity in `Program.cs` with EF Core
 - [ ] Create Identity database migration

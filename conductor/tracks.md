@@ -7,7 +7,7 @@
 
 ---
 
-## [ ] Track: Authentication & User Management
+## [~] Track: Authentication & User Management
 *Link: [./conductor/tracks/authentication_and_user_management_20260214/](./conductor/tracks/authentication_and_user_management_20260214/)*
 
 ---
