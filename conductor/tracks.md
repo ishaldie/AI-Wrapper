@@ -12,7 +12,7 @@
 
 ---
 
-## [ ] Track: Core Data Models & Database
+## [~] Track: Core Data Models & Database
 *Link: [./conductor/tracks/core_data_models_and_database_20260214/](./conductor/tracks/core_data_models_and_database_20260214/)*
 
 ---
