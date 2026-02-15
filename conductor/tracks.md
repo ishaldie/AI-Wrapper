@@ -12,8 +12,8 @@
 
 ---
 
-## [~] Track: Core Data Models & Database
-*Link: [./conductor/tracks/core_data_models_and_database_20260214/](./conductor/tracks/core_data_models_and_database_20260214/)*
+## [x] Track: Core Data Models & Database (completed 2026-02-15)
+*Link: [./conductor/archive/core_data_models_and_database_20260214/](./conductor/archive/core_data_models_and_database_20260214/)*
 
 ---
 
