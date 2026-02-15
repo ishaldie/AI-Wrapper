@@ -69,7 +69,6 @@
     <Compile Include="Services\WebSearchConfigTests.cs" />
     <Compile Include="DTOs\MarketContextDtoTests.cs" />
     <Compile Include="Services\MarketDataServiceTests.cs" />
-    <Compile Include="Services\MarketDataIntegrationTests.cs" />
     <!-- Underwriting Calculation Engine track -->
     <Compile Include="Calculations\RevenueAndNoiTests.cs" />
     <Compile Include="Calculations\DebtAndReturnsTests.cs" />

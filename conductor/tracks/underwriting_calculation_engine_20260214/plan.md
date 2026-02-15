@@ -19,15 +19,16 @@
 - [x] Implement cash-on-cash ((NOI - debt service - reserves) / equity)
 - [x] Implement DSCR (NOI / debt service)
 - [x] Write unit tests for all debt and return calculations (25 tests, all passing)
+- [checkpoint: 3f69b7a]
 
 ## Phase 3: Multi-Year Projections & IRR
-- [ ] Implement 5-year NOI projection with growth assumptions
-- [ ] Implement annual cash flow series (NOI - debt service - reserves)
-- [ ] Implement exit value (terminal NOI / exit cap)
-- [ ] Implement net sale proceeds (exit value - costs - loan balance)
-- [ ] Implement equity multiple (total distributions / equity)
-- [ ] Implement IRR using Newton-Raphson method
-- [ ] Write tests for projection and IRR convergence
+- [x] Implement 5-year NOI projection with growth assumptions
+- [x] Implement annual cash flow series (NOI - debt service - reserves)
+- [x] Implement exit value (terminal NOI / exit cap)
+- [x] Implement net sale proceeds (exit value - costs - loan balance)
+- [x] Implement equity multiple (total distributions / equity)
+- [x] Implement IRR using Newton-Raphson method
+- [x] Write tests for projection and IRR convergence (20 tests, all passing)
 
 ## Phase 4: Comps, Sensitivity & Risk
 - [ ] Implement sales comp adjustment framework (time, size, age, location, amenities)

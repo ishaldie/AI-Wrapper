@@ -21,4 +21,14 @@ public interface IUnderwritingCalculator
     decimal CalculateAnnualReserves(int unitCount, decimal reservesPerUnit = 250m);
     decimal CalculateCashOnCash(decimal noi, decimal annualDebtService, decimal annualReserves, decimal equityRequired);
     decimal CalculateDscr(decimal noi, decimal annualDebtService);
+
+    // Phase 3: Multi-Year Projections & IRR
+    decimal[] ProjectNoi(decimal baseNoi, decimal[] annualGrowthRatePercents);
+    decimal[] ProjectCashFlows(decimal[] projectedNoi, decimal annualDebtService, decimal annualReserves);
+    decimal CalculateExitValue(decimal terminalNoi, decimal exitCapRatePercent);
+    decimal CalculateSaleCosts(decimal exitValue, decimal saleCostPercent = 0.02m);
+    decimal CalculateLoanBalance(decimal originalDebtAmount, decimal interestRatePercent, bool isInterestOnly, int amortizationYears, int yearsHeld);
+    decimal CalculateNetSaleProceeds(decimal exitValue, decimal saleCosts, decimal outstandingLoanBalance);
+    decimal CalculateEquityMultiple(decimal[] annualCashFlows, decimal netSaleProceeds, decimal equityInvested);
+    decimal CalculateIrr(decimal initialInvestment, decimal[] annualCashFlows, decimal terminalCashFlow);
 }
