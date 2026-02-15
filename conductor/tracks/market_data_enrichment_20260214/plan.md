@@ -10,11 +10,11 @@
 
 ## Phase 2: Result Parsing & Caching
 - [x] Create `MarketContext` DTO with structured fields
-- [ ] Implement result parser: extract employer names, project descriptions, rate values
-- [ ] Implement per-deal caching for search results
-- [ ] Handle empty/irrelevant results with fallback text
-- [ ] Track source URLs for attribution
-- [ ] Write tests for parsing logic and cache behavior
+- [x] Implement result parser: extract employer names, project descriptions, rate values
+- [x] Implement per-deal caching for search results
+- [x] Handle empty/irrelevant results with fallback text
+- [x] Track source URLs for attribution
+- [x] Write tests for parsing logic and cache behavior
 
 ## Phase 3: Integration
 - [ ] Wire market data into report assembly (Sections 4 and 5)
