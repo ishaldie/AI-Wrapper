@@ -1,0 +1,52 @@
+@using ZSR.Underwriting.Application.DTOs
+
+<MudCard Elevation="2" Class="pa-2">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">@Deal.PropertyName</MudText>
+            <MudText Typo="Typo.caption" Color="Color.Secondary">@Deal.Address</MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(Deal.Status)">
+                @Deal.Status
+            </MudChip>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="6">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Purchase Price</MudText>
+                <MudText Typo="Typo.body1">@Deal.PurchasePrice.ToString("C0")</MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Units</MudText>
+                <MudText Typo="Typo.body1">@Deal.UnitCount</MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">Cap Rate</MudText>
+                <MudText Typo="Typo.body1">@FormatPercent(Deal.CapRate)</MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <MudText Typo="Typo.caption" Color="Color.Secondary">IRR</MudText>
+                <MudText Typo="Typo.body1">@FormatPercent(Deal.Irr)</MudText>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public DealSummaryDto Deal { get; set; } = null!;
+
+    private static string FormatPercent(decimal? value)
+        => value.HasValue ? $"{value.Value * 100:F1}%" : "—";
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "InProgress" => Color.Warning,
+        "Complete" => Color.Success,
+        "Archived" => Color.Dark,
+        _ => Color.Default
+    };
+}

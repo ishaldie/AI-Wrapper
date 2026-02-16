@@ -92,6 +92,8 @@
     <Compile Include="Claude\ReportProseGeneratorTests.cs" />
     <!-- Dashboard & Deal Pipeline track -->
     <Compile Include="Components\DashboardTests.cs" />
+    <Compile Include="Components\DealPipelineTests.cs" />
+    <Compile Include="Components\DealCardTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

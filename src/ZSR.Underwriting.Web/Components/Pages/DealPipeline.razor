@@ -1,0 +1,100 @@
+@page "/deals"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@inject IDealService DealService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Deal Pipeline</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Deal Pipeline</MudText>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTextField @bind-Value="_searchText"
+                  Placeholder="Search by name or address..."
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Immediate="true"
+                  Class="mb-4" />
+
+    <MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedStatuses" Class="mb-4">
+        <MudChip T="string" Value="@("Draft")" Color="Color.Default" Variant="Variant.Outlined">Draft</MudChip>
+        <MudChip T="string" Value="@("InProgress")" Color="Color.Warning" Variant="Variant.Outlined">In Progress</MudChip>
+        <MudChip T="string" Value="@("Complete")" Color="Color.Success" Variant="Variant.Outlined">Complete</MudChip>
+        <MudChip T="string" Value="@("Archived")" Color="Color.Dark" Variant="Variant.Outlined">Archived</MudChip>
+    </MudChipSet>
+
+    @if (!FilteredDeals.Any())
+    {
+        <MudAlert Severity="Severity.Info">No deals found.</MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="DealSummaryDto" Items="@FilteredDeals" SortMode="SortMode.Single" Dense="true" Hover="true" RowClick="@OnRowClick">
+            <Columns>
+                <PropertyColumn Property="x => x.PropertyName" Title="Property Name" Sortable="true" />
+                <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" />
+                <TemplateColumn Title="Status" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Status))">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
+                            @context.Item.Status
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.UpdatedAt" Title="Date" Format="MM/dd/yyyy" Sortable="true" />
+                <TemplateColumn Title="Cap Rate" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.CapRate ?? 0m))">
+                    <CellTemplate>
+                        @FormatPercent(context.Item.CapRate)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="IRR" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Irr ?? 0m))">
+                    <CellTemplate>
+                        @FormatPercent(context.Item.Irr)
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+}
+
+@code {
+    private bool _loading = true;
+    private List<DealSummaryDto> _deals = new();
+    private string _searchText = string.Empty;
+    private IReadOnlyCollection<string> _selectedStatuses = Array.Empty<string>();
+
+    private IEnumerable<DealSummaryDto> FilteredDeals => _deals
+        .Where(d => _selectedStatuses.Count == 0 || _selectedStatuses.Contains(d.Status))
+        .Where(d => string.IsNullOrWhiteSpace(_searchText)
+            || d.PropertyName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+            || d.Address.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnInitializedAsync()
+    {
+        var deals = await DealService.GetAllDealsAsync();
+        _deals = deals.ToList();
+        _loading = false;
+    }
+
+    private void OnRowClick(DataGridRowClickEventArgs<DealSummaryDto> args)
+    {
+        Navigation.NavigateTo($"deals/{args.Item.Id}/edit");
+    }
+
+    private static string FormatPercent(decimal? value)
+        => value.HasValue ? $"{value.Value * 100:F1}%" : "—";
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "InProgress" => Color.Warning,
+        "Complete" => Color.Success,
+        "Archived" => Color.Dark,
+        _ => Color.Default
+    };
+}

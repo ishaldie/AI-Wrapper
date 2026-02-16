@@ -49,6 +49,7 @@ public class DealService : IDealService
     public async Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
     {
         return await _db.Deals
+            .Include(d => d.CalculationResult)
             .OrderByDescending(d => d.UpdatedAt)
             .Select(d => new DealSummaryDto
             {
@@ -59,7 +60,9 @@ public class DealService : IDealService
                 PurchasePrice = d.PurchasePrice,
                 Status = d.Status.ToString(),
                 CreatedAt = d.CreatedAt,
-                UpdatedAt = d.UpdatedAt
+                UpdatedAt = d.UpdatedAt,
+                CapRate = d.CalculationResult != null ? d.CalculationResult.GoingInCapRate : null,
+                Irr = d.CalculationResult != null ? d.CalculationResult.InternalRateOfReturn : null
             })
             .ToListAsync();
     }
