@@ -7,8 +7,8 @@
 
 ---
 
-## [~] Track: Authentication & User Management
-*Link: [./conductor/tracks/authentication_and_user_management_20260214/](./conductor/tracks/authentication_and_user_management_20260214/)*
+## [x] Track: Authentication & User Management (completed 2026-02-15)
+*Link: [./conductor/archive/authentication_and_user_management_20260214/](./conductor/archive/authentication_and_user_management_20260214/)*
 
 ---
 
@@ -52,7 +52,7 @@
 
 ---
 
-## [ ] Track: Dashboard & Deal Pipeline
-*Link: [./conductor/tracks/dashboard_and_deal_pipeline_20260214/](./conductor/tracks/dashboard_and_deal_pipeline_20260214/)*
+## [x] Track: Dashboard & Deal Pipeline (completed 2026-02-15)
+*Link: [./conductor/archive/dashboard_and_deal_pipeline_20260214/](./conductor/archive/dashboard_and_deal_pipeline_20260214/)*
 
 ---
