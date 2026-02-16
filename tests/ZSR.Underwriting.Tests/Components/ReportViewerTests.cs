@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MudBlazor.Services;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Web.Components.Pages;
 
 namespace ZSR.Underwriting.Tests.Components;
@@ -17,6 +18,14 @@ public class ReportViewerTests : IAsyncLifetime
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddMudServices();
         _ctx.Services.AddSingleton<IReportPdfExporter, StubPdfExporter>();
+        _ctx.Services.AddSingleton<IActivityTracker, NoOpActivityTracker>();
+    }
+
+    private class NoOpActivityTracker : IActivityTracker
+    {
+        public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+        public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+        public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null) => Task.CompletedTask;
     }
 
     private class StubPdfExporter : IReportPdfExporter

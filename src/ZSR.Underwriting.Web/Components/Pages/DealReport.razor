@@ -1,7 +1,9 @@
 @page "/deals/{DealId:guid}/report"
 @using ZSR.Underwriting.Application.DTOs.Report
 @using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
 @inject IReportAssembler ReportAssembler
+@inject IActivityTracker ActivityTracker
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -61,6 +63,7 @@
         try
         {
             _report = await ReportAssembler.AssembleReportAsync(DealId);
+            await ActivityTracker.TrackEventAsync(ActivityEventType.ReportViewed, dealId: DealId);
         }
         catch (KeyNotFoundException)
         {

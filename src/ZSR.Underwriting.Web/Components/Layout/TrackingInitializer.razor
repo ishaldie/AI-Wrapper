@@ -1,0 +1,49 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using ZSR.Underwriting.Application.Interfaces
+@inject IActivityTracker ActivityTracker
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    private bool _initialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _initialized) return;
+        _initialized = true;
+
+        if (AuthState is null) return;
+
+        var state = await AuthState;
+        var userId = state.User.Identity?.IsAuthenticated == true
+            ? state.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            : null;
+
+        if (userId is null) return;
+
+        await ActivityTracker.StartSessionAsync(userId);
+        await ActivityTracker.TrackPageViewAsync(Navigation.Uri);
+
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        try
+        {
+            await ActivityTracker.TrackPageViewAsync(e.Location);
+        }
+        catch
+        {
+            // Tracking failures must never break the user experience
+        }
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}

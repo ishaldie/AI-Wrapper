@@ -1,7 +1,9 @@
 @using ZSR.Underwriting.Application.DTOs.Report
 @using ZSR.Underwriting.Application.Formatting
 @using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
 @inject IReportPdfExporter PdfExporter
+@inject IActivityTracker ActivityTracker
 @inject IJSRuntime JS
 @rendermode InteractiveServer
 
@@ -485,5 +487,6 @@
         using var stream = new MemoryStream(pdfBytes);
         using var streamRef = new DotNetStreamReference(stream);
         await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+        await ActivityTracker.TrackEventAsync(ActivityEventType.PdfExported, metadata: Report.PropertyName);
     }
 }

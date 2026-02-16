@@ -6,6 +6,7 @@ using MudBlazor.Services;
 using Xunit;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Web.Components.Pages;
 
 namespace ZSR.Underwriting.Tests.Components;
@@ -21,6 +22,7 @@ public class DashboardTests : IAsyncLifetime
         _ctx.Services.AddMudServices();
         _ctx.Services.AddSingleton<IDealService, StubDealService>();
         _ctx.Services.AddSingleton<IQuickAnalysisService, StubQuickAnalysisService>();
+        _ctx.Services.AddSingleton<IActivityTracker, NoOpActivityTracker>();
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
     }
@@ -78,6 +80,7 @@ public class DashboardTests : IAsyncLifetime
         ctx.Services.AddMudServices();
         ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
         ctx.Services.AddSingleton<IQuickAnalysisService, StubQuickAnalysisService>();
+        ctx.Services.AddSingleton<IActivityTracker, NoOpActivityTracker>();
         var authCtx = ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
 
@@ -108,6 +111,13 @@ public class DashboardTests : IAsyncLifetime
     {
         var cut = _ctx.Render<Dashboard>();
         Assert.Contains("View All", cut.Markup);
+    }
+
+    private class NoOpActivityTracker : IActivityTracker
+    {
+        public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+        public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+        public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null) => Task.CompletedTask;
     }
 
     private class StubQuickAnalysisService : IQuickAnalysisService

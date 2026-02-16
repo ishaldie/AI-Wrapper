@@ -1,8 +1,10 @@
 @page "/deals/new"
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
 @using ZSR.Underwriting.Web.Components.Pages.DealEntry
 @inject IDealService DealService
+@inject IActivityTracker ActivityTracker
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -48,6 +50,16 @@
     private int _activeStep;
     private DealInputDto _model = new();
     private string? _error;
+    private bool _wizardTracked;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_wizardTracked)
+        {
+            _wizardTracked = true;
+            await ActivityTracker.TrackEventAsync(ActivityEventType.WizardStarted);
+        }
+    }
 
     private async Task HandleInteraction(StepperInteractionEventArgs args)
     {
@@ -55,7 +67,8 @@
         {
             try
             {
-                await DealService.CreateDealAsync(_model);
+                var deal = await DealService.CreateDealAsync(_model);
+                await ActivityTracker.TrackEventAsync(ActivityEventType.WizardCompleted, dealId: deal);
                 Navigation.NavigateTo("/deals");
             }
             catch (Exception ex)

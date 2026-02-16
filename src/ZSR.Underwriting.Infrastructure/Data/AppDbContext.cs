@@ -17,6 +17,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UnderwritingReport> UnderwritingReports => Set<UnderwritingReport>();
     public DbSet<UploadedDocument> UploadedDocuments => Set<UploadedDocument>();
     public DbSet<FieldOverride> FieldOverrides => Set<FieldOverride>();
+    public DbSet<UserSession> UserSessions => Set<UserSession>();
+    public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -180,6 +182,33 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.OriginalValue).HasMaxLength(500);
             entity.Property(e => e.NewValue).HasMaxLength(500);
             entity.Property(e => e.Source).IsRequired().HasMaxLength(200);
+            entity.HasIndex(e => e.DealId);
+        });
+
+        // --- UserSession ---
+        modelBuilder.Entity<UserSession>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasMany(e => e.ActivityEvents)
+                .WithOne()
+                .HasForeignKey(a => a.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- ActivityEvent ---
+        modelBuilder.Entity<ActivityEvent>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.EventType).HasConversion<string>().HasMaxLength(50);
+            entity.Property(e => e.PageUrl).HasMaxLength(2000);
+            entity.Property(e => e.Metadata).HasMaxLength(4000);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.EventType);
+            entity.HasIndex(e => e.OccurredAt);
             entity.HasIndex(e => e.DealId);
         });
     }

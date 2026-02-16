@@ -4,6 +4,7 @@
 @using ZSR.Underwriting.Application.Interfaces
 @using ZSR.Underwriting.Domain.Enums
 @inject IDocumentUploadService UploadService
+@inject IActivityTracker ActivityTracker
 @inject ISnackbar Snackbar
 
 <MudText Typo="Typo.h6" Class="mb-3">Document Upload</MudText>
@@ -104,6 +105,7 @@
             using var stream = file.OpenReadStream(maxAllowedSize: FileUploadConstants.MaxFileSizeBytes);
             var result = await UploadService.UploadDocumentAsync(DealId, stream, file.Name, _selectedDocType);
             _documents.Insert(0, result);
+            await ActivityTracker.TrackEventAsync(ActivityEventType.DocumentUploaded, dealId: DealId, metadata: file.Name);
             Snackbar.Add("File uploaded successfully.", Severity.Success);
         }
         catch (Exception ex)

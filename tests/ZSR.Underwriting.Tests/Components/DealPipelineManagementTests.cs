@@ -6,6 +6,7 @@ using MudBlazor.Services;
 using Xunit;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Web.Components.Pages;
 
 namespace ZSR.Underwriting.Tests.Components;
@@ -20,6 +21,7 @@ public class DealPipelineManagementTests : IAsyncLifetime
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddMudServices();
         _ctx.Services.AddSingleton<IDealService>(new ManagementStubDealService());
+        _ctx.Services.AddSingleton<IActivityTracker, NoOpActivityTracker>();
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -67,6 +69,13 @@ public class DealPipelineManagementTests : IAsyncLifetime
         var cut = _ctx.Render(WrapPipeline());
         cut.WaitForState(() => cut.Markup.Contains("Sunset Apts"));
         Assert.Contains("Delete", cut.Markup);
+    }
+
+    private class NoOpActivityTracker : IActivityTracker
+    {
+        public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+        public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+        public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null) => Task.CompletedTask;
     }
 
     private class ManagementStubDealService : IDealService

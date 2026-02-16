@@ -110,6 +110,11 @@
     <Compile Include="DTOs\QuickAnalysisProgressTests.cs" />
     <Compile Include="Services\QuickAnalysisTrackerTests.cs" />
     <Compile Include="Services\QuickAnalysisServiceTests.cs" />
+    <!-- Activity Tracking track -->
+    <Compile Include="Domain\UserSessionTests.cs" />
+    <Compile Include="Domain\ActivityEventTests.cs" />
+    <Compile Include="Services\ActivityTrackerTests.cs" />
+    <Compile Include="Infrastructure\ActivityTrackingDbTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

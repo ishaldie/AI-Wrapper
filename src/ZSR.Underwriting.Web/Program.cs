@@ -156,6 +156,9 @@ try
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
 
+    // Add activity tracking
+    builder.Services.AddScoped<IActivityTracker, ActivityTracker>();
+
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
