@@ -15,10 +15,10 @@
 - [x] Handle empty/irrelevant results with fallback text
 - [x] Track source URLs for attribution
 - [x] Write tests for parsing logic and cache behavior
-[checkpoint: pending]
+[checkpoint: 21fed99]
 
 ## Phase 3: Integration
-- [ ] Wire market data into report assembly (Sections 4 and 5)
-- [ ] Add Fannie Mae rate lookup for loan default assumptions
-- [ ] Add source attribution display in report
-- [ ] Write integration tests for full search → parse → report flow
+- [x] Wire market data into report assembly (Sections 4 and 5) `89c8dc8`
+- [x] Add Fannie Mae rate lookup for loan default assumptions `89c8dc8`
+- [x] Add source attribution display in report `89c8dc8`
+- [x] Write integration tests for full search → parse → report flow `89c8dc8`

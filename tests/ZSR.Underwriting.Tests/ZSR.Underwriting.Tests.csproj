@@ -80,6 +80,7 @@
     <Compile Include="Calculations\RevenueAndNoiTests.cs" />
     <Compile Include="Calculations\DebtAndReturnsTests.cs" />
     <Compile Include="Calculations\ProjectionsAndIrrTests.cs" />
+    <Compile Include="Calculations\CompsAndSensitivityTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
