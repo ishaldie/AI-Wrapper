@@ -19,9 +19,9 @@
 - [x] Write tests verifying prompt templates include all required data fields
 
 ## Phase 3: Response Parsing & Assembly
-- [ ] Create `IReportProseGenerator` service that orchestrates all prompts
-- [ ] Parse Claude responses into structured prose sections
-- [ ] Validate GO/NO GO decision against protocol thresholds
-- [ ] Handle partial failures (some sections fail, others succeed)
-- [ ] Create `GeneratedProse` DTO with all 6 sections
-- [ ] Write integration tests for full prose generation pipeline
+- [x] Create `IReportProseGenerator` service that orchestrates all prompts
+- [x] Parse Claude responses into structured prose sections
+- [x] Validate GO/NO GO decision against protocol thresholds
+- [x] Handle partial failures (some sections fail, others succeed)
+- [x] Create `GeneratedProse` DTO with all 6 sections
+- [x] Write integration tests for full prose generation pipeline

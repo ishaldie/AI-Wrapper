@@ -89,6 +89,7 @@
     <Compile Include="Claude\ClaudeClientTests.cs" />
     <Compile Include="Claude\ClaudeOptionsTests.cs" />
     <Compile Include="Claude\PromptBuilderTests.cs" />
+    <Compile Include="Claude\ReportProseGeneratorTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

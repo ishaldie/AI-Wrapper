@@ -115,6 +115,8 @@ try
     // Add report services
     builder.Services.AddScoped<IReportAssembler, ReportAssembler>();
     builder.Services.AddSingleton<IReportPdfExporter, ReportPdfExporter>();
+    builder.Services.AddScoped<IPromptBuilder, ZSR.Underwriting.Application.Services.UnderwritingPromptBuilder>();
+    builder.Services.AddScoped<IReportProseGenerator, ZSR.Underwriting.Application.Services.ReportProseGenerator>();
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
