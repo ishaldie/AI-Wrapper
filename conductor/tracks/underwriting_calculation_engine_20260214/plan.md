@@ -37,4 +37,4 @@
 - [x] Implement risk severity rating logic per protocol thresholds
 - [x] Create `CalculationResult` assembler that runs full pipeline
 - [x] Write tests for sensitivity deltas and risk rating accuracy (27 tests, all passing)
-- [checkpoint: pending]
+- [checkpoint: 995255a]
