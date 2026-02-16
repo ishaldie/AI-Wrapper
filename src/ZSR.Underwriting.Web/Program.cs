@@ -168,6 +168,7 @@ try
     builder.Services.AddScoped<IOverrideService, OverrideService>();
 
     // Add Blazor services
+    builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddRazorComponents()
         .AddInteractiveServerComponents();
 

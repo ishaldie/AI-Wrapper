@@ -16,8 +16,9 @@
     @* Search bar *@
     <div style="margin-bottom: 2.5rem;">
         <div class="search-bar">
-            <input type="text" placeholder="Search a property, market, or deal..." />
-            <button class="search-bar-btn" type="button">
+            <input type="text" placeholder="Search a property, market, or deal..."
+                   @bind="_searchQuery" @onkeydown="HandleSearchKeyDown" />
+            <button class="search-bar-btn" type="button" @onclick="NavigateToNewDeal">
                 <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
             </button>
         </div>
@@ -115,6 +116,22 @@
 </div>
 
 @code {
+    private string _searchQuery = "";
+
+    private void NavigateToNewDeal()
+    {
+        var url = string.IsNullOrWhiteSpace(_searchQuery)
+            ? "/deals/new"
+            : $"/deals/new?address={Uri.EscapeDataString(_searchQuery)}";
+        Navigation.NavigateTo(url);
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            NavigateToNewDeal();
+    }
+
     private void ShowComingSoon()
     {
         Snackbar.Add("Coming soon!", Severity.Info);

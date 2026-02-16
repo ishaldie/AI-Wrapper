@@ -24,8 +24,9 @@
     @* Search bar *@
     <div style="margin-bottom: 2.5rem;">
         <div class="search-bar">
-            <input type="text" placeholder="Search a property, market, or deal..." @bind="_searchQuery" />
-            <button class="search-bar-btn" type="button">
+            <input type="text" placeholder="Search a property, market, or deal..."
+                   @bind="_searchQuery" @onkeydown="HandleSearchKeyDown" />
+            <button class="search-bar-btn" type="button" @onclick="NavigateToNewDeal">
                 <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
             </button>
         </div>
@@ -155,6 +156,20 @@
         if (string.IsNullOrWhiteSpace(name)) return "there";
         var parts = name.Trim().Split(' ');
         return parts[0];
+    }
+
+    private void NavigateToNewDeal()
+    {
+        var url = string.IsNullOrWhiteSpace(_searchQuery)
+            ? "/deals/new"
+            : $"/deals/new?address={Uri.EscapeDataString(_searchQuery)}";
+        Navigation.NavigateTo(url);
+    }
+
+    private void HandleSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            NavigateToNewDeal();
     }
 
     private static Color GetStatusColor(string status) => status switch

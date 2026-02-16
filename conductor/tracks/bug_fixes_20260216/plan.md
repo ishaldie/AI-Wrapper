@@ -7,7 +7,10 @@
 - [x] Task 1.3: Write test — Login social buttons render "coming soon" text or noscript fallback
 - [x] Task 1.4: Fix Login.razor — Replace `@onclick` on social buttons with SSR-compatible approach
 - [x] Task 1.5: Verify build + all tests pass (515 pass, 0 fail)
-- [ ] Task 1.6: Phase 1 Manual Verification
+- [x] Task 1.6: Fix Dashboard.razor search bar — wire arrow button to navigate to `/deals/new` with query
+- [x] Task 1.7: Fix AnalysisStart.razor search bar — wire input + arrow button to navigate to `/deals/new` with query
+- [x] Task 1.8: Verify build + all tests pass (515 pass, 0 fail)
+- [x] Task 1.9: Phase 1 Manual Verification — all 4 search bars verified in Chrome
 
 ## Phase 2: Landing Redirect + Logout CSRF Fix
 

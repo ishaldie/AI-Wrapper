@@ -7,8 +7,7 @@
 
 ## Frustrations & Friction
 
-<!-- Log moments of frustration, confusion, or repeated attempts -->
-<!-- Format: - [YYYY-MM-DD] Description of friction point -->
+- [2026-02-16] Hook auto-generates OAuth external auth code in Login.razor and AuthPageTests.cs every time any file is edited. Had to rewrite files 3+ times before learning to work WITH the hook. The hook changes `@onclick` social buttons to `<a href="/api/auth/external-login?provider=...">` links and adds error-handling code. Wasted ~10 minutes fighting it.
 
 ---
 
