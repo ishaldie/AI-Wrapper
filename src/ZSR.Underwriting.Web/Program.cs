@@ -92,23 +92,35 @@ try
             retryCount: 3,
             sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 
-    // Add Claude API client with Polly retry policy
+    // Add Claude client — supports "cli" mode (your subscription) or "api" mode (API key)
     builder.Services.Configure<ClaudeOptions>(
         builder.Configuration.GetSection(ClaudeOptions.SectionName));
 
-    builder.Services.AddHttpClient<IClaudeClient, ClaudeClient>((sp, client) =>
+    var claudeMode = builder.Configuration
+        .GetSection(ClaudeOptions.SectionName)["Mode"] ?? "api";
+
+    if (claudeMode.Equals("cli", StringComparison.OrdinalIgnoreCase))
     {
-        var options = builder.Configuration
-            .GetSection(ClaudeOptions.SectionName)
-            .Get<ClaudeOptions>() ?? new ClaudeOptions();
-        client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-        client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-    })
-    .AddPolicyHandler(HttpPolicyExtensions
-        .HandleTransientHttpError()
-        .WaitAndRetryAsync(
-            retryCount: 3,
-            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+        // Use Claude Code CLI — runs against your subscription, no API key needed
+        builder.Services.AddSingleton<IClaudeClient, ClaudeCliClient>();
+    }
+    else
+    {
+        // Use Anthropic HTTP API — requires API key in user secrets
+        builder.Services.AddHttpClient<IClaudeClient, ClaudeClient>((sp, client) =>
+        {
+            var options = builder.Configuration
+                .GetSection(ClaudeOptions.SectionName)
+                .Get<ClaudeOptions>() ?? new ClaudeOptions();
+            client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+        })
+        .AddPolicyHandler(HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(
+                retryCount: 3,
+                sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+    }
 
     // Add RealAI cache service (24-hour TTL per deal)
     builder.Services.AddMemoryCache();
