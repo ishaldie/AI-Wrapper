@@ -109,4 +109,24 @@ public class AuthPageTests
         Assert.Contains("Continue with Google", content);
         Assert.Contains("Continue with Microsoft", content);
     }
+
+    [Fact]
+    public async Task Landing_Page_Hero_Search_Is_Link_Not_Input()
+    {
+        var response = await _client.GetAsync("/");
+        var content = await response.Content.ReadAsStringAsync();
+        // Bug fix: Hero search bar should be a navigable <a> link to /login
+        // not an <input> with SSR-broken @onfocus handler that does nothing
+        Assert.Contains("Search a property", content);
+        Assert.DoesNotContain("<input type=\"text\" placeholder=\"Search a property", content);
+    }
+
+    [Fact]
+    public async Task Login_Page_Social_Buttons_Link_To_External_Auth_Endpoint()
+    {
+        var response = await _client.GetAsync("/login");
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("/api/auth/external-login?provider=Google", content);
+        Assert.Contains("/api/auth/external-login?provider=Microsoft", content);
+    }
 }

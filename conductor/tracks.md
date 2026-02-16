@@ -62,8 +62,7 @@
 
 ---
 
-### [ ] Track: bug fixes
-
-_Link: [./tracks/bug_fixes_20260216/](./tracks/bug_fixes_20260216/)_
+## [~] Track: Bug Fixes
+*Link: [./conductor/tracks/bug_fixes_20260216/](./conductor/tracks/bug_fixes_20260216/)*
 
 ---

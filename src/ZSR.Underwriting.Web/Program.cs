@@ -14,6 +14,7 @@ using ZSR.Underwriting.Infrastructure.Parsing;
 using ZSR.Underwriting.Infrastructure.Repositories;
 using ZSR.Underwriting.Infrastructure.Services;
 using ZSR.Underwriting.Web.Components;
+using ZSR.Underwriting.Web.Endpoints;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -66,6 +67,19 @@ try
         options.ExpireTimeSpan = TimeSpan.FromDays(14);
         options.SlidingExpiration = true;
     });
+
+    // Register external OAuth providers (Google + Microsoft)
+    builder.Services.AddAuthentication()
+        .AddGoogle(options =>
+        {
+            options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "";
+            options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "";
+        })
+        .AddMicrosoftAccount(options =>
+        {
+            options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"] ?? "";
+            options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"] ?? "";
+        });
 
     // Require authentication on all routes by default
     builder.Services.AddAuthorizationBuilder()
@@ -185,6 +199,8 @@ try
     app.UseAuthorization();
 
     app.UseAntiforgery();
+
+    app.MapExternalAuthEndpoints();
 
     app.MapStaticAssets().AllowAnonymous();
     app.MapRazorComponents<App>()

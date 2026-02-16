@@ -36,12 +36,12 @@
             <p>AI-powered underwriting and analysis for multifamily real estate.</p>
 
             <div style="display: flex; justify-content: center;">
-                <div class="search-bar" style="max-width: 560px;">
-                    <input type="text" placeholder="Search a property, market, or deal..." @onfocus="GoToLogin" />
-                    <button class="search-bar-btn" @onclick="GoToLogin" type="button">
+                <a href="/login" class="search-bar" style="max-width: 560px; text-decoration: none;">
+                    <span style="flex: 1; color: #9CA3AF; font-size: 0.9375rem;">Search a property, market, or deal...</span>
+                    <span class="search-bar-btn">
                         <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
-                    </button>
-                </div>
+                    </span>
+                </a>
             </div>
 
             <p style="font-size: 0.8125rem; color: #9CA3AF; margin-top: 0.75rem;">Free to try. No credit card required.</p>
@@ -63,8 +63,4 @@
 </AuthorizeView>
 
 @code {
-    private void GoToLogin()
-    {
-        Navigation.NavigateTo("/login");
-    }
 }

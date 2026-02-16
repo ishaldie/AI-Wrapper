@@ -64,6 +64,7 @@
     <Compile Include="Validators\RegisterInputValidatorTests.cs" />
     <Compile Include="Validators\LoginInputValidatorTests.cs" />
     <Compile Include="Components\AuthPageTests.cs" />
+    <Compile Include="Components\ExternalAuthTests.cs" />
     <Compile Include="Components\AdminAccessTests.cs" />
     <Compile Include="Services\UserManagementServiceTests.cs" />
     <!-- Deal Entry UI track -->
