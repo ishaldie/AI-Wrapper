@@ -8,9 +8,6 @@
 <PageTitle>ZSR Underwriting - AI-Powered Real Estate Analysis</PageTitle>
 
 <AuthorizeView>
-    <Authorized>
-        @{ Navigation.NavigateTo("/search", forceLoad: true); }
-    </Authorized>
     <NotAuthorized>
         @* Top Nav *@
         <nav class="landing-nav">
@@ -63,4 +60,18 @@
 </AuthorizeView>
 
 @code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthState { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            if (state.User.Identity?.IsAuthenticated == true)
+            {
+                Navigation.NavigateTo("/search", forceLoad: true);
+            }
+        }
+    }
 }

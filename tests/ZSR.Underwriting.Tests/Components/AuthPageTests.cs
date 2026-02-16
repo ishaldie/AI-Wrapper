@@ -129,4 +129,15 @@ public class AuthPageTests
         Assert.Contains("/api/auth/external-login?provider=Google", content);
         Assert.Contains("/api/auth/external-login?provider=Microsoft", content);
     }
+
+    [Fact]
+    public async Task Logout_Post_Endpoint_Returns_Redirect()
+    {
+        // POST /api/auth/logout should return redirect to /login (requires auth)
+        // Before fix: endpoint doesn't exist, returns 200 with not-found page
+        // After fix: endpoint exists, returns 302 redirect to /login
+        var response = await _client.PostAsync("/api/auth/logout", null);
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/login", response.Headers.Location?.ToString() ?? "");
+    }
 }

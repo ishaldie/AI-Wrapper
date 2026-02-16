@@ -1,16 +1,13 @@
 @page "/logout"
-@using Microsoft.AspNetCore.Identity
-@using ZSR.Underwriting.Domain.Entities
-@inject SignInManager<ApplicationUser> SignInManager
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
 @inject NavigationManager Navigation
 
 @code {
-    [SupplyParameterFromForm]
-    private bool Confirm { get; set; }
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await SignInManager.SignOutAsync();
+        // GET /logout does not sign out (CSRF protection)
+        // Sign-out is handled by POST /api/auth/logout
         Navigation.NavigateTo("/login", forceLoad: true);
     }
 }

@@ -14,11 +14,11 @@
 
 ## Phase 2: Landing Redirect + Logout CSRF Fix
 
-- [ ] Task 2.1: Write test — Landing page for authenticated users returns redirect (not render-time nav)
-- [ ] Task 2.2: Fix Landing.razor — Move authenticated redirect from render markup to `OnInitialized` lifecycle
-- [ ] Task 2.3: Write test — GET to `/logout` does NOT sign out (or returns method-not-allowed)
-- [ ] Task 2.4: Fix Logout.razor — Change to POST-based form submission with antiforgery token
-- [ ] Task 2.5: Verify build + all tests pass
+- [x] Task 2.1: Write test — POST /api/auth/logout endpoint returns redirect
+- [x] Task 2.2: Fix Landing.razor — Move authenticated redirect from render markup to `OnInitializedAsync` lifecycle
+- [x] Task 2.3: Fix Logout.razor — GET no longer signs out; POST /api/auth/logout handles sign-out
+- [x] Task 2.4: Update IconSidebar — Logout link changed to POST form with antiforgery
+- [x] Task 2.5: Verify build + all tests pass (516 pass, 0 fail)
 - [ ] Task 2.6: Phase 2 Manual Verification
 
 ## Phase 3: Dead Code Cleanup

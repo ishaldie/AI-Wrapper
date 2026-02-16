@@ -19,6 +19,14 @@ public static class ExternalAuthEndpoints
 
         app.MapGet("/api/auth/external-callback", HandleExternalCallback)
             .AllowAnonymous();
+
+        app.MapPost("/api/auth/logout", HandleLogout);
+    }
+
+    private static async Task<IResult> HandleLogout(SignInManager<ApplicationUser> signInManager)
+    {
+        await signInManager.SignOutAsync();
+        return Results.Redirect("/login");
     }
 
     private static IResult HandleExternalLogin(string provider, string? returnUrl = "/search")

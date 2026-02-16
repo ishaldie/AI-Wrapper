@@ -33,9 +33,12 @@
             </NavLink>
         </AuthorizeView>
 
-        @* Logout *@
-        <a href="/logout" class="icon-sidebar-btn" title="Sign out">
-            <MudIcon Icon="@Icons.Material.Outlined.Logout" Size="Size.Small" />
-        </a>
+        @* Logout — POST form for CSRF protection *@
+        <form method="post" action="/api/auth/logout" style="display: contents;">
+            <AntiforgeryToken />
+            <button type="submit" class="icon-sidebar-btn" title="Sign out">
+                <MudIcon Icon="@Icons.Material.Outlined.Logout" Size="Size.Small" />
+            </button>
+        </form>
     </div>
 </nav>
