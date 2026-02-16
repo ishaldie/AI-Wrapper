@@ -17,6 +17,14 @@ else
 {
     <MudText Typo="Typo.body1" Class="mb-4">Welcome to ZSR Underwriting.</MudText>
 
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               Class="mb-4"
+               Href="deals/new">
+        New Deal
+    </MudButton>
+
     <MudGrid Class="mb-6">
         <MudItem xs="12" sm="4">
             <MudPaper Class="pa-4" Elevation="2">
@@ -37,6 +45,37 @@ else
             </MudPaper>
         </MudItem>
     </MudGrid>
+
+    <MudText Typo="Typo.h5" Class="mb-3">Recent Activity</MudText>
+
+    @if (_deals.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">
+            No deals yet. Click "New Deal" to get started.
+        </MudAlert>
+    }
+    else
+    {
+        <MudList T="DealSummaryDto" Dense="true">
+            @foreach (var deal in _deals.Take(10))
+            {
+                <MudListItem T="DealSummaryDto" Href="@($"deals/{deal.Id}/edit")">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.body1">@deal.PropertyName</MudText>
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">@deal.Address</MudText>
+                        </MudStack>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(deal.Status)">
+                                @deal.Status
+                            </MudChip>
+                            <MudText Typo="Typo.caption">@deal.UpdatedAt.ToString("g")</MudText>
+                        </MudStack>
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    }
 }
 
 @code {
@@ -52,4 +91,13 @@ else
         _deals = deals.ToList();
         _loading = false;
     }
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "InProgress" => Color.Warning,
+        "Complete" => Color.Success,
+        "Archived" => Color.Dark,
+        _ => Color.Default
+    };
 }

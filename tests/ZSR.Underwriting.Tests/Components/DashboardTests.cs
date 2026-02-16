@@ -32,18 +32,14 @@ public class DashboardTests : IAsyncLifetime
     public void Dashboard_RendersPageHeading()
     {
         var cut = _ctx.Render<Dashboard>();
-
-        var markup = cut.Markup;
-        Assert.Contains("Dashboard", markup);
+        Assert.Contains("Dashboard", cut.Markup);
     }
 
     [Fact]
     public void Dashboard_ShowsWelcomeText()
     {
         var cut = _ctx.Render<Dashboard>();
-
         cut.WaitForState(() => cut.Markup.Contains("Welcome"));
-
         Assert.Contains("ZSR Underwriting", cut.Markup);
     }
 
@@ -52,10 +48,7 @@ public class DashboardTests : IAsyncLifetime
     {
         _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
         var cut = _ctx.Render<Dashboard>();
-
         cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-
-        // Should show total count of 4 deals
         Assert.Contains("4", cut.Markup);
         Assert.Contains("Total Deals", cut.Markup);
     }
@@ -65,9 +58,7 @@ public class DashboardTests : IAsyncLifetime
     {
         _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
         var cut = _ctx.Render<Dashboard>();
-
         cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-
         Assert.Contains("Active", cut.Markup);
     }
 
@@ -76,9 +67,7 @@ public class DashboardTests : IAsyncLifetime
     {
         _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
         var cut = _ctx.Render<Dashboard>();
-
         cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-
         Assert.Contains("Completed", cut.Markup);
     }
 
@@ -86,10 +75,44 @@ public class DashboardTests : IAsyncLifetime
     public void Dashboard_EmptyState_ShowsZeroCounts()
     {
         var cut = _ctx.Render<Dashboard>();
-
         cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
-
         Assert.Contains("0", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_ShowsRecentActivityHeading()
+    {
+        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var cut = _ctx.Render<Dashboard>();
+        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
+        Assert.Contains("Recent Activity", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_ShowsRecentDealNames()
+    {
+        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var cut = _ctx.Render<Dashboard>();
+        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
+        Assert.Contains("Sunset Apts", cut.Markup);
+        Assert.Contains("Oak Manor", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_EmptyState_ShowsNoRecentActivity()
+    {
+        var cut = _ctx.Render<Dashboard>();
+        cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
+        Assert.Contains("No deals yet", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_HasNewDealButton()
+    {
+        var cut = _ctx.Render<Dashboard>();
+        cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
+        Assert.Contains("New Deal", cut.Markup);
+        Assert.Contains("deals/new", cut.Markup);
     }
 
     private class StubDealService : IDealService

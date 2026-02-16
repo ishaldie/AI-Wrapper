@@ -3,9 +3,9 @@
 ## Phase 1: Dashboard Home
 - [x] Create `Dashboard.razor` home page
 - [x] Implement summary statistics cards (total, active, completed deals)
-- [ ] Create recent activity feed component
-- [ ] Add "New Deal" action button linking to deal wizard
-- [ ] Write bUnit tests for dashboard components
+- [~] Create recent activity feed component
+- [~] Add "New Deal" action button linking to deal wizard
+- [~] Write bUnit tests for dashboard components
 
 ## Phase 2: Deal Pipeline Table
 - [ ] Create `DealPipeline.razor` with MudBlazor DataGrid

@@ -90,6 +90,8 @@
     <Compile Include="Claude\ClaudeOptionsTests.cs" />
     <Compile Include="Claude\PromptBuilderTests.cs" />
     <Compile Include="Claude\ReportProseGeneratorTests.cs" />
+    <!-- Dashboard & Deal Pipeline track -->
+    <Compile Include="Components\DashboardTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
