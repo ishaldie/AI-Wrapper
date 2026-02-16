@@ -8,12 +8,12 @@
 - [x] Write bUnit tests for dashboard components `b579039`
 
 ## Phase 2: Deal Pipeline Table
-- [x] Create `DealPipeline.razor` with MudBlazor DataGrid
-- [x] Implement sortable columns (name, address, status, date, cap rate, IRR)
-- [x] Implement status filter chips (Draft, InProgress, Complete, Archived)
-- [x] Implement search by property name and address
-- [x] Create `DealCard.razor` quick-view component with key metrics
-- [x] Write tests for filtering and sorting logic
+- [x] Create `DealPipeline.razor` with MudBlazor DataGrid `8368bfe`
+- [x] Implement sortable columns (name, address, status, date, cap rate, IRR) `8368bfe`
+- [x] Implement status filter chips (Draft, InProgress, Complete, Archived) `8368bfe`
+- [x] Implement search by property name and address `8368bfe`
+- [x] Create `DealCard.razor` quick-view component with key metrics `8368bfe`
+- [x] Write tests for filtering and sorting logic `8368bfe`
 
 ## Phase 3: Comparison & Management
 - [ ] Create `DealComparison.razor` side-by-side view
