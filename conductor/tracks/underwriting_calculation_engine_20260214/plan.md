@@ -29,6 +29,7 @@
 - [x] Implement equity multiple (total distributions / equity)
 - [x] Implement IRR using Newton-Raphson method
 - [x] Write tests for projection and IRR convergence (20 tests, all passing)
+- [checkpoint: 3b7e5b5]
 
 ## Phase 4: Comps, Sensitivity & Risk
 - [x] Implement sales comp adjustment framework (time, size, age, location, amenities)
@@ -36,3 +37,4 @@
 - [x] Implement risk severity rating logic per protocol thresholds
 - [x] Create `CalculationResult` assembler that runs full pipeline
 - [x] Write tests for sensitivity deltas and risk rating accuracy (27 tests, all passing)
+- [checkpoint: pending]
