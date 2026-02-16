@@ -26,8 +26,5 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Services\ReportAssembler.cs" />
-  </ItemGroup>
 
 </Project>

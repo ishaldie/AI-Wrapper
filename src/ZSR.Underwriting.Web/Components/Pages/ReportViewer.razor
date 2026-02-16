@@ -1,0 +1,469 @@
+@using ZSR.Underwriting.Application.DTOs.Report
+@using ZSR.Underwriting.Application.Formatting
+@rendermode InteractiveServer
+
+<PageTitle>@Report.PropertyName - Underwriting Report</PageTitle>
+
+<MudGrid>
+    @* Section Navigation Sidebar *@
+    <MudItem xs="12" md="3">
+        <MudPaper Class="pa-3" Elevation="1" Style="position: sticky; top: 80px;">
+            <MudText Typo="Typo.h6" Class="mb-2">Sections</MudText>
+            <MudNavMenu Dense="true">
+                @foreach (var sec in Report.GetSectionsInOrder())
+                {
+                    <MudNavLink Href="@($"#section-{sec.SectionNumber}")" Match="NavLinkMatch.All">
+                        @(sec.SectionNumber). @sec.Title
+                    </MudNavLink>
+                }
+            </MudNavMenu>
+        </MudPaper>
+    </MudItem>
+
+    @* Report Content *@
+    <MudItem xs="12" md="9">
+        @* Header *@
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h4">@Report.PropertyName</MudText>
+                    <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@Report.Address</MudText>
+                    <MudText Typo="Typo.caption">Generated @Report.GeneratedAt.ToString("MMMM d, yyyy")</MudText>
+                </MudStack>
+                @{ var headerDecision = Report.ExecutiveSummary.Decision; }
+                <MudChip T="string"
+                         Size="Size.Large"
+                         Color="@GetDecisionColor(headerDecision)"
+                         Variant="Variant.Filled">
+                    @Report.ExecutiveSummary.DecisionLabel
+                </MudChip>
+            </MudStack>
+        </MudPaper>
+
+        @* Section 1: Core Investment Metrics *@
+        <div id="section-1">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">1. @Report.CoreMetrics.Title</MudText>
+                <MudSimpleTable Dense="true" Striped="true" Hover="true">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Report.CoreMetrics.Metrics)
+                        {
+                            <tr>
+                                <td>@row.Label</td>
+                                <td><strong>@row.Value</strong></td>
+                                <td><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@row.Source</MudChip></td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </div>
+
+        @* Section 2: Executive Summary *@
+        <div id="section-2">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                    <MudText Typo="Typo.h5">2. @Report.ExecutiveSummary.Title</MudText>
+                    <MudChip T="string"
+                             Color="@GetDecisionColor(Report.ExecutiveSummary.Decision)"
+                             Variant="Variant.Filled">
+                        @Report.ExecutiveSummary.DecisionLabel
+                    </MudChip>
+                </MudStack>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.ExecutiveSummary.Narrative</MudText>
+                @if (Report.ExecutiveSummary.KeyHighlights.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Color="Color.Success" Class="mb-1">Key Highlights</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var highlight in Report.ExecutiveSummary.KeyHighlights)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle" IconColor="Color.Success">@highlight</MudListItem>
+                        }
+                    </MudList>
+                }
+                @if (Report.ExecutiveSummary.KeyRisks.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Color="Color.Error" Class="mt-2 mb-1">Key Risks</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var risk in Report.ExecutiveSummary.KeyRisks)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Warning" IconColor="Color.Error">@risk</MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+        </div>
+
+        @* Section 3: Underwriting Assumptions *@
+        <div id="section-3">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">3. @Report.Assumptions.Title</MudText>
+                <MudSimpleTable Dense="true" Striped="true" Hover="true">
+                    <thead>
+                        <tr>
+                            <th>Parameter</th>
+                            <th>Value</th>
+                            <th>Source</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Report.Assumptions.Assumptions)
+                        {
+                            <tr>
+                                <td>@row.Parameter</td>
+                                <td><strong>@row.Value</strong></td>
+                                <td><MudChip T="string" Size="Size.Small" Variant="Variant.Outlined">@row.Source</MudChip></td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </div>
+
+        @* Section 4: Property & Sales Comparables *@
+        <div id="section-4">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">4. @Report.PropertyComps.Title</MudText>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.PropertyComps.Narrative</MudText>
+                @if (Report.PropertyComps.Comps.Count > 0)
+                {
+                    <MudSimpleTable Dense="true" Striped="true" Hover="true" Class="mb-3">
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>Sale Price</th>
+                                <th>Units</th>
+                                <th>$/Unit</th>
+                                <th>Cap Rate</th>
+                                <th>Sale Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var comp in Report.PropertyComps.Comps)
+                            {
+                                <tr>
+                                    <td>@comp.Address</td>
+                                    <td>@ProtocolFormatter.Currency(comp.SalePrice)</td>
+                                    <td>@comp.Units</td>
+                                    <td>@ProtocolFormatter.Currency(comp.PricePerUnit)</td>
+                                    <td>@ProtocolFormatter.Percent(comp.CapRate)</td>
+                                    <td>@comp.SaleDate.ToString("MMM yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudPaper>
+        </div>
+
+        @* Section 5: Tenant & Market Intelligence *@
+        <div id="section-5">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">5. @Report.TenantMarket.Title</MudText>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.TenantMarket.Narrative</MudText>
+                @if (Report.TenantMarket.Benchmarks.Count > 0)
+                {
+                    <MudSimpleTable Dense="true" Striped="true" Hover="true">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Subject</th>
+                                <th>Market</th>
+                                <th>Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Report.TenantMarket.Benchmarks)
+                            {
+                                <tr>
+                                    <td>@row.Metric</td>
+                                    <td>@row.Subject</td>
+                                    <td>@row.Market</td>
+                                    <td>@row.Variance</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudPaper>
+        </div>
+
+        @* Section 6: Operations T12 P&L *@
+        <div id="section-6">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">6. @Report.Operations.Title</MudText>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.Operations.Commentary</MudText>
+                <MudSimpleTable Dense="true" Striped="true" Hover="true">
+                    <thead>
+                        <tr>
+                            <th>Line Item</th>
+                            <th style="text-align:right">Annual</th>
+                            <th style="text-align:right">Per Unit</th>
+                            <th style="text-align:right">% of EGI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Report.Operations.RevenueItems.Count > 0)
+                        {
+                            <tr><td colspan="4"><strong>Revenue</strong></td></tr>
+                            @foreach (var row in Report.Operations.RevenueItems)
+                            {
+                                <tr>
+                                    <td>@row.LineItem</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(row.Annual)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.CurrencyExact(row.PerUnit)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Percent(row.PercentOfEgi)</td>
+                                </tr>
+                            }
+                        }
+                        @if (Report.Operations.ExpenseItems.Count > 0)
+                        {
+                            <tr><td colspan="4"><strong>Expenses</strong></td></tr>
+                            @foreach (var row in Report.Operations.ExpenseItems)
+                            {
+                                <tr>
+                                    <td>@row.LineItem</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(row.Annual)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.CurrencyExact(row.PerUnit)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Percent(row.PercentOfEgi)</td>
+                                </tr>
+                            }
+                        }
+                        <tr style="font-weight:bold; border-top: 2px solid;">
+                            <td>Net Operating Income</td>
+                            <td style="text-align:right">@ProtocolFormatter.Currency(Report.Operations.Noi)</td>
+                            <td></td>
+                            <td style="text-align:right">@ProtocolFormatter.Percent(Report.Operations.NoiMargin)</td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+            </MudPaper>
+        </div>
+
+        @* Section 7: Financial Analysis *@
+        <div id="section-7">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">7. @Report.FinancialAnalysis.Title</MudText>
+
+                @* Sources & Uses *@
+                <MudText Typo="Typo.h6" Class="mb-2">Sources & Uses</MudText>
+                <MudGrid Class="mb-4">
+                    <MudItem xs="6">
+                        <MudSimpleTable Dense="true">
+                            <thead><tr><th colspan="2">Sources</th></tr></thead>
+                            <tbody>
+                                <tr><td>Loan</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.LoanAmount)</td></tr>
+                                <tr><td>Equity</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.EquityRequired)</td></tr>
+                                <tr style="font-weight:bold"><td>Total</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.TotalSources)</td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudSimpleTable Dense="true">
+                            <thead><tr><th colspan="2">Uses</th></tr></thead>
+                            <tbody>
+                                <tr><td>Purchase Price</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.PurchasePrice)</td></tr>
+                                <tr><td>Closing Costs</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.ClosingCosts)</td></tr>
+                                <tr><td>CapEx Reserve</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.CapexReserve)</td></tr>
+                                <tr style="font-weight:bold"><td>Total</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.SourcesAndUses.TotalUses)</td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                </MudGrid>
+
+                @* 5-Year Cash Flow *@
+                @if (Report.FinancialAnalysis.FiveYearCashFlow.Count > 0)
+                {
+                    <MudText Typo="Typo.h6" Class="mb-2">5-Year Cash Flow Projection</MudText>
+                    <MudSimpleTable Dense="true" Striped="true" Hover="true" Class="mb-4">
+                        <thead>
+                            <tr>
+                                <th>Year</th>
+                                <th style="text-align:right">EGI</th>
+                                <th style="text-align:right">OpEx</th>
+                                <th style="text-align:right">NOI</th>
+                                <th style="text-align:right">Debt Service</th>
+                                <th style="text-align:right">Cash Flow</th>
+                                <th style="text-align:right">CoC</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var yr in Report.FinancialAnalysis.FiveYearCashFlow)
+                            {
+                                <tr>
+                                    <td>@yr.Year</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(yr.Egi)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(yr.OpEx)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(yr.Noi)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(yr.DebtService)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(yr.CashFlow)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Percent(yr.CashOnCash)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+
+                @* Returns *@
+                <MudGrid Class="mb-4">
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.h6" Class="mb-2">Returns</MudText>
+                        <MudSimpleTable Dense="true">
+                            <tbody>
+                                <tr><td>IRR</td><td style="text-align:right">@ProtocolFormatter.Percent(Report.FinancialAnalysis.Returns.Irr)</td></tr>
+                                <tr><td>Equity Multiple</td><td style="text-align:right">@ProtocolFormatter.Multiple(Report.FinancialAnalysis.Returns.EquityMultiple)</td></tr>
+                                <tr><td>Avg Cash-on-Cash</td><td style="text-align:right">@ProtocolFormatter.Percent(Report.FinancialAnalysis.Returns.AverageCashOnCash)</td></tr>
+                                <tr><td>Total Profit</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.Returns.TotalProfit)</td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.h6" Class="mb-2">Exit Analysis</MudText>
+                        <MudSimpleTable Dense="true">
+                            <tbody>
+                                <tr><td>Exit Cap Rate</td><td style="text-align:right">@ProtocolFormatter.Percent(Report.FinancialAnalysis.Exit.ExitCapRate)</td></tr>
+                                <tr><td>Exit NOI</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.Exit.ExitNoi)</td></tr>
+                                <tr><td>Exit Value</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.Exit.ExitValue)</td></tr>
+                                <tr><td>Net Proceeds</td><td style="text-align:right">@ProtocolFormatter.Currency(Report.FinancialAnalysis.Exit.NetProceeds)</td></tr>
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+        </div>
+
+        @* Section 8: Value Creation Strategy *@
+        <div id="section-8">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">8. @Report.ValueCreation.Title</MudText>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.ValueCreation.Narrative</MudText>
+                @if (Report.ValueCreation.Strategies.Count > 0)
+                {
+                    <MudSimpleTable Dense="true" Striped="true" Hover="true">
+                        <thead>
+                            <tr>
+                                <th>Strategy</th>
+                                <th>Timeline</th>
+                                <th style="text-align:right">Est. Cost</th>
+                                <th style="text-align:right">Est. Value Add</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Report.ValueCreation.Strategies)
+                            {
+                                <tr>
+                                    <td>@item.Strategy</td>
+                                    <td>@item.Timeline</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(item.EstimatedCost)</td>
+                                    <td style="text-align:right">@ProtocolFormatter.Currency(item.EstimatedValueAdd)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudPaper>
+        </div>
+
+        @* Section 9: Risk Assessment *@
+        <div id="section-9">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudText Typo="Typo.h5" Class="mb-3">9. @Report.RiskAssessment.Title</MudText>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.RiskAssessment.Narrative</MudText>
+                @if (Report.RiskAssessment.Risks.Count > 0)
+                {
+                    <MudSimpleTable Dense="true" Striped="true" Hover="true">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Severity</th>
+                                <th>Mitigation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var risk in Report.RiskAssessment.Risks)
+                            {
+                                <tr>
+                                    <td>@risk.Category</td>
+                                    <td>@risk.Description</td>
+                                    <td>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@GetSeverityColor(risk.Severity)"
+                                                 Variant="Variant.Filled">
+                                            @risk.Severity
+                                        </MudChip>
+                                    </td>
+                                    <td>@risk.Mitigation</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                }
+            </MudPaper>
+        </div>
+
+        @* Section 10: Investment Decision *@
+        <div id="section-10">
+            <MudPaper Class="pa-4 mb-4" Elevation="1">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                    <MudText Typo="Typo.h5">10. @Report.InvestmentDecision.Title</MudText>
+                    <MudChip T="string"
+                             Size="Size.Large"
+                             Color="@GetDecisionColor(Report.InvestmentDecision.Decision)"
+                             Variant="Variant.Filled">
+                        @Report.InvestmentDecision.DecisionLabel
+                    </MudChip>
+                </MudStack>
+                <MudText Typo="Typo.body1" Class="mb-3">@Report.InvestmentDecision.InvestmentThesis</MudText>
+                @if (Report.InvestmentDecision.Conditions.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">Conditions</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var condition in Report.InvestmentDecision.Conditions)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.PriorityHigh" IconColor="Color.Warning">@condition</MudListItem>
+                        }
+                    </MudList>
+                }
+                @if (Report.InvestmentDecision.NextSteps.Count > 0)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-2 mb-1">Next Steps</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var step in Report.InvestmentDecision.NextSteps)
+                        {
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.ArrowForward" IconColor="Color.Info">@step</MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+        </div>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [Parameter]
+    public UnderwritingReportDto Report { get; set; } = new();
+
+    private static Color GetDecisionColor(InvestmentDecisionType decision) => decision switch
+    {
+        InvestmentDecisionType.Go => Color.Success,
+        InvestmentDecisionType.ConditionalGo => Color.Warning,
+        InvestmentDecisionType.NoGo => Color.Error,
+        _ => Color.Default
+    };
+
+    private static Color GetSeverityColor(RiskSeverity severity) => severity switch
+    {
+        RiskSeverity.High => Color.Error,
+        RiskSeverity.Medium => Color.Warning,
+        RiskSeverity.Low => Color.Success,
+        _ => Color.Default
+    };
+}

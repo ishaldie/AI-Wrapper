@@ -59,6 +59,11 @@
     <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
     <!-- Deal Entry UI track -->
     <Compile Include="Components\DealWizardTests.cs" />
+    <!-- Report Assembly & Display track -->
+    <Compile Include="Components\ReportViewerTests.cs" />
+    <Compile Include="Formatting\ProtocolFormatterTests.cs" />
+    <Compile Include="DTOs\ReportDtoTests.cs" />
+    <Compile Include="Services\ReportAssemblerTests.cs" />
     <!-- Document Upload track -->
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />
@@ -69,6 +74,7 @@
     <Compile Include="Services\WebSearchConfigTests.cs" />
     <Compile Include="DTOs\MarketContextDtoTests.cs" />
     <Compile Include="Services\MarketDataServiceTests.cs" />
+    <Compile Include="Services\MarketDataIntegrationTests.cs" />
     <!-- Underwriting Calculation Engine track -->
     <Compile Include="Calculations\RevenueAndNoiTests.cs" />
     <Compile Include="Calculations\DebtAndReturnsTests.cs" />
