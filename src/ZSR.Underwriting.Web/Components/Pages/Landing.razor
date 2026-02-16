@@ -33,12 +33,13 @@
             <p>AI-powered underwriting and analysis for multifamily real estate.</p>
 
             <div style="display: flex; justify-content: center;">
-                <a href="/login" class="search-bar" style="max-width: 560px; text-decoration: none;">
-                    <span style="flex: 1; color: #9CA3AF; font-size: 0.9375rem;">Search a property, market, or deal...</span>
-                    <span class="search-bar-btn">
+                <form method="get" action="/login" class="search-bar" style="max-width: 560px;">
+                    <input type="text" name="q" placeholder="Search a property, market, or deal..."
+                           style="flex: 1; border: none; outline: none; background: transparent; font-size: 0.9375rem; color: #1A1D23;" />
+                    <button type="submit" class="search-bar-btn" style="border: none; cursor: pointer;">
                         <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
-                    </span>
-                </a>
+                    </button>
+                </form>
             </div>
 
             <p style="font-size: 0.8125rem; color: #9CA3AF; margin-top: 0.75rem;">Free to try. No credit card required.</p>
