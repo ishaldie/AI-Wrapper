@@ -1,0 +1,112 @@
+@page "/register"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ZSR.Underwriting.Application.Validators
+@using ZSR.Underwriting.Domain.Entities
+@attribute [AllowAnonymous]
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+<PageTitle>Register - ZSR Underwriting</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Class="pa-6" Elevation="3">
+        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Create Account</MudText>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+        }
+
+        <EditForm Model="CurrentInput" FormName="register" OnValidSubmit="RegisterUser" method="post">
+            <DataAnnotationsValidator />
+            <AntiforgeryToken />
+
+            <MudTextField @bind-Value="CurrentInput.FullName"
+                          Label="Full Name"
+                          Variant="Variant.Outlined"
+                          Class="mb-3"
+                          Required="true"
+                          RequiredError="Full name is required." />
+
+            <MudTextField @bind-Value="CurrentInput.Email"
+                          Label="Email"
+                          InputType="InputType.Email"
+                          Variant="Variant.Outlined"
+                          Class="mb-3"
+                          Required="true"
+                          RequiredError="Email is required." />
+
+            <MudTextField @bind-Value="CurrentInput.Password"
+                          Label="Password"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined"
+                          Class="mb-3"
+                          Required="true"
+                          RequiredError="Password is required."
+                          HelperText="8+ chars, uppercase, lowercase, digit" />
+
+            <MudTextField @bind-Value="CurrentInput.ConfirmPassword"
+                          Label="Confirm Password"
+                          InputType="InputType.Password"
+                          Variant="Variant.Outlined"
+                          Class="mb-4"
+                          Required="true"
+                          RequiredError="Please confirm your password." />
+
+            <MudButton ButtonType="ButtonType.Submit"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       FullWidth="true"
+                       Class="mb-3">
+                Register
+            </MudButton>
+
+            <MudText Typo="Typo.body2" Align="Align.Center">
+                Already have an account? <MudLink Href="/login">Sign in</MudLink>
+            </MudText>
+        </EditForm>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromForm]
+    private RegisterInputModel? Input { get; set; }
+
+    private RegisterInputModel CurrentInput => Input ??= new();
+
+    private string? _errorMessage;
+
+    private async Task RegisterUser()
+    {
+        var validator = new RegisterInputValidator();
+        var validation = await validator.ValidateAsync(CurrentInput);
+        if (!validation.IsValid)
+        {
+            _errorMessage = string.Join(" ", validation.Errors.Select(e => e.ErrorMessage));
+            return;
+        }
+
+        var user = new ApplicationUser
+        {
+            UserName = CurrentInput.Email,
+            Email = CurrentInput.Email,
+            FullName = CurrentInput.FullName
+        };
+
+        var result = await UserManager.CreateAsync(user, CurrentInput.Password);
+        if (!result.Succeeded)
+        {
+            _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        // Assign default Analyst role
+        await UserManager.AddToRoleAsync(user, "Analyst");
+
+        // Sign in the new user
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+}

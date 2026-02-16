@@ -67,6 +67,12 @@ try
         options.SlidingExpiration = true;
     });
 
+    // Require authentication on all routes by default
+    builder.Services.AddAuthorizationBuilder()
+        .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+            .RequireAuthenticatedUser()
+            .Build());
+
     // Add RealAI client with Polly retry policy
     builder.Services.Configure<RealAiOptions>(
         builder.Configuration.GetSection(RealAiOptions.SectionName));

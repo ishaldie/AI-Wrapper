@@ -61,6 +61,9 @@
     <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
     <Compile Include="Infrastructure\SeedDataTests.cs" />
     <Compile Include="Infrastructure\UserRoleAssignmentTests.cs" />
+    <Compile Include="Validators\RegisterInputValidatorTests.cs" />
+    <Compile Include="Validators\LoginInputValidatorTests.cs" />
+    <Compile Include="Components\AuthPageTests.cs" />
     <!-- Deal Entry UI track -->
     <Compile Include="Components\DealWizardTests.cs" />
     <!-- Report Assembly & Display track -->

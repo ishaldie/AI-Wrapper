@@ -1,0 +1,16 @@
+@page "/logout"
+@using Microsoft.AspNetCore.Identity
+@using ZSR.Underwriting.Domain.Entities
+@inject SignInManager<ApplicationUser> SignInManager
+@inject NavigationManager Navigation
+
+@code {
+    [SupplyParameterFromForm]
+    private bool Confirm { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SignInManager.SignOutAsync();
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

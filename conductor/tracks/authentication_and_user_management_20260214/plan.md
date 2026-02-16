@@ -9,12 +9,12 @@
 - [x] Write tests for user creation and role assignment
 
 ## Phase 2: Login & Registration UI
-- [ ] Create `Register.razor` page with form validation
-- [ ] Create `Login.razor` page with remember-me checkbox
-- [ ] Create `Logout` endpoint
-- [ ] Add `[Authorize]` attribute to app routes
-- [ ] Create `RedirectToLogin` component for unauthenticated users
-- [ ] Write tests for registration validation and login flow
+- [x] Create `Register.razor` page with form validation
+- [x] Create `Login.razor` page with remember-me checkbox
+- [x] Create `Logout` endpoint
+- [x] Add `[Authorize]` attribute to app routes (fallback policy)
+- [x] Create `RedirectToLogin` component for unauthenticated users
+- [x] Write tests for registration validation and login flow
 
 ## Phase 3: Role Management
 - [ ] Create `UserManagement.razor` admin page
