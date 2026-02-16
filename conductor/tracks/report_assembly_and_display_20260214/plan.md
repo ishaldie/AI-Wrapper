@@ -28,3 +28,5 @@
 - [x] Add "Export PDF" button to report viewer aae234a
 - [x] Write bUnit tests for key report components aae234a
 - [x] Write integration test for full report assembly + render aae234a
+
+[checkpoint: 9cbfc73] Phases 2+3 verified — 66/66 tests pass
