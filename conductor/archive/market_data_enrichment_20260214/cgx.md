@@ -12,6 +12,7 @@
 - [2026-02-15] Task 1 was already committed by a prior session but plan.md wasn't updated — caused confusion about what work was actually needed.
 
 ## Missing Capabilities
+- [2026-02-15] MarketDataIntegrationTests.cs was never added to the csproj whitelist by the session that created it — integration tests were silently not running. Need a check that new test files get whitelisted.
 
 ## Improvement Candidates
 - [2026-02-15] The csproj hook should preserve existing track test includes rather than resetting to its own list. Consider a merge strategy instead of overwrite.
