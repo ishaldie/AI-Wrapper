@@ -24,7 +24,7 @@
 ## Phase 3: Styling & PDF Export
 - [x] Style decision badge (GO=green, CONDITIONAL=yellow, NO GO=red) f7c28b3 (GetDecisionColor)
 - [x] Style risk severity colors in matrix f7c28b3 (GetSeverityColor)
-- [~] Implement PDF export using QuestPDF
-- [~] Add "Export PDF" button to report viewer
-- [~] Write bUnit tests for key report components
-- [~] Write integration test for full report assembly + render
+- [x] Implement PDF export using QuestPDF aae234a
+- [x] Add "Export PDF" button to report viewer aae234a
+- [x] Write bUnit tests for key report components aae234a
+- [x] Write integration test for full report assembly + render aae234a
