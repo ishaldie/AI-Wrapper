@@ -1,0 +1,41 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@inject NavigationManager Navigation
+
+<nav class="icon-sidebar">
+    <div class="icon-sidebar-top">
+        @* ZSR logo *@
+        <a href="/search" class="icon-sidebar-logo" title="Home">
+            <span>Z</span>
+        </a>
+
+        @* New Analysis button *@
+        <a href="/analysis/start" class="icon-sidebar-btn icon-sidebar-btn-cta" title="New Analysis">
+            <MudIcon Icon="@Icons.Material.Filled.Add" Size="Size.Small" />
+        </a>
+
+        @* Home *@
+        <NavLink href="search" class="icon-sidebar-btn" Match="NavLinkMatch.All" title="Home">
+            <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" />
+        </NavLink>
+
+        @* Deals *@
+        <NavLink href="deals" class="icon-sidebar-btn" Match="NavLinkMatch.Prefix" title="Deals">
+            <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" />
+        </NavLink>
+    </div>
+
+    <div class="icon-sidebar-bottom">
+        @* Settings / Admin *@
+        <AuthorizeView Roles="Admin">
+            <NavLink href="admin/users" class="icon-sidebar-btn" Match="NavLinkMatch.Prefix" title="Settings">
+                <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" />
+            </NavLink>
+        </AuthorizeView>
+
+        @* Logout *@
+        <a href="/logout" class="icon-sidebar-btn" title="Sign out">
+            <MudIcon Icon="@Icons.Material.Outlined.Logout" Size="Size.Small" />
+        </a>
+    </div>
+</nav>

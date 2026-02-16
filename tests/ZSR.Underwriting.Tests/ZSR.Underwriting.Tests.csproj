@@ -103,6 +103,8 @@
     <Compile Include="Components\DealCardTests.cs" />
     <Compile Include="Components\DealComparisonTests.cs" />
     <Compile Include="Components\DealPipelineManagementTests.cs" />
+    <!-- UI Redesign track -->
+    <Compile Include="Services\EmailCodeServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

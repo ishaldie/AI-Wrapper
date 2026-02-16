@@ -1,33 +1,68 @@
 @page "/deals/new"
 @using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
 @using ZSR.Underwriting.Web.Components.Pages.DealEntry
+@inject IDealService DealService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>New Deal</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">New Deal</MudText>
+<MudStack Spacing="0" Class="mb-6">
+    <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">New Deal</MudText>
+    <MudText Typo="Typo.body2" Style="color: #6B7280;">
+        Complete the steps below to create a new underwriting deal.
+    </MudText>
+</MudStack>
 
-<MudStepper @bind-ActiveIndex="_activeStep">
-    <MudStep Title="Required Inputs">
-        <ChildContent>
-            <RequiredInputsStep Model="_model" />
-        </ChildContent>
-    </MudStep>
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error" Class="mb-4" ShowCloseIcon="true" CloseIconClicked="() => _error = null">
+        @_error
+    </MudAlert>
+}
 
-    <MudStep Title="Preferred Inputs">
-        <ChildContent>
-            <PreferredInputsStep Model="_model" />
-        </ChildContent>
-    </MudStep>
+<MudStepper @bind-ActiveIndex="_activeStep" OnPreviewInteraction="HandleInteraction">
+    <ChildContent>
+        <MudStep Title="Required Inputs">
+            <ChildContent>
+                <RequiredInputsStep Model="_model" />
+            </ChildContent>
+        </MudStep>
 
-    <MudStep Title="Optional Inputs">
-        <ChildContent>
-            <OptionalInputsStep Model="_model" />
-        </ChildContent>
-    </MudStep>
+        <MudStep Title="Preferred Inputs">
+            <ChildContent>
+                <PreferredInputsStep Model="_model" />
+            </ChildContent>
+        </MudStep>
+
+        <MudStep Title="Optional Inputs">
+            <ChildContent>
+                <OptionalInputsStep Model="_model" />
+            </ChildContent>
+        </MudStep>
+    </ChildContent>
 </MudStepper>
 
 @code {
     private int _activeStep;
     private DealInputDto _model = new();
+    private string? _error;
+
+    private async Task HandleInteraction(StepperInteractionEventArgs args)
+    {
+        if (args.Action == StepAction.Complete)
+        {
+            try
+            {
+                await DealService.CreateDealAsync(_model);
+                Navigation.NavigateTo("/deals");
+            }
+            catch (Exception ex)
+            {
+                _error = $"Failed to create deal: {ex.Message}";
+                args.Cancel = true;
+            }
+        }
+    }
 }

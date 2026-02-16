@@ -4,79 +4,104 @@
 @using ZSR.Underwriting.Application.Validators
 @using ZSR.Underwriting.Domain.Entities
 @attribute [AllowAnonymous]
+@layout Layout.PublicLayout
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager Navigation
 
 <PageTitle>Register - ZSR Underwriting</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
-    <MudPaper Class="pa-6" Elevation="3">
-        <MudText Typo="Typo.h4" Align="Align.Center" Class="mb-4">Create Account</MudText>
+<div style="display: flex; justify-content: center; padding-top: 4vh;">
+    <div style="width: 100%; max-width: 420px;">
 
-        @if (!string.IsNullOrEmpty(_errorMessage))
-        {
-            <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
-        }
+        <div style="text-align: center; margin-bottom: 2rem;" class="animate-in">
+            <div style="display: inline-flex; align-items: center; gap: 0.625rem; margin-bottom: 1rem;">
+                <div class="auth-brand-icon">
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Style="color: #FFFFFF;" />
+                </div>
+                <span style="font-size: 1.25rem; font-weight: 700; color: #1A1D23; letter-spacing: -0.02em;">
+                    ZSR Underwriting
+                </span>
+            </div>
+        </div>
 
-        <EditForm Model="CurrentInput" FormName="register" OnValidSubmit="RegisterUser" method="post">
-            <DataAnnotationsValidator />
-            <AntiforgeryToken />
+        <div class="auth-card animate-in delay-1" style="padding: 2rem;">
+            <h2 style="font-size: 1.375rem; font-weight: 700; color: #1A1D23; text-align: center; margin: 0 0 0.25rem 0; letter-spacing: -0.02em;">
+                Create Account
+            </h2>
+            <p style="font-size: 0.875rem; color: #6B7280; text-align: center; margin: 0 0 1.5rem 0;">
+                Get started with ZSR Underwriting.
+            </p>
 
-            <MudTextField @bind-Value="CurrentInput.FullName"
-                          Label="Full Name"
-                          Variant="Variant.Outlined"
-                          Class="mb-3"
-                          Required="true"
-                          RequiredError="Full name is required." />
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4" Variant="Variant.Outlined" Dense="true">
+                    @_errorMessage
+                </MudAlert>
+            }
 
-            <MudTextField @bind-Value="CurrentInput.Email"
-                          Label="Email"
-                          InputType="InputType.Email"
-                          Variant="Variant.Outlined"
-                          Class="mb-3"
-                          Required="true"
-                          RequiredError="Email is required." />
+            <EditForm Model="CurrentInput" FormName="register" OnValidSubmit="RegisterUser" method="post">
+                <DataAnnotationsValidator />
 
-            <MudTextField @bind-Value="CurrentInput.Password"
-                          Label="Password"
-                          InputType="InputType.Password"
-                          Variant="Variant.Outlined"
-                          Class="mb-3"
-                          Required="true"
-                          RequiredError="Password is required."
-                          HelperText="8+ chars, uppercase, lowercase, digit" />
+                <div class="auth-form-group">
+                    <label for="reg-name">Full Name</label>
+                    <input type="text" id="reg-name" name="Input.FullName"
+                           value="@CurrentInput.FullName" placeholder="John Smith" />
+                </div>
 
-            <MudTextField @bind-Value="CurrentInput.ConfirmPassword"
-                          Label="Confirm Password"
-                          InputType="InputType.Password"
-                          Variant="Variant.Outlined"
-                          Class="mb-4"
-                          Required="true"
-                          RequiredError="Please confirm your password." />
+                <div class="auth-form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" name="Input.Email"
+                           value="@CurrentInput.Email" placeholder="you@@company.com" />
+                </div>
 
-            <MudButton ButtonType="ButtonType.Submit"
-                       Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       FullWidth="true"
-                       Class="mb-3">
-                Register
-            </MudButton>
+                <div class="auth-form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" name="Input.Password"
+                           value="@CurrentInput.Password" placeholder="Create a password" />
+                    <div class="field-helper">8+ characters, uppercase, lowercase, digit</div>
+                </div>
 
-            <MudText Typo="Typo.body2" Align="Align.Center">
-                Already have an account? <MudLink Href="/login">Sign in</MudLink>
-            </MudText>
-        </EditForm>
-    </MudPaper>
-</MudContainer>
+                <div class="auth-form-group">
+                    <label for="reg-confirm">Confirm Password</label>
+                    <input type="password" id="reg-confirm" name="Input.ConfirmPassword"
+                           value="@CurrentInput.ConfirmPassword" placeholder="Confirm your password" />
+                </div>
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           FullWidth="true"
+                           Style="text-transform: none; font-weight: 600; height: 46px; font-size: 0.9375rem; border-radius: 10px; letter-spacing: 0.01em; background: #F97316; color: #FFFFFF;">
+                    Create Account
+                </MudButton>
+
+                <p style="font-size: 0.875rem; color: #6B7280; text-align: center; margin-top: 1.25rem;">
+                    Already have an account?
+                    <a href="/login" style="color: #F97316; font-weight: 600; text-decoration: none;">Sign in</a>
+                </p>
+            </EditForm>
+        </div>
+    </div>
+</div>
 
 @code {
     [SupplyParameterFromForm]
     private RegisterInputModel? Input { get; set; }
 
+    [SupplyParameterFromQuery]
+    private string? Email { get; set; }
+
     private RegisterInputModel CurrentInput => Input ??= new();
 
     private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(Email) && string.IsNullOrWhiteSpace(CurrentInput.Email))
+        {
+            CurrentInput.Email = Email;
+        }
+    }
 
     private async Task RegisterUser()
     {
@@ -102,11 +127,8 @@
             return;
         }
 
-        // Assign default Analyst role
         await UserManager.AddToRoleAsync(user, "Analyst");
-
-        // Sign in the new user
         await SignInManager.SignInAsync(user, isPersistent: false);
-        Navigation.NavigateTo("/", forceLoad: true);
+        Navigation.NavigateTo("/search", forceLoad: true);
     }
 }

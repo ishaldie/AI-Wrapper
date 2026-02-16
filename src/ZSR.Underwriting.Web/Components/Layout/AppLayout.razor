@@ -1,0 +1,20 @@
+@inherits LayoutComponentBase
+@using ZSR.Underwriting.Web.Theme
+
+<MudThemeProvider Theme="ZsrTheme.Instance" IsDarkMode="false" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<div class="app-layout">
+    <IconSidebar />
+    <main class="app-main-content">
+        @Body
+    </main>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">&#x1f5d9;</span>
+</div>

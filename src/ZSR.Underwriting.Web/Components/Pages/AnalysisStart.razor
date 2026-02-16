@@ -1,0 +1,122 @@
+@page "/analysis/start"
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>New Analysis - ZSR Underwriting</PageTitle>
+
+<div class="animate-in" style="max-width: 960px;">
+    <MudText Typo="Typo.h3" Style="color: #1A1D23; margin-bottom: 0.5rem; font-weight: 800;">
+        Start a new analysis
+    </MudText>
+    <MudText Typo="Typo.body1" Style="color: #6B7280; margin-bottom: 2rem;">
+        Choose a category to get started.
+    </MudText>
+
+    @* Search bar *@
+    <div style="margin-bottom: 2.5rem;">
+        <div class="search-bar">
+            <input type="text" placeholder="Search a property, market, or deal..." />
+            <button class="search-bar-btn" type="button">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+            </button>
+        </div>
+    </div>
+
+    @* Category Grid *@
+    <MudGrid Spacing="3">
+        @* Homeowners *@
+        <MudItem xs="12" sm="4">
+            <MudText Typo="Typo.h6" Style="color: #1A1D23; margin-bottom: 0.75rem;">
+                Homeowners
+            </MudText>
+            <div class="category-card" @onclick="() => ShowComingSoon()">
+                <div class="category-icon" style="background: #EFF6FF; color: #2563EB;">
+                    <MudIcon Icon="@Icons.Material.Filled.Home" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; margin-bottom: 0.25rem;">
+                    Home valuation
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    Get an AI-powered estimate for any residential property.
+                </MudText>
+            </div>
+            <div class="category-card" style="margin-top: 0.75rem;" @onclick="() => ShowComingSoon()">
+                <div class="category-icon" style="background: #F0FDF4; color: #16A34A;">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; margin-bottom: 0.25rem;">
+                    Market trends
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    Explore neighborhood trends and market conditions.
+                </MudText>
+            </div>
+        </MudItem>
+
+        @* Investors *@
+        <MudItem xs="12" sm="4">
+            <MudText Typo="Typo.h6" Style="color: #1A1D23; margin-bottom: 0.75rem;">
+                Investors
+            </MudText>
+            <a href="/deals/new" class="category-card" style="border-color: #F97316;">
+                <div class="category-icon" style="background: #FFF7ED; color: #F97316;">
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; margin-bottom: 0.25rem;">
+                    Underwrite a deal
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    Full acquisition underwriting with 10-section AI report.
+                </MudText>
+            </a>
+            <div class="category-card" style="margin-top: 0.75rem;" @onclick="() => ShowComingSoon()">
+                <div class="category-icon" style="background: #FEF3C7; color: #D97706;">
+                    <MudIcon Icon="@Icons.Material.Filled.Compare" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; margin-bottom: 0.25rem;">
+                    Comp analysis
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    Find and analyze comparable sales in any market.
+                </MudText>
+            </div>
+        </MudItem>
+
+        @* Institutions *@
+        <MudItem xs="12" sm="4">
+            <MudText Typo="Typo.h6" Style="color: #1A1D23; margin-bottom: 0.75rem;">
+                Institutions
+            </MudText>
+            <div class="category-card" @onclick="() => ShowComingSoon()">
+                <div class="category-icon" style="background: #F5F3FF; color: #7C3AED;">
+                    <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; margin-bottom: 0.25rem;">
+                    Portfolio review
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    Bulk analysis across your entire property portfolio.
+                </MudText>
+            </div>
+            <div class="category-card" style="margin-top: 0.75rem;" @onclick="() => ShowComingSoon()">
+                <div class="category-icon" style="background: #FEE2E2; color: #DC2626;">
+                    <MudIcon Icon="@Icons.Material.Filled.Shield" />
+                </div>
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; margin-bottom: 0.25rem;">
+                    Risk assessment
+                </MudText>
+                <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                    Deep-dive risk analysis for institutional-grade diligence.
+                </MudText>
+            </div>
+        </MudItem>
+    </MudGrid>
+</div>
+
+@code {
+    private void ShowComingSoon()
+    {
+        Snackbar.Add("Coming soon!", Severity.Info);
+    }
+}

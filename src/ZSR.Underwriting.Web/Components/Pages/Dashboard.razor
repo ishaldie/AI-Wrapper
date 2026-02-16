@@ -1,95 +1,160 @@
-@page "/"
+@page "/search"
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IDealService DealService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Dashboard - ZSR Underwriting</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Dashboard</MudText>
+<div class="animate-in" style="max-width: 960px;">
+    <AuthorizeView>
+        <Authorized>
+            <MudText Typo="Typo.body1" Style="color: #6B7280; margin-bottom: 0.25rem;">
+                Welcome back, @GetFirstName(context.User.Identity?.Name)
+            </MudText>
+        </Authorized>
+    </AuthorizeView>
 
-@if (_loading)
-{
-    <MudProgressCircular Indeterminate="true" />
-}
-else
-{
-    <MudText Typo="Typo.body1" Class="mb-4">Welcome to ZSR Underwriting.</MudText>
+    <MudText Typo="Typo.h3" Style="color: #1A1D23; margin-bottom: 1.5rem; font-weight: 800;">
+        Start a new analysis
+    </MudText>
 
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Add"
-               Class="mb-4"
-               Href="deals/new">
-        New Deal
-    </MudButton>
+    @* Search bar *@
+    <div style="margin-bottom: 2.5rem;">
+        <div class="search-bar">
+            <input type="text" placeholder="Search a property, market, or deal..." @bind="_searchQuery" />
+            <button class="search-bar-btn" type="button">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+            </button>
+        </div>
+    </div>
 
-    <MudGrid Class="mb-6">
+    @* Recommended section *@
+    <MudText Typo="Typo.h6" Style="color: #1A1D23; margin-bottom: 1rem;">
+        Recommended for you
+    </MudText>
+
+    <MudGrid Spacing="3" Class="mb-6">
         <MudItem xs="12" sm="4">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h3">@_deals.Count</MudText>
-                <MudText Typo="Typo.subtitle1" Color="Color.Default">Total Deals</MudText>
-            </MudPaper>
+            <div class="rec-card animate-in delay-1">
+                <MudStack Spacing="2">
+                    <MudChip T="string" Size="Size.Small" Style="background: #EFF6FF; color: #2563EB; font-weight: 600;">
+                        New
+                    </MudChip>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+                        Underwrite a deal
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                        Start a new multifamily acquisition analysis with AI-powered insights.
+                    </MudText>
+                </MudStack>
+            </div>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h3" Color="Color.Warning">@ActiveCount</MudText>
-                <MudText Typo="Typo.subtitle1">Active</MudText>
-            </MudPaper>
+            <div class="rec-card animate-in delay-2">
+                <MudStack Spacing="2">
+                    <MudChip T="string" Size="Size.Small" Style="background: #FEF3C7; color: #D97706; font-weight: 600;">
+                        Trending
+                    </MudChip>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+                        Market analysis
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                        Explore market trends, comps, and submarket data for any metro area.
+                    </MudText>
+                </MudStack>
+            </div>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <MudPaper Class="pa-4" Elevation="2">
-                <MudText Typo="Typo.h3" Color="Color.Success">@CompletedCount</MudText>
-                <MudText Typo="Typo.subtitle1">Completed</MudText>
-            </MudPaper>
+            <div class="rec-card animate-in delay-3">
+                <MudStack Spacing="2">
+                    <MudChip T="string" Size="Size.Small" Style="background: #F0FDF4; color: #16A34A; font-weight: 600;">
+                        For you
+                    </MudChip>
+                    <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">
+                        Review recent work
+                    </MudText>
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                        Pick up where you left off with your most recent analyses.
+                    </MudText>
+                </MudStack>
+            </div>
         </MudItem>
     </MudGrid>
 
-    <MudText Typo="Typo.h5" Class="mb-3">Recent Activity</MudText>
+    @* Your analyses section *@
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+        <MudText Typo="Typo.h6" Style="color: #1A1D23;">
+            Your analyses
+        </MudText>
+        <MudButton Variant="Variant.Text" Href="/deals"
+                   EndIcon="@Icons.Material.Filled.ArrowForward"
+                   Style="text-transform: none; font-weight: 600; font-size: 0.8125rem; color: #F97316;">
+            View All
+        </MudButton>
+    </MudStack>
 
-    @if (_deals.Count == 0)
+    @if (_loading)
     {
-        <MudAlert Severity="Severity.Info">
-            No deals yet. Click "New Deal" to get started.
-        </MudAlert>
+        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+        </MudStack>
+    }
+    else if (_deals.Count == 0)
+    {
+        <MudPaper Elevation="0" Class="card-elevated pa-8" Style="text-align: center;">
+            <MudIcon Icon="@Icons.Material.Outlined.FolderOpen" Size="Size.Medium"
+                     Style="color: #D1D5DB;" />
+            <MudText Typo="Typo.body1" Style="color: #6B7280; margin-top: 0.5rem;">
+                No analyses yet. Start your first deal to see it here.
+            </MudText>
+        </MudPaper>
     }
     else
     {
-        <MudList T="DealSummaryDto" Dense="true">
-            @foreach (var deal in _deals.Take(10))
-            {
-                <MudListItem T="DealSummaryDto" Href="@($"deals/{deal.Id}/edit")">
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
-                        <MudStack Spacing="0">
-                            <MudText Typo="Typo.body1">@deal.PropertyName</MudText>
-                            <MudText Typo="Typo.caption" Color="Color.Secondary">@deal.Address</MudText>
-                        </MudStack>
-                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(deal.Status)">
-                                @deal.Status
-                            </MudChip>
-                            <MudText Typo="Typo.caption">@deal.UpdatedAt.ToString("g")</MudText>
-                        </MudStack>
-                    </MudStack>
-                </MudListItem>
-            }
-        </MudList>
+        <MudDataGrid Items="@_deals" Dense="true" Hover="true" Bordered="false"
+                     Style="background: #FFFFFF; border-radius: 12px; border: 1px solid #E5E7EB;">
+            <Columns>
+                <PropertyColumn Property="x => x.PropertyName" Title="NAME" />
+                <TemplateColumn Title="STATUS">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small"
+                                 Color="@GetStatusColor(context.Item.Status)"
+                                 Variant="Variant.Filled">
+                            @context.Item.Status
+                        </MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Address" Title="ADDRESS" />
+                <TemplateColumn Title="LAST MODIFIED">
+                    <CellTemplate>
+                        @context.Item.UpdatedAt.ToString("MMM d, yyyy")
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
     }
-}
+</div>
 
 @code {
     private bool _loading = true;
     private List<DealSummaryDto> _deals = new();
-
-    private int ActiveCount => _deals.Count(d => d.Status is "Draft" or "InProgress");
-    private int CompletedCount => _deals.Count(d => d.Status == "Complete");
+    private string _searchQuery = "";
 
     protected override async Task OnInitializedAsync()
     {
         var deals = await DealService.GetAllDealsAsync();
         _deals = deals.ToList();
         _loading = false;
+    }
+
+    private static string GetFirstName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "there";
+        var parts = name.Trim().Split(' ');
+        return parts[0];
     }
 
     private static Color GetStatusColor(string status) => status switch

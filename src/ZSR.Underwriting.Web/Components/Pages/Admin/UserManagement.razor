@@ -8,15 +8,25 @@
 
 <PageTitle>User Management - ZSR Underwriting</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">User Management</MudText>
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-6">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">User Management</MudText>
+        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+            Manage user accounts and role assignments.
+        </MudText>
+    </MudStack>
+</MudStack>
 
 @if (_loading)
 {
-    <MudProgressCircular Indeterminate="true" />
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
 }
 else
 {
-    <MudTable Items="_users" Hover="true" Striped="true" Dense="true" Elevation="2">
+    <MudTable Items="_users" Hover="true" Striped="true" Elevation="0"
+              Style="border: 1px solid #E5E7EB;">
         <HeaderContent>
             <MudTh>Name</MudTh>
             <MudTh>Email</MudTh>
@@ -41,7 +51,8 @@ else
                     <MudButton Size="Size.Small"
                                Variant="Variant.Outlined"
                                Color="Color.Warning"
-                               OnClick="@(() => PromoteToAdmin(context))">
+                               OnClick="@(() => PromoteToAdmin(context))"
+                               Style="text-transform: none;">
                         Make Admin
                     </MudButton>
                 }
@@ -50,7 +61,8 @@ else
                     <MudButton Size="Size.Small"
                                Variant="Variant.Outlined"
                                Color="Color.Default"
-                               OnClick="@(() => DemoteFromAdmin(context))">
+                               OnClick="@(() => DemoteFromAdmin(context))"
+                               Style="text-transform: none;">
                         Remove Admin
                     </MudButton>
                 }
@@ -60,7 +72,9 @@ else
 
     @if (!string.IsNullOrEmpty(_statusMessage))
     {
-        <MudAlert Severity="@_statusSeverity" Class="mt-3">@_statusMessage</MudAlert>
+        <MudAlert Severity="@_statusSeverity" Class="mt-3" Variant="Variant.Outlined">
+            @_statusMessage
+        </MudAlert>
     }
 }
 

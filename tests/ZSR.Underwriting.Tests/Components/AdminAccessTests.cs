@@ -3,13 +3,14 @@ using System.Net;
 
 namespace ZSR.Underwriting.Tests.Components;
 
-public class AdminAccessTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection(WebAppCollection.Name)]
+public class AdminAccessTests
 {
     private readonly HttpClient _client;
 
-    public AdminAccessTests(WebApplicationFactory<Program> factory)
+    public AdminAccessTests(WebAppFixture fixture)
     {
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        _client = fixture.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });

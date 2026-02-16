@@ -56,3 +56,14 @@
 *Link: [./conductor/archive/dashboard_and_deal_pipeline_20260214/](./conductor/archive/dashboard_and_deal_pipeline_20260214/)*
 
 ---
+
+## [~] Track: UI Redesign & Web Fixes
+*Link: [./conductor/tracks/ui-redesign-and-web-fixes/](./conductor/tracks/ui-redesign-and-web-fixes/)*
+
+---
+
+### [ ] Track: bug fixes
+
+_Link: [./tracks/bug_fixes_20260216/](./tracks/bug_fixes_20260216/)_
+
+---

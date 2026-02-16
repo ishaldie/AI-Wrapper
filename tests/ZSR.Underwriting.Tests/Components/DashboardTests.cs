@@ -1,4 +1,5 @@
 using Bunit;
+using Bunit.TestDoubles;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -19,6 +20,8 @@ public class DashboardTests : IAsyncLifetime
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddMudServices();
         _ctx.Services.AddSingleton<IDealService, StubDealService>();
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -29,90 +32,80 @@ public class DashboardTests : IAsyncLifetime
     }
 
     [Fact]
-    public void Dashboard_RendersPageHeading()
+    public void Dashboard_RendersWelcomeHeading()
     {
         var cut = _ctx.Render<Dashboard>();
-        Assert.Contains("Dashboard", cut.Markup);
+        Assert.Contains("Welcome back", cut.Markup);
     }
 
     [Fact]
-    public void Dashboard_ShowsWelcomeText()
+    public void Dashboard_ShowsStartNewAnalysis()
     {
         var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => cut.Markup.Contains("Welcome"));
-        Assert.Contains("ZSR Underwriting", cut.Markup);
+        Assert.Contains("Start a new analysis", cut.Markup);
     }
 
     [Fact]
-    public void Dashboard_ShowsTotalDealsCount()
+    public void Dashboard_ShowsRecommendedSection()
     {
-        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var cut = _ctx.Render<Dashboard>();
+        Assert.Contains("Recommended for you", cut.Markup);
+    }
+
+    [Fact]
+    public void Dashboard_ShowsYourAnalysesSection()
+    {
         var cut = _ctx.Render<Dashboard>();
         cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-        Assert.Contains("4", cut.Markup);
-        Assert.Contains("Total Deals", cut.Markup);
+        Assert.Contains("Your analyses", cut.Markup);
     }
 
     [Fact]
-    public void Dashboard_ShowsActiveDealsCount()
+    public void Dashboard_EmptyState_ShowsNoAnalysesMessage()
     {
-        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
         var cut = _ctx.Render<Dashboard>();
         cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-        Assert.Contains("Active", cut.Markup);
+        Assert.Contains("No analyses yet", cut.Markup);
     }
 
     [Fact]
-    public void Dashboard_ShowsCompletedDealsCount()
+    public async Task Dashboard_WithDeals_ShowsDealNames()
     {
-        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
-        var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-        Assert.Contains("Completed", cut.Markup);
+        // Separate BunitContext since we need a different IDealService registration
+        var ctx = new BunitContext();
+        ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        ctx.Services.AddMudServices();
+        ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        var authCtx = ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
+
+        try
+        {
+            // MudDataGrid with MudChip requires MudPopoverProvider in the render tree
+            ctx.Render<MudPopoverProvider>();
+            var dashboard = ctx.Render<Dashboard>();
+            dashboard.WaitForState(() => !dashboard.Markup.Contains("mud-progress"));
+            Assert.Contains("Sunset Apts", dashboard.Markup);
+            Assert.Contains("Oak Manor", dashboard.Markup);
+        }
+        finally
+        {
+            await ctx.DisposeAsync();
+        }
     }
 
     [Fact]
-    public void Dashboard_EmptyState_ShowsZeroCounts()
+    public void Dashboard_ShowsSearchBar()
     {
         var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
-        Assert.Contains("0", cut.Markup);
+        Assert.Contains("search-bar", cut.Markup);
     }
 
     [Fact]
-    public void Dashboard_ShowsRecentActivityHeading()
-    {
-        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
-        var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-        Assert.Contains("Recent Activity", cut.Markup);
-    }
-
-    [Fact]
-    public void Dashboard_ShowsRecentDealNames()
-    {
-        _ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
-        var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => !cut.Markup.Contains("mud-progress"));
-        Assert.Contains("Sunset Apts", cut.Markup);
-        Assert.Contains("Oak Manor", cut.Markup);
-    }
-
-    [Fact]
-    public void Dashboard_EmptyState_ShowsNoRecentActivity()
+    public void Dashboard_ShowsViewAllLink()
     {
         var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
-        Assert.Contains("No deals yet", cut.Markup);
-    }
-
-    [Fact]
-    public void Dashboard_HasNewDealButton()
-    {
-        var cut = _ctx.Render<Dashboard>();
-        cut.WaitForState(() => cut.Markup.Contains("Total Deals"));
-        Assert.Contains("New Deal", cut.Markup);
-        Assert.Contains("deals/new", cut.Markup);
+        Assert.Contains("View All", cut.Markup);
     }
 
     private class StubDealService : IDealService

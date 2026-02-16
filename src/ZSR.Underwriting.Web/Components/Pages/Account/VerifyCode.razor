@@ -1,0 +1,154 @@
+@page "/verify-code"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Entities
+@attribute [AllowAnonymous]
+@layout Layout.PublicLayout
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IEmailCodeService EmailCodeService
+@inject NavigationManager Navigation
+
+<PageTitle>Verify Code - ZSR Underwriting</PageTitle>
+
+<div style="display: flex; justify-content: center; padding-top: 6vh;">
+    <div style="width: 100%; max-width: 420px;">
+
+        <div style="text-align: center; margin-bottom: 2rem;" class="animate-in">
+            <div style="display: inline-flex; align-items: center; gap: 0.625rem; margin-bottom: 1rem;">
+                <div class="auth-brand-icon">
+                    <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Style="color: #FFFFFF;" />
+                </div>
+                <span style="font-size: 1.25rem; font-weight: 700; color: #1A1D23; letter-spacing: -0.02em;">
+                    ZSR Underwriting
+                </span>
+            </div>
+        </div>
+
+        <div class="auth-card animate-in delay-1" style="padding: 2rem;">
+            <h2 style="font-size: 1.375rem; font-weight: 700; color: #1A1D23; text-align: center; margin: 0 0 0.25rem 0; letter-spacing: -0.02em;">
+                Verify Your Identity
+            </h2>
+            <p style="font-size: 0.875rem; color: #6B7280; text-align: center; margin: 0 0 0.5rem 0;">
+                We've sent a code to
+            </p>
+            <p style="font-size: 0.875rem; color: #1A1D23; text-align: center; font-weight: 600; margin: 0 0 0.25rem 0;">
+                @_email
+            </p>
+            <p style="text-align: center; margin: 0 0 1.5rem 0;">
+                <a href="/login" style="font-size: 0.8125rem; color: #F97316; font-weight: 500; text-decoration: none;">
+                    Edit
+                </a>
+            </p>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4" Variant="Variant.Outlined" Dense="true">
+                    @_errorMessage
+                </MudAlert>
+            }
+
+            @if (_resent)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-4" Variant="Variant.Outlined" Dense="true">
+                    A new code has been sent.
+                </MudAlert>
+            }
+
+            <EditForm Model="CurrentCodeInput" FormName="verify-code" OnValidSubmit="SubmitCode" method="post">
+                <div class="auth-form-group">
+                    <label for="verify-code-input">Verification Code</label>
+                    <input type="text" id="verify-code-input" name="CodeInput.Code"
+                           value="@CurrentCodeInput.Code" placeholder="Enter 6-digit code"
+                           maxlength="6" inputmode="numeric" autocomplete="one-time-code"
+                           style="text-align: center; letter-spacing: 0.3em; font-size: 1.25rem; font-weight: 600;" />
+                </div>
+
+                <input type="hidden" name="CodeInput.Email" value="@_email" />
+
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           FullWidth="true"
+                           Style="text-transform: none; font-weight: 600; height: 46px; font-size: 0.9375rem; border-radius: 10px; letter-spacing: 0.01em; background: #F97316; color: #FFFFFF;">
+                    Continue
+                </MudButton>
+            </EditForm>
+
+            <p style="font-size: 0.875rem; color: #6B7280; text-align: center; margin-top: 1.25rem;">
+                Didn't receive the code?
+                <a href="/verify-code?email=@(Uri.EscapeDataString(_email ?? ""))&resend=true"
+                   style="color: #F97316; font-weight: 600; text-decoration: none;">
+                    Resend
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private string? Email { get; set; }
+
+    [SupplyParameterFromQuery]
+    private bool Resend { get; set; }
+
+    [SupplyParameterFromForm]
+    private VerifyCodeModel? CodeInput { get; set; }
+
+    private VerifyCodeModel CurrentCodeInput => CodeInput ??= new();
+
+    private string? _email;
+    private string? _errorMessage;
+    private bool _resent;
+
+    protected override void OnInitialized()
+    {
+        _email = Email ?? CurrentCodeInput.Email ?? "";
+
+        if (string.IsNullOrWhiteSpace(_email))
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (Resend)
+        {
+            EmailCodeService.GenerateCode(_email);
+            _resent = true;
+        }
+    }
+
+    private async Task SubmitCode()
+    {
+        _email = CurrentCodeInput.Email ?? _email ?? "";
+
+        if (string.IsNullOrWhiteSpace(CurrentCodeInput.Code))
+        {
+            _errorMessage = "Please enter the verification code.";
+            return;
+        }
+
+        if (!EmailCodeService.ValidateCode(_email, CurrentCodeInput.Code))
+        {
+            _errorMessage = "Invalid or expired code. Please try again.";
+            return;
+        }
+
+        var user = await UserManager.FindByEmailAsync(_email);
+        if (user == null)
+        {
+            _errorMessage = "User not found.";
+            return;
+        }
+
+        await SignInManager.SignInAsync(user, isPersistent: true);
+        Navigation.NavigateTo("/search", forceLoad: true);
+    }
+
+    public class VerifyCodeModel
+    {
+        public string Code { get; set; } = "";
+        public string Email { get; set; } = "";
+    }
+}

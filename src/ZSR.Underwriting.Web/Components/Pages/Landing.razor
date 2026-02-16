@@ -1,0 +1,70 @@
+@page "/"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@attribute [AllowAnonymous]
+@layout Layout.PublicLayout
+@inject NavigationManager Navigation
+
+<PageTitle>ZSR Underwriting - AI-Powered Real Estate Analysis</PageTitle>
+
+<AuthorizeView>
+    <Authorized>
+        @{ Navigation.NavigateTo("/search", forceLoad: true); }
+    </Authorized>
+    <NotAuthorized>
+        @* Top Nav *@
+        <nav class="landing-nav">
+            <a href="/" class="landing-nav-brand">
+                <div style="width: 32px; height: 32px; border-radius: 8px; background: #F97316; display: flex; align-items: center; justify-content: center; color: #FFFFFF; font-weight: 800; font-size: 0.875rem;">
+                    Z
+                </div>
+                <span style="font-weight: 700; font-size: 1.125rem; color: #1A1D23; letter-spacing: -0.02em;">
+                    ZSR
+                </span>
+            </a>
+            <div class="landing-nav-links">
+                <a href="/login">Log in</a>
+                <a href="/register" class="cta-btn-orange" style="padding: 0.5rem 1.25rem; font-size: 0.8125rem; border-radius: 8px;">
+                    Sign up
+                </a>
+            </div>
+        </nav>
+
+        @* Hero *@
+        <section class="landing-hero animate-in">
+            <h1>Answer any real estate question in seconds</h1>
+            <p>AI-powered underwriting and analysis for multifamily real estate.</p>
+
+            <div style="display: flex; justify-content: center;">
+                <div class="search-bar" style="max-width: 560px;">
+                    <input type="text" placeholder="Search a property, market, or deal..." @onfocus="GoToLogin" />
+                    <button class="search-bar-btn" @onclick="GoToLogin" type="button">
+                        <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Small" />
+                    </button>
+                </div>
+            </div>
+
+            <p style="font-size: 0.8125rem; color: #9CA3AF; margin-top: 0.75rem;">Free to try. No credit card required.</p>
+
+            <div class="landing-chips">
+                <span class="landing-chip">Underwrite a deal</span>
+                <span class="landing-chip">Market analysis</span>
+                <span class="landing-chip">Comp search</span>
+                <span class="landing-chip">Risk assessment</span>
+            </div>
+        </section>
+
+        @* Dark Showcase Section *@
+        <div class="landing-dark-section animate-in delay-2">
+            <h2>Institutional-quality underwriting in minutes</h2>
+            <p>Comprehensive 10-section reports with financial analysis, risk assessment, and GO/NO GO investment decisions.</p>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private void GoToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}

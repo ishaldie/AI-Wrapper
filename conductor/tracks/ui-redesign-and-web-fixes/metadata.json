@@ -1,0 +1,9 @@
+{
+  "id": "ui-redesign-and-web-fixes",
+  "type": "refactor",
+  "status": "in_progress",
+  "created": "2026-02-16",
+  "description": "UI redesign with frontend-design skill principles, SSR form fixes, and site-wide error resolution",
+  "currentPhase": 5,
+  "completedPhases": [1, 2, 3, 4]
+}

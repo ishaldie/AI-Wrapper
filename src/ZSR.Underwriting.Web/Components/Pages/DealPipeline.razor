@@ -8,88 +8,109 @@
 
 <PageTitle>Deal Pipeline</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-4">Deal Pipeline</MudText>
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-6">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">Deal Pipeline</MudText>
+        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+            Manage and track all underwriting deals.
+        </MudText>
+    </MudStack>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add" Href="deals/new"
+               Style="text-transform: none; font-weight: 500;">
+        New Deal
+    </MudButton>
+</MudStack>
 
 @if (_loading)
 {
-    <MudProgressCircular Indeterminate="true" />
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
 }
 else
 {
-    <MudTextField @bind-Value="_searchText"
-                  Placeholder="Search by name or address..."
-                  Adornment="Adornment.Start"
-                  AdornmentIcon="@Icons.Material.Filled.Search"
-                  Immediate="true"
-                  Class="mb-4" />
+    <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB;">
+        <MudTextField @bind-Value="_searchText"
+                      Placeholder="Search by name or address..."
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true"
+                      Class="mb-4" />
 
-    <MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedStatuses" Class="mb-4">
-        <MudChip T="string" Value="@("Draft")" Color="Color.Default" Variant="Variant.Outlined">Draft</MudChip>
-        <MudChip T="string" Value="@("InProgress")" Color="Color.Warning" Variant="Variant.Outlined">In Progress</MudChip>
-        <MudChip T="string" Value="@("Complete")" Color="Color.Success" Variant="Variant.Outlined">Complete</MudChip>
-        <MudChip T="string" Value="@("Archived")" Color="Color.Dark" Variant="Variant.Outlined">Archived</MudChip>
-    </MudChipSet>
+        <MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedStatuses" Class="mb-4">
+            <MudChip T="string" Value="@("Draft")" Color="Color.Default" Variant="Variant.Outlined">Draft</MudChip>
+            <MudChip T="string" Value="@("InProgress")" Color="Color.Warning" Variant="Variant.Outlined">In Progress</MudChip>
+            <MudChip T="string" Value="@("Complete")" Color="Color.Success" Variant="Variant.Outlined">Complete</MudChip>
+            <MudChip T="string" Value="@("Archived")" Color="Color.Dark" Variant="Variant.Outlined">Archived</MudChip>
+        </MudChipSet>
 
-    <MudButton Variant="Variant.Outlined"
-               Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Compare"
-               Disabled="@(_selectedItems.Count < 2)"
-               OnClick="CompareSelected"
-               Class="mb-4">
-        Compare (@_selectedItems.Count)
-    </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Compare"
+                   Disabled="@(_selectedItems.Count < 2)"
+                   OnClick="CompareSelected"
+                   Class="mb-4"
+                   Style="text-transform: none; font-weight: 500;">
+            Compare (@_selectedItems.Count)
+        </MudButton>
 
-    @if (!FilteredDeals.Any())
-    {
-        <MudAlert Severity="Severity.Info">No deals found.</MudAlert>
-    }
-    else
-    {
-        <MudDataGrid T="DealSummaryDto" Items="@FilteredDeals" SortMode="SortMode.Single" Dense="true" Hover="true"
-                     MultiSelection="true" @bind-SelectedItems="_selectedItems">
-            <Columns>
-                <SelectColumn T="DealSummaryDto" ShowInFooter="false" />
-                <PropertyColumn Property="x => x.PropertyName" Title="Property Name" Sortable="true" />
-                <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" />
-                <TemplateColumn Title="Status" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Status))">
-                    <CellTemplate>
-                        <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
-                            @context.Item.Status
-                        </MudChip>
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.UpdatedAt" Title="Date" Format="MM/dd/yyyy" Sortable="true" />
-                <TemplateColumn Title="Cap Rate" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.CapRate ?? 0m))">
-                    <CellTemplate>
-                        @FormatPercent(context.Item.CapRate)
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="IRR" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Irr ?? 0m))">
-                    <CellTemplate>
-                        @FormatPercent(context.Item.Irr)
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Actions" Sortable="false">
-                    <CellTemplate>
-                        <MudStack Row="true" Spacing="1">
-                            @if (context.Item.Status != "Archived")
-                            {
-                                <MudIconButton Icon="@Icons.Material.Filled.Archive"
+        @if (!FilteredDeals.Any())
+        {
+            <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Medium" Style="color: #D1D5DB;" />
+                <MudText Typo="Typo.body1" Style="color: #6B7280;">No deals found.</MudText>
+            </MudStack>
+        }
+        else
+        {
+            <MudDataGrid T="DealSummaryDto" Items="@FilteredDeals" SortMode="SortMode.Single"
+                         Hover="true" Elevation="0"
+                         MultiSelection="true" @bind-SelectedItems="_selectedItems">
+                <Columns>
+                    <SelectColumn T="DealSummaryDto" ShowInFooter="false" />
+                    <PropertyColumn Property="x => x.PropertyName" Title="Property Name" Sortable="true" />
+                    <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" />
+                    <TemplateColumn Title="Status" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Status))">
+                        <CellTemplate>
+                            <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
+                                @context.Item.Status
+                            </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.UpdatedAt" Title="Date" Format="MM/dd/yyyy" Sortable="true" />
+                    <TemplateColumn Title="Cap Rate" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.CapRate ?? 0m))">
+                        <CellTemplate>
+                            @FormatPercent(context.Item.CapRate)
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="IRR" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Irr ?? 0m))">
+                        <CellTemplate>
+                            @FormatPercent(context.Item.Irr)
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Actions" Sortable="false">
+                        <CellTemplate>
+                            <MudStack Row="true" Spacing="1">
+                                @if (context.Item.Status != "Archived")
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Archive"
+                                                   Size="Size.Small"
+                                                   aria-label="Archive"
+                                                   OnClick="@(() => ArchiveDeal(context.Item))" />
+                                }
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                Size="Size.Small"
-                                               aria-label="Archive"
-                                               OnClick="@(() => ArchiveDeal(context.Item))" />
-                            }
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Size="Size.Small"
-                                           Color="Color.Error"
-                                           aria-label="Delete"
-                                           OnClick="@(() => ConfirmDeleteDeal(context.Item))" />
-                        </MudStack>
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-        </MudDataGrid>
-    }
+                                               Color="Color.Error"
+                                               aria-label="Delete"
+                                               OnClick="@(() => ConfirmDeleteDeal(context.Item))" />
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+            </MudDataGrid>
+        }
+    </MudPaper>
 }
 
 @code {
@@ -143,7 +164,7 @@ else
     }
 
     private static string FormatPercent(decimal? value)
-        => value.HasValue ? $"{value.Value * 100:F1}%" : "—";
+        => value.HasValue ? $"{value.Value * 100:F1}%" : "\u2014";
 
     private static Color GetStatusColor(string status) => status switch
     {

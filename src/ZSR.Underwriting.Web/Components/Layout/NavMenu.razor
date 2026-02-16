@@ -1,10 +1,25 @@
 @using Microsoft.AspNetCore.Components.Authorization
 
-<MudNavMenu>
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
-    <MudNavLink Href="deals" Icon="@Icons.Material.Filled.List">Deal Pipeline</MudNavLink>
-    <MudNavLink Href="deals/new" Icon="@Icons.Material.Filled.Add">New Deal</MudNavLink>
+<MudNavMenu Bordered="true" Color="Color.Primary" Class="px-2 pt-2">
+    <MudText Typo="Typo.overline" Class="px-3 pt-2 pb-1" Style="color: #9CA3AF;">
+        WORKSPACE
+    </MudText>
+    <MudNavLink Href="search" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">
+        Dashboard
+    </MudNavLink>
+    <MudNavLink Href="deals" Icon="@Icons.Material.Filled.ViewList">
+        Deal Pipeline
+    </MudNavLink>
+    <MudNavLink Href="deals/new" Icon="@Icons.Material.Filled.AddCircleOutline">
+        New Deal
+    </MudNavLink>
+
     <AuthorizeView Roles="Admin">
-        <MudNavLink Href="admin/users" Icon="@Icons.Material.Filled.People">User Management</MudNavLink>
+        <MudText Typo="Typo.overline" Class="px-3 pt-4 pb-1" Style="color: #9CA3AF;">
+            ADMINISTRATION
+        </MudText>
+        <MudNavLink Href="admin/users" Icon="@Icons.Material.Filled.ManageAccounts">
+            User Management
+        </MudNavLink>
     </AuthorizeView>
 </MudNavMenu>

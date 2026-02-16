@@ -126,6 +126,9 @@ try
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<RealAiCacheService>();
 
+    // Email code service for passwordless auth
+    builder.Services.AddSingleton<IEmailCodeService, EmailCodeService>();
+
     // Add repository layer
     builder.Services.AddScoped<IDealRepository, DealRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
@@ -183,7 +186,7 @@ try
 
     app.UseAntiforgery();
 
-    app.MapStaticAssets();
+    app.MapStaticAssets().AllowAnonymous();
     app.MapRazorComponents<App>()
         .AddInteractiveServerRenderMode();
 

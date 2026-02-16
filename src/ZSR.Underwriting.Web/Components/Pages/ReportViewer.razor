@@ -10,7 +10,7 @@
 <MudGrid>
     @* Section Navigation Sidebar *@
     <MudItem xs="12" md="3">
-        <MudPaper Class="pa-3" Elevation="1" Style="position: sticky; top: 80px;">
+        <MudPaper Class="pa-3" Elevation="0" Style="position: sticky; top: 80px; border: 1px solid #E5E7EB;">
             <MudText Typo="Typo.h6" Class="mb-2">Sections</MudText>
             <MudNavMenu Dense="true">
                 @foreach (var sec in Report.GetSectionsInOrder())
@@ -26,7 +26,7 @@
     @* Report Content *@
     <MudItem xs="12" md="9">
         @* Header *@
-        <MudPaper Class="pa-4 mb-4" Elevation="2">
+        <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
             <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                 <MudStack Spacing="0">
                     <MudText Typo="Typo.h4">@Report.PropertyName</MudText>
@@ -53,7 +53,7 @@
 
         @* Section 1: Core Investment Metrics *@
         <div id="section-1">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">1. @Report.CoreMetrics.Title</MudText>
                 <MudSimpleTable Dense="true" Striped="true" Hover="true">
                     <thead>
@@ -79,7 +79,7 @@
 
         @* Section 2: Executive Summary *@
         <div id="section-2">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
                     <MudText Typo="Typo.h5">2. @Report.ExecutiveSummary.Title</MudText>
                     <MudChip T="string"
@@ -114,7 +114,7 @@
 
         @* Section 3: Underwriting Assumptions *@
         <div id="section-3">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">3. @Report.Assumptions.Title</MudText>
                 <MudSimpleTable Dense="true" Striped="true" Hover="true">
                     <thead>
@@ -140,7 +140,7 @@
 
         @* Section 4: Property & Sales Comparables *@
         <div id="section-4">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">4. @Report.PropertyComps.Title</MudText>
                 <MudText Typo="Typo.body1" Class="mb-3">@Report.PropertyComps.Narrative</MudText>
                 @if (Report.PropertyComps.Comps.Count > 0)
@@ -176,7 +176,7 @@
 
         @* Section 5: Tenant & Market Intelligence *@
         <div id="section-5">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">5. @Report.TenantMarket.Title</MudText>
                 <MudText Typo="Typo.body1" Class="mb-3">@Report.TenantMarket.Narrative</MudText>
                 @if (Report.TenantMarket.Benchmarks.Count > 0)
@@ -208,7 +208,7 @@
 
         @* Section 6: Operations T12 P&L *@
         <div id="section-6">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">6. @Report.Operations.Title</MudText>
                 <MudText Typo="Typo.body1" Class="mb-3">@Report.Operations.Commentary</MudText>
                 <MudSimpleTable Dense="true" Striped="true" Hover="true">
@@ -260,7 +260,7 @@
 
         @* Section 7: Financial Analysis *@
         <div id="section-7">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">7. @Report.FinancialAnalysis.Title</MudText>
 
                 @* Sources & Uses *@
@@ -352,7 +352,7 @@
 
         @* Section 8: Value Creation Strategy *@
         <div id="section-8">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">8. @Report.ValueCreation.Title</MudText>
                 <MudText Typo="Typo.body1" Class="mb-3">@Report.ValueCreation.Narrative</MudText>
                 @if (Report.ValueCreation.Strategies.Count > 0)
@@ -384,7 +384,7 @@
 
         @* Section 9: Risk Assessment *@
         <div id="section-9">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudText Typo="Typo.h5" Class="mb-3">9. @Report.RiskAssessment.Title</MudText>
                 <MudText Typo="Typo.body1" Class="mb-3">@Report.RiskAssessment.Narrative</MudText>
                 @if (Report.RiskAssessment.Risks.Count > 0)
@@ -422,7 +422,7 @@
 
         @* Section 10: Investment Decision *@
         <div id="section-10">
-            <MudPaper Class="pa-4 mb-4" Elevation="1">
+            <MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
                 <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
                     <MudText Typo="Typo.h5">10. @Report.InvestmentDecision.Title</MudText>
                     <MudChip T="string"

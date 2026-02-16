@@ -1,30 +1,50 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Authorization
+@using ZSR.Underwriting.Web.Theme
 
-<MudThemeProvider />
+<MudThemeProvider Theme="ZsrTheme.Instance" IsDarkMode="false" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="1">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudText Typo="Typo.h6" Class="ml-3">ZSR Underwriting</MudText>
+    <MudAppBar Elevation="0" Style="background: #FFFFFF; border-bottom: 1px solid #E5E7EB; height: 56px;">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Dark" Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" Size="Size.Small" />
+        <div class="sidebar-brand" style="margin-left: 4px;">
+            <div class="sidebar-logo">
+                <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" />
+            </div>
+            <MudText Typo="Typo.h6" Style="font-weight: 800; color: #1A1D23; font-size: 0.9375rem; letter-spacing: -0.03em;">
+                ZSR
+            </MudText>
+        </div>
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
-                <MudText Typo="Typo.body2" Class="mr-3">@context.User.Identity?.Name</MudText>
-                <MudIconButton Icon="@Icons.Material.Filled.Logout" Color="Color.Inherit" Href="/logout" />
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudAvatar Size="Size.Small" Style="background: linear-gradient(135deg, #1E3A5F, #2A5080); font-size: 0.6875rem; font-weight: 700; width: 32px; height: 32px;">
+                        @GetInitials(context.User.Identity?.Name)
+                    </MudAvatar>
+                    <MudText Typo="Typo.body2" Style="color: #374151; font-weight: 500; font-size: 0.8125rem;">
+                        @context.User.Identity?.Name
+                    </MudText>
+                    <MudIconButton Icon="@Icons.Material.Outlined.Logout" Color="Color.Default" Href="/logout"
+                                   Size="Size.Small" Style="color: #9CA3AF;" />
+                </MudStack>
             </Authorized>
         </AuthorizeView>
     </MudAppBar>
-    <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">Navigation</MudText>
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="0"
+               Style="border-right: 1px solid #E5E7EB; background: #FAFBFC;">
+        <MudDrawerHeader Dense="true" Class="pt-4 pb-2 px-4">
+            <MudText Typo="Typo.overline" Style="color: #9CA3AF; font-weight: 700; letter-spacing: 0.1em; font-size: 0.625rem;">
+                NAVIGATION
+            </MudText>
         </MudDrawerHeader>
         <NavMenu />
     </MudDrawer>
-    <MudMainContent Class="pa-4">
+    <MudMainContent Style="background-color: #F0F2F5; min-height: 100vh;" Class="pa-6">
         @Body
     </MudMainContent>
 </MudLayout>
@@ -32,7 +52,7 @@
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <span class="dismiss">&#x1f5d9;</span>
 </div>
 
 @code {
@@ -41,5 +61,14 @@
     private void ToggleDrawer()
     {
         _drawerOpen = !_drawerOpen;
+    }
+
+    private static string GetInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 2
+            ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
+            : name[..1].ToUpper();
     }
 }

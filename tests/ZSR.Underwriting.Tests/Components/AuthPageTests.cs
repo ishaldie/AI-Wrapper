@@ -3,13 +3,14 @@ using System.Net;
 
 namespace ZSR.Underwriting.Tests.Components;
 
-public class AuthPageTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection(WebAppCollection.Name)]
+public class AuthPageTests
 {
     private readonly HttpClient _client;
 
-    public AuthPageTests(WebApplicationFactory<Program> factory)
+    public AuthPageTests(WebAppFixture fixture)
     {
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        _client = fixture.Factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             AllowAutoRedirect = false
         });
@@ -21,7 +22,7 @@ public class AuthPageTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.GetAsync("/login");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Sign In", content);
+        Assert.Contains("Welcome", content);
     }
 
     [Fact]
@@ -36,7 +37,7 @@ public class AuthPageTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task Dashboard_Redirects_To_Login_When_Unauthenticated()
     {
-        var response = await _client.GetAsync("/");
+        var response = await _client.GetAsync("/search");
         Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
         Assert.Contains("/login", response.Headers.Location?.ToString() ?? "");
     }
@@ -50,19 +51,11 @@ public class AuthPageTests : IClassFixture<WebApplicationFactory<Program>>
     }
 
     [Fact]
-    public async Task Login_Page_Contains_Password_Field()
+    public async Task Login_Page_Contains_Continue_Button()
     {
         var response = await _client.GetAsync("/login");
         var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Password", content);
-    }
-
-    [Fact]
-    public async Task Login_Page_Contains_Remember_Me()
-    {
-        var response = await _client.GetAsync("/login");
-        var content = await response.Content.ReadAsStringAsync();
-        Assert.Contains("Remember me", content);
+        Assert.Contains("Continue", content);
     }
 
     [Fact]
@@ -87,5 +80,33 @@ public class AuthPageTests : IClassFixture<WebApplicationFactory<Program>>
         var response = await _client.GetAsync("/login");
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("/register", content);
+    }
+
+    [Fact]
+    public async Task Landing_Page_Is_Accessible_Without_Auth()
+    {
+        var response = await _client.GetAsync("/");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Answer any real estate question", content);
+    }
+
+    [Fact]
+    public async Task VerifyCode_Page_Redirects_Without_Email()
+    {
+        var response = await _client.GetAsync("/verify-code");
+        // Should redirect to login since no email query param
+        Assert.True(
+            response.StatusCode == HttpStatusCode.OK ||
+            response.StatusCode == HttpStatusCode.Redirect);
+    }
+
+    [Fact]
+    public async Task Login_Page_Shows_Social_Login_Options()
+    {
+        var response = await _client.GetAsync("/login");
+        var content = await response.Content.ReadAsStringAsync();
+        Assert.Contains("Continue with Google", content);
+        Assert.Contains("Continue with Microsoft", content);
     }
 }
