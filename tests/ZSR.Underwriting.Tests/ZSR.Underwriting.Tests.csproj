@@ -88,6 +88,7 @@
     <!-- Claude AI Report Generation track -->
     <Compile Include="Claude\ClaudeClientTests.cs" />
     <Compile Include="Claude\ClaudeOptionsTests.cs" />
+    <Compile Include="Claude\PromptBuilderTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,14 +9,14 @@
 - [x] Write tests with mocked API responses
 
 ## Phase 2: Prompt Engineering
-- [ ] Create `IPromptBuilder` interface for structured prompt construction
-- [ ] Build prompt template for Executive Summary (decision badge, thesis, risks)
-- [ ] Build prompt template for Market Context (supply-demand, economics, rent outlook)
-- [ ] Build prompt template for Value Creation Strategy (timeline, capital)
-- [ ] Build prompt template for Risk Assessment narratives
-- [ ] Build prompt template for Investment Decision (GO/NO GO, conditions, next steps)
-- [ ] Build prompt template for Property Overview prose
-- [ ] Write tests verifying prompt templates include all required data fields
+- [x] Create `IPromptBuilder` interface for structured prompt construction
+- [x] Build prompt template for Executive Summary (decision badge, thesis, risks)
+- [x] Build prompt template for Market Context (supply-demand, economics, rent outlook)
+- [x] Build prompt template for Value Creation Strategy (timeline, capital)
+- [x] Build prompt template for Risk Assessment narratives
+- [x] Build prompt template for Investment Decision (GO/NO GO, conditions, next steps)
+- [x] Build prompt template for Property Overview prose
+- [x] Write tests verifying prompt templates include all required data fields
 
 ## Phase 3: Response Parsing & Assembly
 - [ ] Create `IReportProseGenerator` service that orchestrates all prompts
