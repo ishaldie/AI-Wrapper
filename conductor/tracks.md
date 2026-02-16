@@ -37,8 +37,8 @@
 
 ---
 
-## [ ] Track: Claude AI Report Generation
-*Link: [./conductor/tracks/claude_ai_report_generation_20260214/](./conductor/tracks/claude_ai_report_generation_20260214/)*
+## [x] Track: Claude AI Report Generation (completed 2026-02-15)
+*Link: [./conductor/archive/claude_ai_report_generation_20260214/](./conductor/archive/claude_ai_report_generation_20260214/)*
 
 ---
 
