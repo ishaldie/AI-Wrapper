@@ -17,9 +17,9 @@
 - [x] Write tests for registration validation and login flow
 
 ## Phase 3: Role Management
-- [ ] Create `UserManagement.razor` admin page
-- [ ] Display user list with roles
-- [ ] Add role assignment functionality (Analyst/Admin)
-- [ ] Restrict admin pages to Admin role
-- [ ] Configure account lockout policy
-- [ ] Write tests for role-based access control
+- [x] Create `UserManagement.razor` admin page
+- [x] Display user list with roles
+- [x] Add role assignment functionality (Analyst/Admin)
+- [x] Restrict admin pages to Admin role (`[Authorize(Roles = "Admin")]`)
+- [x] Configure account lockout policy (pre-existing: 5 attempts, 15 min)
+- [x] Write tests for role-based access control

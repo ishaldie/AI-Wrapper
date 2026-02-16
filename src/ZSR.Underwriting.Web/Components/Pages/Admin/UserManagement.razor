@@ -1,0 +1,117 @@
+@page "/admin/users"
+@using Microsoft.AspNetCore.Authorization
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@inject IUserManagementService UserService
+
+<PageTitle>User Management - ZSR Underwriting</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">User Management</MudText>
+
+@if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else
+{
+    <MudTable Items="_users" Hover="true" Striped="true" Dense="true" Elevation="2">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Email</MudTh>
+            <MudTh>Roles</MudTh>
+            <MudTh>Actions</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.FullName</MudTd>
+            <MudTd DataLabel="Email">@context.Email</MudTd>
+            <MudTd DataLabel="Roles">
+                @foreach (var role in context.Roles)
+                {
+                    <MudChip T="string" Size="Size.Small"
+                             Color="@(role == "Admin" ? Color.Error : Color.Primary)">
+                        @role
+                    </MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Actions">
+                @if (!context.Roles.Contains("Admin"))
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Color="Color.Warning"
+                               OnClick="@(() => PromoteToAdmin(context))">
+                        Make Admin
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="@(() => DemoteFromAdmin(context))">
+                        Remove Admin
+                    </MudButton>
+                }
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <MudAlert Severity="@_statusSeverity" Class="mt-3">@_statusMessage</MudAlert>
+    }
+}
+
+@code {
+    private bool _loading = true;
+    private List<UserDto> _users = new();
+    private string? _statusMessage;
+    private Severity _statusSeverity = Severity.Info;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        _loading = true;
+        var users = await UserService.GetAllUsersAsync();
+        _users = users.ToList();
+        _loading = false;
+    }
+
+    private async Task PromoteToAdmin(UserDto user)
+    {
+        var success = await UserService.AssignRoleAsync(user.Id, "Admin");
+        if (success)
+        {
+            _statusMessage = $"{user.FullName} promoted to Admin.";
+            _statusSeverity = Severity.Success;
+        }
+        else
+        {
+            _statusMessage = $"Failed to promote {user.FullName}.";
+            _statusSeverity = Severity.Error;
+        }
+        await LoadUsersAsync();
+    }
+
+    private async Task DemoteFromAdmin(UserDto user)
+    {
+        var success = await UserService.RemoveRoleAsync(user.Id, "Admin");
+        if (success)
+        {
+            _statusMessage = $"{user.FullName} removed from Admin role.";
+            _statusSeverity = Severity.Success;
+        }
+        else
+        {
+            _statusMessage = $"Failed to remove Admin role from {user.FullName}.";
+            _statusSeverity = Severity.Error;
+        }
+        await LoadUsersAsync();
+    }
+}

@@ -126,6 +126,7 @@ try
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
+    builder.Services.AddScoped<IUserManagementService, UserManagementService>();
     builder.Services.AddScoped<ZSR.Underwriting.Domain.Interfaces.IFileStorageService>(sp =>
         new LocalFileStorageService(Path.Combine(builder.Environment.ContentRootPath, "uploads")));
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
