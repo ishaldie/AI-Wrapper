@@ -20,6 +20,7 @@ public class DashboardTests : IAsyncLifetime
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddMudServices();
         _ctx.Services.AddSingleton<IDealService, StubDealService>();
+        _ctx.Services.AddSingleton<IQuickAnalysisService, StubQuickAnalysisService>();
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
     }
@@ -76,6 +77,7 @@ public class DashboardTests : IAsyncLifetime
         ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         ctx.Services.AddMudServices();
         ctx.Services.AddSingleton<IDealService>(new StubDealServiceWithData());
+        ctx.Services.AddSingleton<IQuickAnalysisService, StubQuickAnalysisService>();
         var authCtx = ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
 
@@ -106,6 +108,12 @@ public class DashboardTests : IAsyncLifetime
     {
         var cut = _ctx.Render<Dashboard>();
         Assert.Contains("View All", cut.Markup);
+    }
+
+    private class StubQuickAnalysisService : IQuickAnalysisService
+    {
+        public Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, CancellationToken ct = default)
+            => Task.FromResult(new QuickAnalysisProgress { DealId = Guid.NewGuid(), SearchQuery = searchQuery });
     }
 
     private class StubDealService : IDealService

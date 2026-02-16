@@ -1,0 +1,119 @@
+@page "/deals/analyze/{DealId:guid}"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Services
+@using ZSR.Underwriting.Web.Components.Pages.QuickAnalysis
+@implements IDisposable
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Analyzing - ZSR Underwriting</PageTitle>
+
+<div class="animate-in" style="max-width: 640px; margin: 2rem auto;">
+    @if (_progress == null)
+    {
+        <MudPaper Elevation="0" Class="card-elevated pa-8" Style="text-align: center;">
+            <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large"
+                     Style="color: #D1D5DB;" />
+            <MudText Typo="Typo.h6" Class="mt-2" Style="color: #6B7280;">
+                Analysis not found
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1" Style="color: #9CA3AF;">
+                This analysis may have expired or the link is invalid.
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Href="/search" Class="mt-4"
+                       Style="text-transform: none; border-radius: 12px;">
+                Back to Dashboard
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <MudText Typo="Typo.h4" Style="color: #1A1D23; font-weight: 800; margin-bottom: 0.25rem;">
+            Analyzing property
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #6B7280; margin-bottom: 1.5rem;">
+            @_progress.SearchQuery
+        </MudText>
+
+        @* Progress bar *@
+        <MudProgressLinear Value="@ProgressPercent" Color="Color.Primary"
+                           Rounded="true" Size="Size.Large" Class="mb-4"
+                           Style="height: 8px; border-radius: 999px;" />
+
+        <MudText Typo="Typo.body2" Style="color: #9CA3AF; margin-bottom: 1.5rem;">
+            @_progress.CompletedSteps of @_progress.TotalSteps steps complete
+        </MudText>
+
+        @* Step list *@
+        <MudPaper Elevation="0" Class="card-elevated pa-4">
+            @foreach (var step in Enum.GetValues<AnalysisStep>())
+            {
+                <AnalysisStepRow Status="@_progress.GetStepStatus(step)"
+                                 Label="@QuickAnalysisProgress.GetStepLabel(step)" />
+            }
+        </MudPaper>
+
+        @* Error alert *@
+        @if (_progress.HasErrors && _progress.IsFinished)
+        {
+            <MudAlert Severity="Severity.Warning" Class="mt-4" Variant="Variant.Outlined">
+                Some steps couldn't complete. You can still view partial results.
+            </MudAlert>
+        }
+
+        @* Action buttons *@
+        @if (_progress.IsFinished)
+        {
+            <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.Center">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           Href="@($"/deals/{DealId}/report")"
+                           Style="text-transform: none; border-radius: 12px; font-weight: 600;">
+                    View Report
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                           Href="/deals/new"
+                           Style="text-transform: none; border-radius: 12px;">
+                    Add More Details
+                </MudButton>
+            </MudStack>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public Guid DealId { get; set; }
+
+    private QuickAnalysisProgress? _progress;
+    private Timer? _pollTimer;
+
+    protected override void OnInitialized()
+    {
+        _progress = QuickAnalysisTracker.GetProgress(DealId);
+
+        if (_progress != null && !_progress.IsFinished)
+        {
+            _pollTimer = new Timer(PollProgress, null, 500, 500);
+        }
+    }
+
+    private void PollProgress(object? state)
+    {
+        _progress = QuickAnalysisTracker.GetProgress(DealId);
+
+        InvokeAsync(StateHasChanged);
+
+        if (_progress == null || _progress.IsFinished)
+        {
+            _pollTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        }
+    }
+
+    private double ProgressPercent =>
+        _progress == null ? 0 : (double)_progress.CompletedSteps / _progress.TotalSteps * 100;
+
+    public void Dispose()
+    {
+        _pollTimer?.Dispose();
+    }
+}

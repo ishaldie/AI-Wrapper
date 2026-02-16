@@ -106,6 +106,10 @@
     <Compile Include="Components\DealPipelineManagementTests.cs" />
     <!-- UI Redesign track -->
     <Compile Include="Services\EmailCodeServiceTests.cs" />
+    <!-- Quick Analysis track -->
+    <Compile Include="DTOs\QuickAnalysisProgressTests.cs" />
+    <Compile Include="Services\QuickAnalysisTrackerTests.cs" />
+    <Compile Include="Services\QuickAnalysisServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

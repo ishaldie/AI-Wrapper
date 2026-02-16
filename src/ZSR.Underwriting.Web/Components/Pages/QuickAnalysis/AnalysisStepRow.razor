@@ -1,0 +1,35 @@
+@using ZSR.Underwriting.Application.DTOs
+
+<div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0;">
+    @switch (Status)
+    {
+        case StepStatus.Pending:
+            <MudIcon Icon="@Icons.Material.Outlined.Circle"
+                     Size="Size.Small" Style="color: #D1D5DB;" />
+            <MudText Typo="Typo.body2" Style="color: #9CA3AF;">@Label</MudText>
+            break;
+
+        case StepStatus.InProgress:
+            <MudProgressCircular Indeterminate="true" Size="Size.Small"
+                                 Color="Color.Primary" Style="width: 20px; height: 20px;" />
+            <MudText Typo="Typo.body2" Style="color: #1A1D23; font-weight: 600;">@Label</MudText>
+            break;
+
+        case StepStatus.Complete:
+            <MudIcon Icon="@Icons.Material.Filled.CheckCircle"
+                     Size="Size.Small" Color="Color.Success" />
+            <MudText Typo="Typo.body2" Style="color: #16A34A;">@Label</MudText>
+            break;
+
+        case StepStatus.Failed:
+            <MudIcon Icon="@Icons.Material.Filled.Warning"
+                     Size="Size.Small" Color="Color.Warning" />
+            <MudText Typo="Typo.body2" Style="color: #D97706;">@Label (skipped)</MudText>
+            break;
+    }
+</div>
+
+@code {
+    [Parameter] public StepStatus Status { get; set; }
+    [Parameter] public string Label { get; set; } = "";
+}

@@ -1,0 +1,78 @@
+@page "/deals/{DealId:guid}/report"
+@using ZSR.Underwriting.Application.DTOs.Report
+@using ZSR.Underwriting.Application.Interfaces
+@inject IReportAssembler ReportAssembler
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Report - ZSR Underwriting</PageTitle>
+
+<div class="animate-in" style="max-width: 1200px;">
+    @if (_loading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="pa-12">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+            <MudText Typo="Typo.body1" Style="color: #6B7280;" Class="mt-2">
+                Loading report...
+            </MudText>
+        </MudStack>
+    }
+    else if (_error != null)
+    {
+        <MudPaper Elevation="0" Class="card-elevated pa-8" Style="text-align: center;">
+            <MudIcon Icon="@Icons.Material.Outlined.ErrorOutline" Size="Size.Large"
+                     Style="color: #EF4444;" />
+            <MudText Typo="Typo.h6" Class="mt-2" Style="color: #1A1D23;">
+                Report unavailable
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1" Style="color: #6B7280;">
+                @_error
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Href="/search" Class="mt-4"
+                       Style="text-transform: none; border-radius: 12px;">
+                Back to Dashboard
+            </MudButton>
+        </MudPaper>
+    }
+    else if (_report != null)
+    {
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-4">
+            <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
+                       Href="/search"
+                       Style="text-transform: none; color: #6B7280;">
+                Dashboard
+            </MudButton>
+        </MudStack>
+
+        <ReportViewer Report="@_report" />
+    }
+</div>
+
+@code {
+    [Parameter] public Guid DealId { get; set; }
+
+    private UnderwritingReportDto? _report;
+    private bool _loading = true;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _report = await ReportAssembler.AssembleReportAsync(DealId);
+        }
+        catch (KeyNotFoundException)
+        {
+            _error = "Deal not found. It may have been deleted.";
+        }
+        catch (Exception)
+        {
+            _error = "An error occurred while loading the report.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+}

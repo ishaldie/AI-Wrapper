@@ -153,6 +153,9 @@ try
     builder.Services.AddScoped<IPromptBuilder, ZSR.Underwriting.Application.Services.UnderwritingPromptBuilder>();
     builder.Services.AddScoped<IReportProseGenerator, ZSR.Underwriting.Application.Services.ReportProseGenerator>();
 
+    // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
+    builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
+
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
