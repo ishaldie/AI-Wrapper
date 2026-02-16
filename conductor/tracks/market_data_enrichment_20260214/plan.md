@@ -22,3 +22,4 @@
 - [x] Add Fannie Mae rate lookup for loan default assumptions `89c8dc8`
 - [x] Add source attribution display in report `89c8dc8`
 - [x] Write integration tests for full search → parse → report flow `89c8dc8`
+[checkpoint: 76a5a8f]
