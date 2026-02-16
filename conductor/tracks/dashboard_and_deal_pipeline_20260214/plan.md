@@ -16,9 +16,9 @@
 - [x] Write tests for filtering and sorting logic `8368bfe`
 
 ## Phase 3: Comparison & Management
-- [~] Create `DealComparison.razor` side-by-side view
-- [~] Implement deal selection (checkboxes) for comparison
-- [~] Display comparison table with aligned metrics
-- [~] Implement archive deal functionality
-- [~] Implement delete deal with confirmation dialog
-- [~] Write integration tests for pipeline operations
+- [x] Create `DealComparison.razor` side-by-side view `c474673`
+- [x] Implement deal selection (checkboxes) for comparison `c474673`
+- [x] Display comparison table with aligned metrics `c474673`
+- [x] Implement archive deal functionality `c474673`
+- [x] Implement delete deal with confirmation dialog `c474673`
+- [x] Write integration tests for pipeline operations `c474673`
