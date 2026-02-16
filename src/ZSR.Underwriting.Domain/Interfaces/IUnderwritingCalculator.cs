@@ -31,4 +31,7 @@ public interface IUnderwritingCalculator
     decimal CalculateNetSaleProceeds(decimal exitValue, decimal saleCosts, decimal outstandingLoanBalance);
     decimal CalculateEquityMultiple(decimal[] annualCashFlows, decimal netSaleProceeds, decimal equityInvested);
     decimal CalculateIrr(decimal initialInvestment, decimal[] annualCashFlows, decimal terminalCashFlow);
+
+    // Phase 4: Sales Comp Adjustments
+    decimal AdjustCompPricePerUnit(decimal rawPricePerUnit, decimal timeAdjPercent, decimal sizeAdjPercent, decimal ageAdjPercent, decimal locationAdjPercent, decimal amenitiesAdjPercent);
 }

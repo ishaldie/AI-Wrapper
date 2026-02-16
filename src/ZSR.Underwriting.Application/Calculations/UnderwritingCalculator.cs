@@ -260,4 +260,12 @@ public class UnderwritingCalculator : IUnderwritingCalculator
 
         return Math.Round((decimal)(rate * 100), 1);
     }
+
+    // Phase 4: Sales Comp Adjustments
+
+    public decimal AdjustCompPricePerUnit(decimal rawPricePerUnit, decimal timeAdjPercent, decimal sizeAdjPercent, decimal ageAdjPercent, decimal locationAdjPercent, decimal amenitiesAdjPercent)
+    {
+        var totalAdj = timeAdjPercent + sizeAdjPercent + ageAdjPercent + locationAdjPercent + amenitiesAdjPercent;
+        return rawPricePerUnit * (1m + totalAdj / 100m);
+    }
 }

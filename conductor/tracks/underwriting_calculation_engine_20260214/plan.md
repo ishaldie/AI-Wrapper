@@ -31,8 +31,8 @@
 - [x] Write tests for projection and IRR convergence (20 tests, all passing)
 
 ## Phase 4: Comps, Sensitivity & Risk
-- [ ] Implement sales comp adjustment framework (time, size, age, location, amenities)
-- [ ] Implement sensitivity scenarios (income -5%, occupancy -10%, cap +100bps)
-- [ ] Implement risk severity rating logic per protocol thresholds
-- [ ] Create `CalculationResult` assembler that runs full pipeline
-- [ ] Write tests for sensitivity deltas and risk rating accuracy
+- [x] Implement sales comp adjustment framework (time, size, age, location, amenities)
+- [x] Implement sensitivity scenarios (income -5%, occupancy -10%, cap +100bps)
+- [x] Implement risk severity rating logic per protocol thresholds
+- [x] Create `CalculationResult` assembler that runs full pipeline
+- [x] Write tests for sensitivity deltas and risk rating accuracy (27 tests, all passing)
