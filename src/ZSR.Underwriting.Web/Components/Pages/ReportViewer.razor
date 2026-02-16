@@ -1,5 +1,8 @@
 @using ZSR.Underwriting.Application.DTOs.Report
 @using ZSR.Underwriting.Application.Formatting
+@using ZSR.Underwriting.Application.Interfaces
+@inject IReportPdfExporter PdfExporter
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>@Report.PropertyName - Underwriting Report</PageTitle>
@@ -30,13 +33,21 @@
                     <MudText Typo="Typo.subtitle1" Color="Color.Secondary">@Report.Address</MudText>
                     <MudText Typo="Typo.caption">Generated @Report.GeneratedAt.ToString("MMMM d, yyyy")</MudText>
                 </MudStack>
-                @{ var headerDecision = Report.ExecutiveSummary.Decision; }
-                <MudChip T="string"
-                         Size="Size.Large"
-                         Color="@GetDecisionColor(headerDecision)"
-                         Variant="Variant.Filled">
-                    @Report.ExecutiveSummary.DecisionLabel
-                </MudChip>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    @{ var headerDecision = Report.ExecutiveSummary.Decision; }
+                    <MudChip T="string"
+                             Size="Size.Large"
+                             Color="@GetDecisionColor(headerDecision)"
+                             Variant="Variant.Filled">
+                        @Report.ExecutiveSummary.DecisionLabel
+                    </MudChip>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PictureAsPdf"
+                               OnClick="ExportPdf">
+                        Export PDF
+                    </MudButton>
+                </MudStack>
             </MudStack>
         </MudPaper>
 
@@ -466,4 +477,13 @@
         RiskSeverity.Low => Color.Success,
         _ => Color.Default
     };
+
+    private async Task ExportPdf()
+    {
+        var pdfBytes = PdfExporter.GeneratePdf(Report);
+        var fileName = $"{Report.PropertyName.Replace(" ", "_")}_Underwriting_Report.pdf";
+        using var stream = new MemoryStream(pdfBytes);
+        using var streamRef = new DotNetStreamReference(stream);
+        await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+    }
 }

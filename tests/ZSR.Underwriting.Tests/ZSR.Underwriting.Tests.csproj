@@ -64,6 +64,7 @@
     <Compile Include="Formatting\ProtocolFormatterTests.cs" />
     <Compile Include="DTOs\ReportDtoTests.cs" />
     <Compile Include="Services\ReportAssemblerTests.cs" />
+    <Compile Include="Services\ReportPdfExporterTests.cs" />
     <!-- Document Upload track -->
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />

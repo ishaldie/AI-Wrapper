@@ -94,6 +94,10 @@ try
     builder.Services.AddScoped<IDealRepository, DealRepository>();
     builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+    // Add report services
+    builder.Services.AddScoped<IReportAssembler, ReportAssembler>();
+    builder.Services.AddSingleton<IReportPdfExporter, ReportPdfExporter>();
+
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
     builder.Services.AddScoped<ZSR.Underwriting.Domain.Interfaces.IFileStorageService>(sp =>

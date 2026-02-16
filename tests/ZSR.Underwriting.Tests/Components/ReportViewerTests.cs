@@ -16,6 +16,12 @@ public class ReportViewerTests : IAsyncLifetime
         _ctx = new BunitContext();
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddMudServices();
+        _ctx.Services.AddSingleton<IReportPdfExporter, StubPdfExporter>();
+    }
+
+    private class StubPdfExporter : IReportPdfExporter
+    {
+        public byte[] GeneratePdf(UnderwritingReportDto report) => [0x25, 0x50, 0x44, 0x46];
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
