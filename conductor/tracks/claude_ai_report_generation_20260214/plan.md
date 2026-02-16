@@ -1,12 +1,12 @@
 # Plan: Claude AI Report Generation
 
 ## Phase 1: Claude API Client
-- [ ] Create `IClaudeClient` interface in Domain
-- [ ] Create `ClaudeOptions` configuration class (API key, model, max tokens)
-- [ ] Implement `ClaudeClient` in Infrastructure using Anthropic SDK or HttpClient
-- [ ] Configure Polly retry policy for API calls
-- [ ] Implement token usage tracking and logging
-- [ ] Write tests with mocked API responses
+- [x] Create `IClaudeClient` interface in Domain
+- [x] Create `ClaudeOptions` configuration class (API key, model, max tokens)
+- [x] Implement `ClaudeClient` in Infrastructure using Anthropic SDK or HttpClient
+- [x] Configure Polly retry policy for API calls
+- [x] Implement token usage tracking and logging
+- [x] Write tests with mocked API responses
 
 ## Phase 2: Prompt Engineering
 - [ ] Create `IPromptBuilder` interface for structured prompt construction

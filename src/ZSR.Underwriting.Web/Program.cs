@@ -86,6 +86,24 @@ try
             retryCount: 3,
             sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 
+    // Add Claude API client with Polly retry policy
+    builder.Services.Configure<ClaudeOptions>(
+        builder.Configuration.GetSection(ClaudeOptions.SectionName));
+
+    builder.Services.AddHttpClient<IClaudeClient, ClaudeClient>((sp, client) =>
+    {
+        var options = builder.Configuration
+            .GetSection(ClaudeOptions.SectionName)
+            .Get<ClaudeOptions>() ?? new ClaudeOptions();
+        client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
+        client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+    })
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+
     // Add RealAI cache service (24-hour TTL per deal)
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<RealAiCacheService>();

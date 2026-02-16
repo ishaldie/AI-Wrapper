@@ -40,6 +40,8 @@
     <Compile Remove="Parsing\**" />
     <Compile Remove="Services\**" />
     <Compile Remove="Validators\**" />
+    <Compile Remove="Claude\**" />
+    <Compile Remove="Helpers\**" />
   </ItemGroup>
   <ItemGroup>
     <!-- Core Data Models track -->
@@ -81,6 +83,11 @@
     <Compile Include="Calculations\DebtAndReturnsTests.cs" />
     <Compile Include="Calculations\ProjectionsAndIrrTests.cs" />
     <Compile Include="Calculations\CompsAndSensitivityTests.cs" />
+    <!-- Shared test helpers -->
+    <Compile Include="Helpers\MockHttpMessageHandler.cs" />
+    <!-- Claude AI Report Generation track -->
+    <Compile Include="Claude\ClaudeClientTests.cs" />
+    <Compile Include="Claude\ClaudeOptionsTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
