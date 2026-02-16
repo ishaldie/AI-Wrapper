@@ -32,8 +32,8 @@
 
 ---
 
-## [ ] Track: Underwriting Calculation Engine
-*Link: [./conductor/tracks/underwriting_calculation_engine_20260214/](./conductor/tracks/underwriting_calculation_engine_20260214/)*
+## [x] Track: Underwriting Calculation Engine (completed 2026-02-15)
+*Link: [./conductor/archive/underwriting_calculation_engine_20260214/](./conductor/archive/underwriting_calculation_engine_20260214/)*
 
 ---
 
@@ -42,13 +42,13 @@
 
 ---
 
-## [~] Track: Report Assembly & Display
-*Link: [./conductor/tracks/report_assembly_and_display_20260214/](./conductor/tracks/report_assembly_and_display_20260214/)*
+## [x] Track: Report Assembly & Display (completed 2026-02-15)
+*Link: [./conductor/archive/report_assembly_and_display_20260214/](./conductor/archive/report_assembly_and_display_20260214/)*
 
 ---
 
-## [ ] Track: Market Data Enrichment
-*Link: [./conductor/tracks/market_data_enrichment_20260214/](./conductor/tracks/market_data_enrichment_20260214/)*
+## [x] Track: Market Data Enrichment (completed 2026-02-15)
+*Link: [./conductor/archive/market_data_enrichment_20260214/](./conductor/archive/market_data_enrichment_20260214/)*
 
 ---
 
