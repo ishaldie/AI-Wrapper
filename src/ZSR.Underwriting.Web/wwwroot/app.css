@@ -573,28 +573,6 @@ html, body {
 .delay-5 { animation-delay: 0.25s; }
 
 /* ==========================================================================
-   Sidebar (legacy MainLayout)
-   ========================================================================== */
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0 0.25rem;
-}
-
-.sidebar-logo {
-    width: 28px;
-    height: 28px;
-    background: linear-gradient(135deg, #1E3A5F, #2A5080);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #FFFFFF;
-    font-size: 0.75rem;
-}
-
-/* ==========================================================================
    KPI Card Icon Circles
    ========================================================================== */
 .kpi-icon-circle {
