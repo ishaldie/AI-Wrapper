@@ -1,0 +1,130 @@
+@page "/deals/compare"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@inject IDealService DealService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Deal Comparison</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-4">Deal Comparison</MudText>
+
+@if (string.IsNullOrWhiteSpace(Ids))
+{
+    <MudAlert Severity="Severity.Info">Select 2-3 deals from the pipeline to compare.</MudAlert>
+}
+else if (_loading)
+{
+    <MudProgressCircular Indeterminate="true" />
+}
+else if (_selectedDeals.Count < 2)
+{
+    <MudAlert Severity="Severity.Warning">Select at least 2 deals to compare.</MudAlert>
+}
+else
+{
+    <MudSimpleTable Dense="true" Hover="true" Striped="true" Elevation="2">
+        <thead>
+            <tr>
+                <th>Metric</th>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <th>@deal.PropertyName</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Address</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td>@deal.Address</td>
+                }
+            </tr>
+            <tr>
+                <td><strong>Status</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td><MudChip T="string" Size="Size.Small" Color="@GetStatusColor(deal.Status)">@deal.Status</MudChip></td>
+                }
+            </tr>
+            <tr>
+                <td><strong>Purchase Price</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td>@deal.PurchasePrice.ToString("C0")</td>
+                }
+            </tr>
+            <tr>
+                <td><strong>Units</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td>@deal.UnitCount</td>
+                }
+            </tr>
+            <tr>
+                <td><strong>Price/Unit</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td>@(deal.UnitCount > 0 ? (deal.PurchasePrice / deal.UnitCount).ToString("C0") : "—")</td>
+                }
+            </tr>
+            <tr>
+                <td><strong>Cap Rate</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td>@FormatPercent(deal.CapRate)</td>
+                }
+            </tr>
+            <tr>
+                <td><strong>IRR</strong></td>
+                @foreach (var deal in _selectedDeals)
+                {
+                    <td>@FormatPercent(deal.Irr)</td>
+                }
+            </tr>
+        </tbody>
+    </MudSimpleTable>
+
+    <MudButton Variant="Variant.Text" Class="mt-4" Href="deals">Back to Pipeline</MudButton>
+}
+
+@code {
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string? Ids { get; set; }
+
+    private bool _loading = true;
+    private List<DealSummaryDto> _selectedDeals = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Ids))
+        {
+            _loading = false;
+            return;
+        }
+
+        var idList = Ids.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => Guid.TryParse(s.Trim(), out var g) ? g : (Guid?)null)
+            .Where(g => g.HasValue)
+            .Select(g => g!.Value)
+            .ToHashSet();
+
+        var allDeals = await DealService.GetAllDealsAsync();
+        _selectedDeals = allDeals.Where(d => idList.Contains(d.Id)).ToList();
+        _loading = false;
+    }
+
+    private static string FormatPercent(decimal? value)
+        => value.HasValue ? $"{value.Value * 100:F1}%" : "—";
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "InProgress" => Color.Warning,
+        "Complete" => Color.Success,
+        "Archived" => Color.Dark,
+        _ => Color.Default
+    };
+}

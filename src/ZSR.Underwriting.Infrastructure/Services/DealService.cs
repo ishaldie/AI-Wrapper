@@ -77,6 +77,15 @@ public class DealService : IDealService
         await _db.SaveChangesAsync();
     }
 
+    public async Task DeleteDealAsync(Guid id)
+    {
+        var deal = await _db.Deals.FindAsync(id)
+            ?? throw new KeyNotFoundException($"Deal {id} not found.");
+
+        _db.Deals.Remove(deal);
+        await _db.SaveChangesAsync();
+    }
+
     private static void MapFromDto(Deal deal, DealInputDto input)
     {
         deal.PropertyName = input.PropertyName;

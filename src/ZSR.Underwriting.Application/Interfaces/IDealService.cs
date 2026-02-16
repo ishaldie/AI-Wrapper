@@ -9,4 +9,5 @@ public interface IDealService
     Task<DealInputDto?> GetDealAsync(Guid id);
     Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync();
     Task SetStatusAsync(Guid id, string status);
+    Task DeleteDealAsync(Guid id);
 }

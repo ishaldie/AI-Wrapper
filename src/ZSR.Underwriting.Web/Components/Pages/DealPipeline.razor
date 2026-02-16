@@ -3,6 +3,7 @@
 @using ZSR.Underwriting.Application.Interfaces
 @inject IDealService DealService
 @inject NavigationManager Navigation
+@inject IDialogService DialogService
 @rendermode InteractiveServer
 
 <PageTitle>Deal Pipeline</PageTitle>
@@ -29,14 +30,25 @@ else
         <MudChip T="string" Value="@("Archived")" Color="Color.Dark" Variant="Variant.Outlined">Archived</MudChip>
     </MudChipSet>
 
+    <MudButton Variant="Variant.Outlined"
+               Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Compare"
+               Disabled="@(_selectedItems.Count < 2)"
+               OnClick="CompareSelected"
+               Class="mb-4">
+        Compare (@_selectedItems.Count)
+    </MudButton>
+
     @if (!FilteredDeals.Any())
     {
         <MudAlert Severity="Severity.Info">No deals found.</MudAlert>
     }
     else
     {
-        <MudDataGrid T="DealSummaryDto" Items="@FilteredDeals" SortMode="SortMode.Single" Dense="true" Hover="true" RowClick="@OnRowClick">
+        <MudDataGrid T="DealSummaryDto" Items="@FilteredDeals" SortMode="SortMode.Single" Dense="true" Hover="true"
+                     MultiSelection="true" @bind-SelectedItems="_selectedItems">
             <Columns>
+                <SelectColumn T="DealSummaryDto" ShowInFooter="false" />
                 <PropertyColumn Property="x => x.PropertyName" Title="Property Name" Sortable="true" />
                 <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" />
                 <TemplateColumn Title="Status" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Status))">
@@ -57,6 +69,24 @@ else
                         @FormatPercent(context.Item.Irr)
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="1">
+                            @if (context.Item.Status != "Archived")
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Archive"
+                                               Size="Size.Small"
+                                               aria-label="Archive"
+                                               OnClick="@(() => ArchiveDeal(context.Item))" />
+                            }
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           aria-label="Delete"
+                                           OnClick="@(() => ConfirmDeleteDeal(context.Item))" />
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
             </Columns>
         </MudDataGrid>
     }
@@ -67,6 +97,7 @@ else
     private List<DealSummaryDto> _deals = new();
     private string _searchText = string.Empty;
     private IReadOnlyCollection<string> _selectedStatuses = Array.Empty<string>();
+    private HashSet<DealSummaryDto> _selectedItems = new();
 
     private IEnumerable<DealSummaryDto> FilteredDeals => _deals
         .Where(d => _selectedStatuses.Count == 0 || _selectedStatuses.Contains(d.Status))
@@ -81,9 +112,34 @@ else
         _loading = false;
     }
 
-    private void OnRowClick(DataGridRowClickEventArgs<DealSummaryDto> args)
+    private void CompareSelected()
     {
-        Navigation.NavigateTo($"deals/{args.Item.Id}/edit");
+        var ids = string.Join(",", _selectedItems.Select(d => d.Id));
+        Navigation.NavigateTo($"deals/compare?ids={ids}");
+    }
+
+    private async Task ArchiveDeal(DealSummaryDto deal)
+    {
+        await DealService.SetStatusAsync(deal.Id, "Archived");
+        deal.Status = "Archived";
+        StateHasChanged();
+    }
+
+    private async Task ConfirmDeleteDeal(DealSummaryDto deal)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Delete Deal",
+            $"Are you sure you want to delete \"{deal.PropertyName}\"? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await DealService.DeleteDealAsync(deal.Id);
+            _deals.Remove(deal);
+            _selectedItems.Remove(deal);
+            StateHasChanged();
+        }
     }
 
     private static string FormatPercent(decimal? value)

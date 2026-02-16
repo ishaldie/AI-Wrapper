@@ -94,6 +94,8 @@
     <Compile Include="Components\DashboardTests.cs" />
     <Compile Include="Components\DealPipelineTests.cs" />
     <Compile Include="Components\DealCardTests.cs" />
+    <Compile Include="Components\DealComparisonTests.cs" />
+    <Compile Include="Components\DealPipelineManagementTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
