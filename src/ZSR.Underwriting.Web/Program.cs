@@ -145,6 +145,9 @@ try
         db.Database.EnsureCreated();
     }
 
+    // Seed roles and default admin user
+    await SeedData.SeedAsync(app.Services);
+
     // Configure the HTTP request pipeline
     if (!app.Environment.IsDevelopment())
     {

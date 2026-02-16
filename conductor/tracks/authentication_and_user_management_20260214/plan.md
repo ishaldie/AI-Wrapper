@@ -1,12 +1,12 @@
 # Plan: Authentication & User Management
 
 ## Phase 1: Identity Setup
-- [~] Add ASP.NET Identity NuGet packages
-- [ ] Create `ApplicationUser` entity extending `IdentityUser` in Domain
-- [ ] Configure Identity in `Program.cs` with EF Core
-- [ ] Create Identity database migration
-- [ ] Seed Admin role and default admin user
-- [ ] Write tests for user creation and role assignment
+- [x] Add ASP.NET Identity NuGet packages (pre-existing)
+- [x] Create `ApplicationUser` entity extending `IdentityUser` in Domain (pre-existing)
+- [x] Configure Identity in `Program.cs` with EF Core (pre-existing)
+- [x] Create Identity database migration (pre-existing)
+- [x] Seed Admin role and default admin user
+- [x] Write tests for user creation and role assignment
 
 ## Phase 2: Login & Registration UI
 - [ ] Create `Register.razor` page with form validation

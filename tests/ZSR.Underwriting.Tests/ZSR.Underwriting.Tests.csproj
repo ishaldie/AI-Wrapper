@@ -59,6 +59,8 @@
     <Compile Include="Domain\ApplicationUserTests.cs" />
     <Compile Include="Infrastructure\IdentityConfigurationTests.cs" />
     <Compile Include="Infrastructure\IdentityServiceRegistrationTests.cs" />
+    <Compile Include="Infrastructure\SeedDataTests.cs" />
+    <Compile Include="Infrastructure\UserRoleAssignmentTests.cs" />
     <!-- Deal Entry UI track -->
     <Compile Include="Components\DealWizardTests.cs" />
     <!-- Report Assembly & Display track -->
