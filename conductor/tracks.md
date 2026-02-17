@@ -67,7 +67,7 @@
 
 ---
 
-## [ ] Track: Terms of Service & Privacy Policy
-*Link: [./conductor/tracks/terms_of_service_20260216/](./conductor/tracks/terms_of_service_20260216/)*
+## [x] Track: Terms of Service & Privacy Policy (completed 2026-02-16)
+*Link: [./conductor/archive/terms_of_service_20260216/](./conductor/archive/terms_of_service_20260216/)*
 
 ---
