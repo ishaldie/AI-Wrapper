@@ -47,10 +47,21 @@
 </MudStepper>
 
 @code {
+    [SupplyParameterFromQuery(Name = "address")]
+    private string? InitialAddress { get; set; }
+
     private int _activeStep;
     private DealInputDto _model = new();
     private string? _error;
     private bool _wizardTracked;
+
+    protected override void OnInitialized()
+    {
+        if (!string.IsNullOrWhiteSpace(InitialAddress))
+        {
+            _model.Address = InitialAddress;
+        }
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
