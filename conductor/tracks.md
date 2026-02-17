@@ -66,3 +66,8 @@
 *Link: [./conductor/tracks/bug_fixes_20260216/](./conductor/tracks/bug_fixes_20260216/)*
 
 ---
+
+## [ ] Track: Terms of Service & Privacy Policy
+*Link: [./conductor/tracks/terms_of_service_20260216/](./conductor/tracks/terms_of_service_20260216/)*
+
+---
