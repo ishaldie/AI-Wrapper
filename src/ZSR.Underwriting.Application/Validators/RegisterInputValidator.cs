@@ -8,6 +8,7 @@ public class RegisterInputModel
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
     public string ConfirmPassword { get; set; } = string.Empty;
+    public bool AcceptedTos { get; set; }
 }
 
 public class RegisterInputValidator : AbstractValidator<RegisterInputModel>
@@ -30,5 +31,8 @@ public class RegisterInputValidator : AbstractValidator<RegisterInputModel>
 
         RuleFor(x => x.ConfirmPassword)
             .Equal(x => x.Password).WithMessage("Passwords do not match.");
+
+        RuleFor(x => x.AcceptedTos)
+            .Equal(true).WithMessage("You must accept the Terms of Service and Privacy Policy.");
     }
 }

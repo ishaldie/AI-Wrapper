@@ -8,6 +8,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
 <PageTitle>Register - ZSR Underwriting</PageTitle>
 
@@ -68,6 +69,19 @@
                            value="@CurrentInput.ConfirmPassword" placeholder="Confirm your password" />
                 </div>
 
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; margin-bottom: 1.25rem;">
+                    <input type="checkbox" id="reg-tos" name="Input.AcceptedTos"
+                           value="true"
+                           checked="@CurrentInput.AcceptedTos"
+                           style="margin-top: 0.2rem; width: 18px; height: 18px; accent-color: #F97316;" />
+                    <label for="reg-tos" style="font-size: 0.8125rem; color: #6B7280; cursor: pointer; line-height: 1.5;">
+                        I agree to the
+                        <a href="/terms" target="_blank" style="color: #F97316; font-weight: 600;">Terms of Service</a>
+                        and
+                        <a href="/privacy" target="_blank" style="color: #F97316; font-weight: 600;">Privacy Policy</a>.
+                    </label>
+                </div>
+
                 <MudButton ButtonType="ButtonType.Submit"
                            Variant="Variant.Filled"
                            FullWidth="true"
@@ -122,11 +136,14 @@
             return;
         }
 
+        var tosVersion = Configuration["Application:TosVersion"] ?? "1.0";
         var user = new ApplicationUser
         {
             UserName = CurrentInput.Email,
             Email = CurrentInput.Email,
-            FullName = CurrentInput.FullName
+            FullName = CurrentInput.FullName,
+            TosAcceptedAt = DateTime.UtcNow,
+            TosVersion = tosVersion
         };
 
         var result = await UserManager.CreateAsync(user, CurrentInput.Password);

@@ -106,6 +106,7 @@ public static class ExternalAuthEndpoints
         await userManager.AddLoginAsync(newUser, info);
         await signInManager.SignInAsync(newUser, isPersistent: true);
 
-        return Results.Redirect(returnUrl ?? "/search");
+        // New OAuth users must accept TOS before accessing the app
+        return Results.Redirect("/accept-terms");
     }
 }

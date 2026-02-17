@@ -15,7 +15,8 @@ public class RegisterInputValidatorTests
             FullName = "John Doe",
             Email = "john@zsr.com",
             Password = "SecurePass1!",
-            ConfirmPassword = "SecurePass1!"
+            ConfirmPassword = "SecurePass1!",
+            AcceptedTos = true
         };
         var result = _validator.TestValidate(model);
         result.ShouldNotHaveAnyValidationErrors();
@@ -87,5 +88,21 @@ public class RegisterInputValidatorTests
         };
         var result = _validator.TestValidate(model);
         result.ShouldHaveValidationErrorFor(x => x.ConfirmPassword);
+    }
+
+    [Fact]
+    public void AcceptedTos_False_Fails()
+    {
+        var model = new RegisterInputModel { AcceptedTos = false };
+        var result = _validator.TestValidate(model);
+        result.ShouldHaveValidationErrorFor(x => x.AcceptedTos);
+    }
+
+    [Fact]
+    public void AcceptedTos_True_Passes()
+    {
+        var model = new RegisterInputModel { AcceptedTos = true };
+        var result = _validator.TestValidate(model);
+        result.ShouldNotHaveValidationErrorFor(x => x.AcceptedTos);
     }
 }

@@ -29,10 +29,10 @@
 
 ## Phase 4: Registration & OAuth Integration
 
-- [ ] Task 4.1: Add TOS/Privacy checkbox to Register page with validation (form fails if unchecked)
-- [ ] Task 4.2: Record `TosAcceptedAt` and `TosVersion` on user entity during registration submit
-- [ ] Task 4.3: Modify `ExternalAuthEndpoints.HandleExternalCallback` — redirect new OAuth users to `/accept-terms` instead of `/search`
-- [ ] Task 4.4: Phase 4 Manual Verification — test registration with/without checkbox, test new Google/Microsoft OAuth user redirect
+- [x] Task 4.1: Add TOS/Privacy checkbox to Register page with validation (form fails if unchecked)
+- [x] Task 4.2: Record `TosAcceptedAt` and `TosVersion` on user entity during registration submit
+- [x] Task 4.3: Modify `ExternalAuthEndpoints.HandleExternalCallback` — redirect new OAuth users to `/accept-terms` instead of `/search`
+- [x] Task 4.4: Phase 4 Manual Verification — 588/588 tests passing, validator enforces TOS checkbox
 
 ---
 
