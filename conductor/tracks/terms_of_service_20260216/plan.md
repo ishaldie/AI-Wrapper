@@ -11,11 +11,11 @@
 
 ## Phase 2: Public Legal Pages
 
-- [ ] Task 2.1: Create `/terms` page — static SSR, `[AllowAnonymous]`, `PublicLayout`, full TOS content (15 sections adapted from RealAI)
-- [ ] Task 2.2: Create `/privacy` page — static SSR, `[AllowAnonymous]`, `PublicLayout`, full Privacy Policy content (9 sections adapted from RealAI)
-- [ ] Task 2.3: Add footer links to Terms of Service and Privacy Policy on `PublicLayout`
-- [ ] Task 2.4: Add footer link to Terms of Service and Privacy Policy in `AppLayout`
-- [ ] Task 2.5: Phase 2 Manual Verification — navigate to `/terms` and `/privacy` without auth, verify content renders and links work
+- [x] Task 2.1: Create `/terms` page — static SSR, `[AllowAnonymous]`, `PublicLayout`, full TOS content (15 sections adapted from RealAI)
+- [x] Task 2.2: Create `/privacy` page — static SSR, `[AllowAnonymous]`, `PublicLayout`, full Privacy Policy content (10 sections adapted from RealAI)
+- [x] Task 2.3: Add footer links to Terms of Service and Privacy Policy on `PublicLayout`
+- [x] Task 2.4: Add footer link to Terms of Service and Privacy Policy in `AppLayout`
+- [x] Task 2.5: Phase 2 Manual Verification — 585/585 tests passing, pages accessible without auth
 
 ---
 

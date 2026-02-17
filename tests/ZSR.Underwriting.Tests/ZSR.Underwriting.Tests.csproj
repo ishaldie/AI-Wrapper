@@ -115,6 +115,8 @@
     <Compile Include="Domain\ActivityEventTests.cs" />
     <Compile Include="Services\ActivityTrackerTests.cs" />
     <Compile Include="Infrastructure\ActivityTrackingDbTests.cs" />
+    <!-- Terms of Service track -->
+    <Compile Include="Components\LegalPageTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

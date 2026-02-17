@@ -1,0 +1,158 @@
+@page "/privacy"
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@layout Layout.PublicLayout
+
+<PageTitle>Privacy Policy - ZSR Underwriting</PageTitle>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem;">
+    <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #6B7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 1.5rem;">
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" /> Back
+    </a>
+
+    <h1 style="font-size: 2rem; font-weight: 700; color: #1A1D23; margin: 0 0 0.5rem 0; letter-spacing: -0.02em;">
+        Privacy Policy
+    </h1>
+    <p style="color: #6B7280; font-size: 0.875rem; margin: 0 0 2rem 0;">
+        Effective February 16, 2026
+    </p>
+
+    <div class="legal-content" style="color: #374151; font-size: 0.9375rem; line-height: 1.7;">
+
+        <p>
+            ZSR Ventures, LLC ("ZSR," "we," or "us") handles Personal Information that we collect in connection with
+            individuals who visit our website, access our products and services, or otherwise engage in business with ZSR.
+            This Privacy Policy describes our policies and practices regarding Personal Information collected via our
+            website and services (the "Services"). This Privacy Policy applies to Personal Information collected through
+            the Services and does not apply to information collected by third-party websites or applications not operated
+            by ZSR.
+        </p>
+        <p>
+            By accessing the website and/or using our Services, you are consenting to our use of your Personal Information
+            in accordance with this Privacy Policy. Your access to and use of the Services is also subject to the
+            <a href="/terms" style="color: #F97316;">ZSR Terms of Service</a>.
+        </p>
+
+        @* --- Section 1: Information We Collect --- *@
+        <h2>1. Information We Collect</h2>
+        <h3>Personal Information You Provide</h3>
+        <p>
+            We use the term "Personal Information" to mean any information that could be used to identify you, including
+            your name, email address, or any combination of information that could be used to identify you. What Personal
+            Information we collect depends on how you interact with the Services:
+        </p>
+        <ul>
+            <li><strong>Account Information:</strong> When you register, we collect your full name, email address, and password (stored in hashed form). If you use Google or Microsoft OAuth login, we receive your name and email from those providers.</li>
+            <li><strong>Uploaded Documents:</strong> When you upload deal documents (rent rolls, T12 operating statements, offering memoranda, appraisals), we store and process these files to generate underwriting reports.</li>
+            <li><strong>Deal Data:</strong> Property addresses, purchase prices, loan terms, and other underwriting inputs you provide through the Service.</li>
+        </ul>
+
+        <h3>Automatically-Collected Information</h3>
+        <p>
+            We and our service providers may automatically log information when you use our Services, such as:
+        </p>
+        <ul>
+            <li><strong>Device data:</strong> Browser type, operating system, screen resolution, IP address, and general location information such as city or state.</li>
+            <li><strong>Usage data:</strong> Pages viewed, features used, session duration, and navigation patterns within the Service.</li>
+            <li><strong>Session cookies:</strong> The Service uses session cookies required for Blazor Server functionality and authentication. These are essential for the Service to operate and cannot be disabled.</li>
+        </ul>
+
+        @* --- Section 2: How We Use Your Information --- *@
+        <h2>2. How We Use Your Information</h2>
+        <p>We use your Personal Information for the following purposes:</p>
+        <ul>
+            <li>To operate, maintain, and provide the features of the Service, including generating underwriting reports.</li>
+            <li>To process and analyze uploaded documents using AI technology (including third-party AI models) to extract data and generate analysis.</li>
+            <li>To create and maintain your account and verify your identity.</li>
+            <li>To contact you regarding administrative issues, account notifications, or respond to your inquiries.</li>
+            <li>To improve and develop the Service, including training and improving our analysis capabilities using aggregated, de-identified data.</li>
+            <li>To enforce our Terms of Service and comply with applicable law.</li>
+            <li>To protect the safety and security of our users and the Service.</li>
+        </ul>
+
+        @* --- Section 3: Third-Party Services --- *@
+        <h2>3. Third-Party Services</h2>
+        <p>
+            We use third-party services to operate the Service. These services may process your data as described below:
+        </p>
+        <ul>
+            <li><strong>RealAI API (RealAI Systems, LLC):</strong> We send property addresses to the RealAI API to retrieve property data, tenant metrics, market data, and sales comparables. RealAI's processing of data is subject to their own privacy policy.</li>
+            <li><strong>Anthropic (Claude AI):</strong> We send deal data and analysis to Anthropic's Claude AI API to generate narrative prose for underwriting reports. Anthropic's processing is subject to their privacy policy and data usage terms.</li>
+            <li><strong>Hosting Provider:</strong> The Service is hosted on cloud infrastructure. Your data is stored on servers operated by our hosting provider.</li>
+            <li><strong>Authentication Providers:</strong> If you use Google or Microsoft OAuth login, those providers handle the authentication flow subject to their own privacy policies.</li>
+        </ul>
+        <p>
+            We do not sell your Personal Information to third parties. We share data with third-party services only as
+            necessary to operate the Service as described above.
+        </p>
+
+        @* --- Section 4: Cookies & Tracking --- *@
+        <h2>4. Cookies &amp; Tracking</h2>
+        <p>
+            The Service uses essential cookies required for authentication and Blazor Server functionality. These session
+            cookies are necessary for the Service to operate and are automatically cleared when you close your browser or
+            log out. We do not use third-party advertising cookies or tracking pixels for interest-based advertising.
+        </p>
+
+        @* --- Section 5: Data Security --- *@
+        <h2>5. Data Security</h2>
+        <p>
+            We have put in place safeguards to protect Personal Information against loss, theft, and unauthorized use,
+            disclosure, or modification, including encryption of data in transit, secure password hashing, and access
+            controls. However, no method of transmission over the Internet or method of electronic storage is 100% secure.
+            We cannot guarantee the absolute security of your data.
+        </p>
+
+        @* --- Section 6: Data Retention --- *@
+        <h2>6. Data Retention</h2>
+        <p>
+            We keep your Personal Information for as long as reasonably necessary for the purposes described in this
+            Privacy Policy or as required by law. Specifically:
+        </p>
+        <ul>
+            <li><strong>Account data:</strong> Retained while your account is active. Deleted upon account deletion request.</li>
+            <li><strong>Uploaded documents:</strong> Retained while the associated deal exists in your account.</li>
+            <li><strong>Underwriting reports:</strong> Retained while the associated deal exists in your account.</li>
+            <li><strong>Usage data:</strong> Retained in aggregated, de-identified form for analytics purposes.</li>
+        </ul>
+
+        @* --- Section 7: Your Rights & Choices --- *@
+        <h2>7. Your Rights &amp; Choices</h2>
+        <p>
+            Depending on your jurisdiction, you may have the following rights regarding your Personal Information:
+        </p>
+        <ul>
+            <li><strong>Access:</strong> Request information about the Personal Information we collect and maintain about you.</li>
+            <li><strong>Correction:</strong> Request correction of inaccurate Personal Information.</li>
+            <li><strong>Deletion:</strong> Request deletion of your Personal Information and account. Note that some data may be retained as required by law.</li>
+            <li><strong>Opt-out of marketing:</strong> If we send marketing communications, you can opt out by clicking "unsubscribe" or contacting us.</li>
+        </ul>
+        <p>
+            To exercise any of these rights, please contact us at
+            <a href="mailto:privacy@zsrventures.com" style="color: #F97316;">privacy@zsrventures.com</a>.
+        </p>
+
+        @* --- Section 8: Children's Privacy --- *@
+        <h2>8. Children's Privacy</h2>
+        <p>
+            The Service is not directed to children under the age of 18. We do not knowingly collect Personal Information
+            from children under 18. If you become aware that a minor has provided Personal Information through our Service,
+            please contact us and we will take steps to delete such information.
+        </p>
+
+        @* --- Section 9: Changes to This Policy --- *@
+        <h2>9. Changes to This Privacy Policy</h2>
+        <p>
+            We reserve the right to modify this Privacy Policy at any time. If we make material changes, we will notify
+            you through the Service or by email. We encourage you to review this Privacy Policy periodically to stay
+            informed about how we collect, use, and protect your information.
+        </p>
+
+        @* --- Section 10: Contact Information --- *@
+        <h2>10. Contact Information</h2>
+        <p>
+            If you have any questions about this Privacy Policy, please contact us at
+            <a href="mailto:privacy@zsrventures.com" style="color: #F97316;">privacy@zsrventures.com</a>.
+        </p>
+    </div>
+</div>

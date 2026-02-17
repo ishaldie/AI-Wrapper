@@ -1,0 +1,275 @@
+@page "/terms"
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@layout Layout.PublicLayout
+
+<PageTitle>Terms of Service - ZSR Underwriting</PageTitle>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem;">
+    <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #6B7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 1.5rem;">
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" /> Back
+    </a>
+
+    <h1 style="font-size: 2rem; font-weight: 700; color: #1A1D23; margin: 0 0 0.5rem 0; letter-spacing: -0.02em;">
+        Terms of Service
+    </h1>
+    <p style="color: #6B7280; font-size: 0.875rem; margin: 0 0 2rem 0;">
+        Date of Last Revision: February 16, 2026
+    </p>
+
+    <div class="legal-content" style="color: #374151; font-size: 0.9375rem; line-height: 1.7;">
+
+        <p>
+            ZSR Ventures, LLC ("ZSR," "we," "us," or "our") provides its products and services to you through its
+            website (the "Site") and through its related technology and services (collectively, such products, services,
+            including any new features and applications, and the Site, the "Service"), subject to the following Terms of
+            Service (as amended from time to time, the "Terms of Service").
+        </p>
+        <p>
+            By accessing, browsing, or otherwise using the Site or any other aspect of the Service, you acknowledge that
+            you have read, understood, and agree to be bound by these Terms of Service. If you do not accept the terms
+            and conditions of these Terms of Service, you will not access, browse, or otherwise use the Service.
+        </p>
+        <p>
+            We reserve the right, at our sole discretion, to change or modify portions of these Terms of Service at any
+            time. If we do this, we will post the changes on this page and will indicate at the top of this page the date
+            these terms were last revised. Any such changes will become effective no earlier than fourteen (14) days after
+            they are posted, except that changes addressing new functions of the Service or changes made for legal reasons
+            will be effective immediately. Your continued use of the Service after the date any such changes become
+            effective constitutes your acceptance of the new Terms of Service.
+        </p>
+
+        @* --- Section 1: Description of Service --- *@
+        <h2>1. Description of Service</h2>
+        <p>
+            The Service is an AI-powered web application that automates multifamily real estate acquisition underwriting.
+            Users provide a property address, purchase price, and optional deal documents, and the system generates
+            underwriting reports with financial analysis, risk assessment, and investment decision support.
+        </p>
+        <p>
+            The Service utilizes proprietary and third-party technologies, including artificial intelligence, machine
+            learning systems, third-party large language models, and external data APIs to produce its output. The Service
+            is designed as an analytical tool to assist real estate professionals and is not a substitute for independent
+            professional judgment.
+        </p>
+
+        @* --- Section 2: Account Registration & Security --- *@
+        <h2>2. Account Registration &amp; Security</h2>
+        <p>
+            You may be required to register with ZSR in order to access and use certain features of the Service. If you
+            choose to register, you agree to provide and maintain true, accurate, current, and complete information about
+            yourself. You are responsible for maintaining the confidentiality of your password and account details, and
+            are fully responsible for any and all activities that occur under your password or account.
+        </p>
+        <p>
+            You agree to (a) immediately notify us of any unauthorized use of your password or account or any other
+            breach of security, and (b) ensure that you exit from your account at the end of each session. We will not be
+            liable for any loss or damage arising from your failure to comply with this section. If you are under 18 years
+            of age, you are not authorized to use the Service.
+        </p>
+
+        @* --- Section 3: User Content & Uploaded Documents --- *@
+        <h2>3. User Content &amp; Uploaded Documents</h2>
+        <p>
+            The Service allows you to upload documents such as rent rolls, trailing 12-month operating statements (T12s),
+            offering memoranda (OMs), appraisals, and other deal-related materials ("User Content"). You represent and
+            warrant that you own all right, title, and interest in such User Content or have the necessary permissions to
+            upload it.
+        </p>
+        <p>
+            You hereby grant ZSR a nonexclusive, worldwide, royalty-free license to copy, store, process, analyze, and
+            otherwise use your User Content solely in connection with the operation of the Service, including to generate
+            underwriting reports and improve the Service. You assume all risk associated with your User Content and have
+            sole responsibility for its accuracy, quality, legality, and appropriateness.
+        </p>
+        <p>
+            You authorize ZSR to collect and analyze User Content and other data relating to the Service to derive
+            statistical and usage data. ZSR may use such aggregated, de-identified data for any purpose in accordance
+            with applicable law and our Privacy Policy.
+        </p>
+
+        @* --- Section 4: AI Technology & Output Accuracy --- *@
+        <h2>4. AI Technology &amp; Output Accuracy</h2>
+        <p>
+            The Service includes proprietary and third-party advanced technologies, such as artificial intelligence,
+            machine learning systems, third-party large language models, and similar technology and features (together,
+            "AI Technology"). Due to the nature of AI Technology, information, content, recommendations, or data generated
+            by such AI Technology ("Output") may be incorrect or inaccurate. Service features that include AI Technology
+            are not a substitute for human oversight. When you use the Service you understand and agree:
+        </p>
+        <ul>
+            <li>
+                Output received from the Service may contain errors or misleading information and may not always be
+                accurate or reliable. You should not rely on information from our Service as a sole source of truth or
+                factual information, or as a substitute for professional advice.
+            </li>
+            <li>
+                You must evaluate Output for accuracy and appropriateness for your use case, including using human review
+                as appropriate, before using or relying on such information.
+            </li>
+            <li>
+                AI Technology can perpetuate biases that are present in the data used to train them, and the Service may
+                provide incomplete, incorrect, or offensive Output that does not represent our views.
+            </li>
+            <li>
+                If Output references any third-party products or services, it does not mean the third party endorses or
+                is affiliated with us.
+            </li>
+            <li>
+                ZSR bears no liability to you or anyone else arising from or relating to your use of AI Technology or
+                reliance on any Output.
+            </li>
+        </ul>
+
+        @* --- Section 5: Not Investment Advice --- *@
+        <h2>5. Not Investment Advice</h2>
+        <p>
+            <strong>The Service is an analytical tool and does not constitute investment advice, financial advice, or a
+            recommendation to buy, sell, or hold any real estate asset or security.</strong> Underwriting reports, financial
+            calculations, risk assessments, and investment decision outputs generated by the Service are for informational
+            and analytical purposes only.
+        </p>
+        <p>
+            You should not make any investment decision based solely on the Output of the Service. Always consult with
+            qualified real estate, financial, tax, and legal professionals before making investment decisions. ZSR is not a
+            registered investment adviser, broker-dealer, or financial planner, and does not provide personalized investment
+            recommendations.
+        </p>
+        <p>
+            All financial calculations, projections, and analyses provided by the Service are estimates based on the inputs
+            and data available. Actual results may vary materially from projections. Past performance data does not guarantee
+            future results.
+        </p>
+
+        @* --- Section 6: Intellectual Property --- *@
+        <h2>6. Intellectual Property</h2>
+        <p>
+            You acknowledge and agree that the Service may contain content, data, or features ("Service Content") that are
+            protected by copyright, patent, trademark, trade secret, or other proprietary rights and laws. Except as
+            expressly authorized by ZSR, you agree not to modify, copy, frame, scrape, rent, lease, loan, sell, distribute,
+            or create derivative works based on the Service or the Service Content.
+        </p>
+        <p>
+            The technology and software underlying the Service are the property of ZSR and its partners. You agree not to
+            copy, modify, create a derivative work of, reverse engineer, reverse assemble, or otherwise attempt to discover
+            any source code, or sell, assign, sublicense, or otherwise transfer any right in the software.
+        </p>
+        <p>
+            You agree not to use the Service or its data to build your own algorithms, create or improve machine-learning
+            models, or for any purpose that competes with the Service.
+        </p>
+
+        @* --- Section 7: Third-Party Services & Data --- *@
+        <h2>7. Third-Party Services &amp; Data</h2>
+        <p>
+            The Service may display, include, or make available content, data, information, or materials from third parties
+            ("Third-Party Materials"), including but not limited to property data providers, AI model providers, market data
+            services, and web search results. ZSR has no control over the accuracy, availability, reliability, or
+            completeness of Third-Party Materials.
+        </p>
+        <p>
+            We are not responsible for and do not endorse third-party services or data. The integration or inclusion of
+            Third-Party Materials does not imply an endorsement or recommendation. You acknowledge and agree that ZSR will
+            not be responsible or liable, directly or indirectly, for any damage or loss caused or alleged to be caused by
+            or in connection with use of or reliance on any Third-Party Materials.
+        </p>
+
+        @* --- Section 8: Acceptable Use --- *@
+        <h2>8. Acceptable Use</h2>
+        <p>You agree not to use the Service to:</p>
+        <ul>
+            <li>Upload any content that infringes intellectual property rights, contains viruses, or is unlawful, harmful, or objectionable.</li>
+            <li>Interfere with or disrupt the Service or servers or networks connected to the Service.</li>
+            <li>Violate any applicable local, state, national, or international law.</li>
+            <li>Impersonate any person or entity, or falsely state or misrepresent your affiliation with a person or entity.</li>
+            <li>Attempt to access materials or information through any means not intentionally made available through the Service.</li>
+            <li>Use the Service for any commercial purpose not specifically authorized, including reselling access or Output.</li>
+            <li>Use automated means (bots, scrapers, robots) to access the Service without express written permission.</li>
+        </ul>
+
+        @* --- Section 9: Disclaimers --- *@
+        <h2>9. Disclaimers</h2>
+        <p style="text-transform: uppercase; font-weight: 600; font-size: 0.875rem;">
+            YOUR USE OF THE SERVICE IS AT YOUR SOLE RISK. THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS.
+            ZSR EXPRESSLY DISCLAIMS ALL WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING, BUT NOT
+            LIMITED TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+            NON-INFRINGEMENT.
+        </p>
+        <p style="text-transform: uppercase; font-weight: 600; font-size: 0.875rem;">
+            ZSR MAKES NO WARRANTY THAT (I) THE SERVICE WILL MEET YOUR REQUIREMENTS, (II) THE SERVICE WILL BE
+            UNINTERRUPTED, TIMELY, SECURE, OR ERROR-FREE, (III) THE RESULTS THAT MAY BE OBTAINED FROM THE USE OF THE
+            SERVICE WILL BE ACCURATE OR RELIABLE, OR (IV) THE QUALITY OF ANY PRODUCTS, SERVICES, INFORMATION, OR OTHER
+            MATERIALS OBTAINED BY YOU THROUGH THE SERVICE WILL MEET YOUR EXPECTATIONS.
+        </p>
+
+        @* --- Section 10: Limitation of Liability --- *@
+        <h2>10. Limitation of Liability</h2>
+        <p style="text-transform: uppercase; font-weight: 600; font-size: 0.875rem;">
+            YOU EXPRESSLY UNDERSTAND AND AGREE THAT ZSR WILL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+            CONSEQUENTIAL, EXEMPLARY DAMAGES, OR DAMAGES FOR LOSS OF PROFITS INCLUDING BUT NOT LIMITED TO, DAMAGES FOR
+            LOSS OF GOODWILL, USE, DATA, OR OTHER INTANGIBLE LOSSES (EVEN IF ZSR HAS BEEN ADVISED OF THE POSSIBILITY OF
+            SUCH DAMAGES), WHETHER BASED ON CONTRACT, TORT, NEGLIGENCE, STRICT LIABILITY, OR OTHERWISE, RESULTING FROM:
+            (I) THE USE OR THE INABILITY TO USE THE SERVICE; (II) UNAUTHORIZED ACCESS TO OR ALTERATION OF YOUR DATA;
+            (III) STATEMENTS OR CONDUCT OF ANY THIRD PARTY ON THE SERVICE; OR (IV) ANY OTHER MATTER RELATING TO THE SERVICE.
+        </p>
+        <p style="text-transform: uppercase; font-weight: 600; font-size: 0.875rem;">
+            IN NO EVENT WILL ZSR'S TOTAL LIABILITY TO YOU FOR ALL DAMAGES, LOSSES, OR CAUSES OF ACTION EXCEED ONE HUNDRED
+            DOLLARS ($100).
+        </p>
+
+        @* --- Section 11: Indemnification --- *@
+        <h2>11. Indemnification</h2>
+        <p>
+            To the extent permitted under applicable law, you agree to release, defend, indemnify, and hold ZSR and its
+            officers, employees, directors, service providers, licensors, and agents harmless from any and all losses,
+            damages, expenses, including reasonable attorneys' fees, rights, claims, actions of any kind, and injury arising
+            out of or relating to your use of the Service, any User Content, your connection to the Service, your violation
+            of these Terms of Service, or your violation of any rights of another.
+        </p>
+
+        @* --- Section 12: Termination --- *@
+        <h2>12. Termination</h2>
+        <p>
+            You agree that ZSR, in its sole discretion, may suspend or terminate your account or use of the Service and
+            remove and discard any User Content within the Service, for any reason, including, without limitation, for lack
+            of use or if ZSR believes that you have violated or acted inconsistently with these Terms of Service. ZSR may
+            also discontinue providing the Service at any time with or without notice.
+        </p>
+        <p>
+            You agree that any termination of your access to the Service may be effected without prior notice, and
+            acknowledge and agree that ZSR may immediately deactivate or delete your account and all related information
+            and files. ZSR will not be liable to you or any third party for any termination of your access to the Service.
+        </p>
+
+        @* --- Section 13: Modifications to Terms --- *@
+        <h2>13. Modifications to Terms</h2>
+        <p>
+            We reserve the right to modify these Terms of Service at any time. If we make material changes, we will notify
+            you through the Service or by email. Changes will become effective no earlier than fourteen (14) days after
+            posting. Your continued use of the Service after changes become effective constitutes acceptance of the updated
+            Terms of Service.
+        </p>
+
+        @* --- Section 14: General Provisions --- *@
+        <h2>14. General Provisions</h2>
+        <p>
+            These Terms of Service constitute the entire agreement between you and ZSR and govern your use of the Service.
+            These Terms of Service will be governed by the laws of the State of Delaware without regard to its conflict of
+            law provisions. If any provision of these Terms of Service is found to be invalid, the parties agree that the
+            court should endeavor to give effect to the parties' intentions, and the other provisions remain in full force
+            and effect.
+        </p>
+        <p>
+            The failure of ZSR to exercise or enforce any right or provision of these Terms of Service will not constitute
+            a waiver of such right or provision. You may not assign these Terms of Service without prior written consent of
+            ZSR, but ZSR may assign or transfer these Terms of Service without restriction.
+        </p>
+
+        @* --- Section 15: Contact --- *@
+        <h2>15. Contact Information</h2>
+        <p>
+            If you have any questions about these Terms of Service, please contact us at
+            <a href="mailto:legal@zsrventures.com" style="color: #F97316;">legal@zsrventures.com</a>.
+        </p>
+    </div>
+</div>
