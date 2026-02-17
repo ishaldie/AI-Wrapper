@@ -77,4 +77,12 @@ public class LegalPageTests
         var content = await response.Content.ReadAsStringAsync();
         Assert.Contains("Information We Collect", content);
     }
+
+    [Fact]
+    public async Task AcceptTerms_Redirects_When_Unauthenticated()
+    {
+        var response = await _client.GetAsync("/accept-terms");
+        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Contains("/login", response.Headers.Location?.ToString() ?? "");
+    }
 }

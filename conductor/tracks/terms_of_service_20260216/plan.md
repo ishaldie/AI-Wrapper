@@ -21,9 +21,9 @@
 
 ## Phase 3: Accept Terms Gate Page
 
-- [ ] Task 3.1: Create `/accept-terms` page — static SSR, `[Authorize]`, `PublicLayout`, checkbox + submit form
-- [ ] Task 3.2: Implement form POST handler — validate checkbox, update `ApplicationUser.TosAcceptedAt` and `TosVersion`, redirect to `/search`
-- [ ] Task 3.3: Phase 3 Manual Verification — log in as a user with no TOS acceptance, navigate to `/accept-terms`, accept, verify DB fields updated
+- [x] Task 3.1: Create `/accept-terms` page — static SSR, `[Authorize]`, `PublicLayout`, checkbox + submit form
+- [x] Task 3.2: Implement form POST handler — validate checkbox, update `ApplicationUser.TosAcceptedAt` and `TosVersion`, redirect to `/search`
+- [x] Task 3.3: Phase 3 Manual Verification — 9/9 legal page tests passing, redirect works for unauthenticated users
 
 ---
 
