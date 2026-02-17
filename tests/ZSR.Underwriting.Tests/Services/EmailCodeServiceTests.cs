@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Xunit;
+using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Services;
 
 namespace ZSR.Underwriting.Tests.Services;
@@ -12,36 +14,37 @@ public class EmailCodeServiceTests
     public EmailCodeServiceTests()
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
-        _sut = new EmailCodeService(cache, NullLogger<EmailCodeService>.Instance);
+        var smtpOptions = Options.Create(new SmtpOptions());
+        _sut = new EmailCodeService(cache, NullLogger<EmailCodeService>.Instance, smtpOptions);
     }
 
     [Fact]
-    public void GenerateCode_Returns_SixDigitString()
+    public async Task GenerateCodeAsync_Returns_SixDigitString()
     {
-        var code = _sut.GenerateCode("test@example.com");
+        var code = await _sut.GenerateCodeAsync("test@example.com");
         Assert.Equal(6, code.Length);
         Assert.True(int.TryParse(code, out var num));
         Assert.InRange(num, 100000, 999999);
     }
 
     [Fact]
-    public void ValidateCode_Correct_Code_Returns_True()
+    public async Task ValidateCode_Correct_Code_Returns_True()
     {
-        var code = _sut.GenerateCode("user@test.com");
+        var code = await _sut.GenerateCodeAsync("user@test.com");
         Assert.True(_sut.ValidateCode("user@test.com", code));
     }
 
     [Fact]
-    public void ValidateCode_Wrong_Code_Returns_False()
+    public async Task ValidateCode_Wrong_Code_Returns_False()
     {
-        _sut.GenerateCode("user@test.com");
+        await _sut.GenerateCodeAsync("user@test.com");
         Assert.False(_sut.ValidateCode("user@test.com", "000000"));
     }
 
     [Fact]
-    public void ValidateCode_Is_OneTimeUse()
+    public async Task ValidateCode_Is_OneTimeUse()
     {
-        var code = _sut.GenerateCode("user@test.com");
+        var code = await _sut.GenerateCodeAsync("user@test.com");
         Assert.True(_sut.ValidateCode("user@test.com", code));
         Assert.False(_sut.ValidateCode("user@test.com", code));
     }
@@ -53,9 +56,18 @@ public class EmailCodeServiceTests
     }
 
     [Fact]
-    public void ValidateCode_Is_CaseInsensitive_For_Email()
+    public async Task ValidateCode_Is_CaseInsensitive_For_Email()
     {
-        var code = _sut.GenerateCode("User@Test.com");
+        var code = await _sut.GenerateCodeAsync("User@Test.com");
         Assert.True(_sut.ValidateCode("user@test.com", code));
+    }
+
+    [Fact]
+    public async Task GenerateCodeAsync_WithNoSmtpConfig_FallsBackToConsole()
+    {
+        // Default SmtpOptions has empty Username/Host — should not throw
+        var code = await _sut.GenerateCodeAsync("fallback@test.com");
+        Assert.Equal(6, code.Length);
+        Assert.True(_sut.ValidateCode("fallback@test.com", code));
     }
 }

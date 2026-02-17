@@ -2,6 +2,6 @@ namespace ZSR.Underwriting.Application.Interfaces;
 
 public interface IEmailCodeService
 {
-    string GenerateCode(string email);
+    Task<string> GenerateCodeAsync(string email);
     bool ValidateCode(string email, string code);
 }

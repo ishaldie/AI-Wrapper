@@ -77,7 +77,7 @@
 
                 <p style="font-size: 0.875rem; color: #6B7280; text-align: center; margin-top: 1.25rem;">
                     Already have an account?
-                    <a href="/login" style="color: #F97316; font-weight: 600; text-decoration: none;">Sign in</a>
+                    <a href="/login@(QuerySuffix("?q="))" style="color: #F97316; font-weight: 600; text-decoration: none;">Sign in</a>
                 </p>
             </EditForm>
         </div>
@@ -91,6 +91,9 @@
     [SupplyParameterFromQuery]
     private string? Email { get; set; }
 
+    [SupplyParameterFromQuery(Name = "q")]
+    private string? SearchQuery { get; set; }
+
     private RegisterInputModel CurrentInput => Input ??= new();
 
     private string? _errorMessage;
@@ -101,6 +104,12 @@
         {
             CurrentInput.Email = Email;
         }
+    }
+
+    private string QuerySuffix(string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery)) return "";
+        return prefix + Uri.EscapeDataString(SearchQuery);
     }
 
     private async Task RegisterUser()
@@ -129,6 +138,10 @@
 
         await UserManager.AddToRoleAsync(user, "Analyst");
         await SignInManager.SignInAsync(user, isPersistent: false);
-        Navigation.NavigateTo("/search", forceLoad: true);
+
+        var redirectUrl = string.IsNullOrWhiteSpace(SearchQuery)
+            ? "/search"
+            : $"/search?q={Uri.EscapeDataString(SearchQuery)}";
+        Navigation.NavigateTo(redirectUrl, forceLoad: true);
     }
 }

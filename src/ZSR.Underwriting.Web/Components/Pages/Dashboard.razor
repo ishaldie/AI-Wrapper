@@ -159,16 +159,31 @@
 </div>
 
 @code {
+    [SupplyParameterFromQuery(Name = "q")]
+    private string? InitialQuery { get; set; }
+
     private bool _loading = true;
     private bool _analyzing;
     private List<DealSummaryDto> _deals = new();
     private string _searchQuery = "";
+    private bool _autoSearchTriggered;
 
     protected override async Task OnInitializedAsync()
     {
         var deals = await DealService.GetAllDealsAsync();
         _deals = deals.ToList();
         _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !string.IsNullOrWhiteSpace(InitialQuery) && !_autoSearchTriggered)
+        {
+            _autoSearchTriggered = true;
+            _searchQuery = InitialQuery;
+            StateHasChanged();
+            await HandleSearch();
+        }
     }
 
     private static string GetFirstName(string? name)

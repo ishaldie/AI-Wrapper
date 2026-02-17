@@ -37,7 +37,7 @@
                 @_email
             </p>
             <p style="text-align: center; margin: 0 0 1.5rem 0;">
-                <a href="/login" style="font-size: 0.8125rem; color: #F97316; font-weight: 500; text-decoration: none;">
+                <a href="/login@(QuerySuffix("?q="))" style="font-size: 0.8125rem; color: #F97316; font-weight: 500; text-decoration: none;">
                     Edit
                 </a>
             </p>
@@ -77,7 +77,7 @@
 
             <p style="font-size: 0.875rem; color: #6B7280; text-align: center; margin-top: 1.25rem;">
                 Didn't receive the code?
-                <a href="/verify-code?email=@(Uri.EscapeDataString(_email ?? ""))&resend=true"
+                <a href="/verify-code?email=@(Uri.EscapeDataString(_email ?? ""))&resend=true@(QuerySuffix("&q="))"
                    style="color: #F97316; font-weight: 600; text-decoration: none;">
                     Resend
                 </a>
@@ -93,6 +93,9 @@
     [SupplyParameterFromQuery]
     private bool Resend { get; set; }
 
+    [SupplyParameterFromQuery(Name = "q")]
+    private string? SearchQuery { get; set; }
+
     [SupplyParameterFromForm]
     private VerifyCodeModel? CodeInput { get; set; }
 
@@ -102,7 +105,7 @@
     private string? _errorMessage;
     private bool _resent;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _email = Email ?? CurrentCodeInput.Email ?? "";
 
@@ -114,9 +117,15 @@
 
         if (Resend)
         {
-            EmailCodeService.GenerateCode(_email);
+            await EmailCodeService.GenerateCodeAsync(_email);
             _resent = true;
         }
+    }
+
+    private string QuerySuffix(string prefix)
+    {
+        if (string.IsNullOrWhiteSpace(SearchQuery)) return "";
+        return prefix + Uri.EscapeDataString(SearchQuery);
     }
 
     private async Task SubmitCode()
@@ -143,7 +152,11 @@
         }
 
         await SignInManager.SignInAsync(user, isPersistent: true);
-        Navigation.NavigateTo("/search", forceLoad: true);
+
+        var redirectUrl = string.IsNullOrWhiteSpace(SearchQuery)
+            ? "/search"
+            : $"/search?q={Uri.EscapeDataString(SearchQuery)}";
+        Navigation.NavigateTo(redirectUrl, forceLoad: true);
     }
 
     public class VerifyCodeModel

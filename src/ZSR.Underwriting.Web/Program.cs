@@ -140,6 +140,10 @@ try
     builder.Services.AddMemoryCache();
     builder.Services.AddSingleton<RealAiCacheService>();
 
+    // SMTP configuration for email delivery
+    builder.Services.Configure<SmtpOptions>(
+        builder.Configuration.GetSection(SmtpOptions.SectionName));
+
     // Email code service for passwordless auth
     builder.Services.AddSingleton<IEmailCodeService, EmailCodeService>();
 
