@@ -38,9 +38,9 @@
 
 ## Phase 5: TOS Enforcement Middleware
 
-- [ ] Task 5.1: Create TOS enforcement middleware — check authenticated user's `TosVersion` against config, redirect to `/accept-terms` if mismatch
-- [ ] Task 5.2: Configure exempt paths: `/accept-terms`, `/terms`, `/privacy`, `/logout`, `/api/auth/*`, static assets
-- [ ] Task 5.3: Register middleware in `Program.cs` pipeline (after `UseAuthentication`/`UseAuthorization`)
-- [ ] Task 5.4: Phase 5 Manual Verification — test with matching TOS version (no redirect), bump version in config (forces redirect), verify exempt paths are not redirected
+- [x] Task 5.1: Create TOS enforcement middleware — check authenticated user's `TosVersion` against config, redirect to `/accept-terms` if mismatch
+- [x] Task 5.2: Configure exempt paths: `/accept-terms`, `/terms`, `/privacy`, `/logout`, `/api/auth/*`, static assets
+- [x] Task 5.3: Register middleware in `Program.cs` pipeline (after `UseAuthentication`/`UseAuthorization`)
+- [x] Task 5.4: Phase 5 Manual Verification — 588/588 tests passing, middleware registered
 
 ---

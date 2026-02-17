@@ -208,6 +208,7 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseMiddleware<ZSR.Underwriting.Web.Middleware.TosEnforcementMiddleware>();
 
     app.UseAntiforgery();
 
