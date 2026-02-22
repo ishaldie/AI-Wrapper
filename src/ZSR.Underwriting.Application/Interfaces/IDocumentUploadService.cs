@@ -5,7 +5,7 @@ namespace ZSR.Underwriting.Application.Interfaces;
 
 public interface IDocumentUploadService
 {
-    Task<FileUploadResultDto> UploadDocumentAsync(Guid dealId, Stream fileStream, string fileName, DocumentType documentType, CancellationToken ct = default);
-    Task<IReadOnlyList<FileUploadResultDto>> GetDocumentsForDealAsync(Guid dealId, CancellationToken ct = default);
-    Task DeleteDocumentAsync(Guid documentId, CancellationToken ct = default);
+    Task<FileUploadResultDto> UploadDocumentAsync(Guid dealId, Stream fileStream, string fileName, DocumentType documentType, string userId, CancellationToken ct = default);
+    Task<IReadOnlyList<FileUploadResultDto>> GetDocumentsForDealAsync(Guid dealId, string userId, CancellationToken ct = default);
+    Task DeleteDocumentAsync(Guid documentId, string userId, CancellationToken ct = default);
 }

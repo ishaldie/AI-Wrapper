@@ -21,8 +21,10 @@ public class DocumentUploadService : IDocumentUploadService
 
     public async Task<FileUploadResultDto> UploadDocumentAsync(
         Guid dealId, Stream fileStream, string fileName,
-        DocumentType documentType, CancellationToken ct = default)
+        DocumentType documentType, string userId, CancellationToken ct = default)
     {
+        await VerifyDealOwnershipAsync(dealId, userId, ct);
+
         var storedPath = await _storage.SaveFileAsync(fileStream, fileName, $"deals/{dealId}", ct);
 
         var doc = new UploadedDocument(dealId, fileName, storedPath, documentType, fileStream.Length);
@@ -40,8 +42,10 @@ public class DocumentUploadService : IDocumentUploadService
     }
 
     public async Task<IReadOnlyList<FileUploadResultDto>> GetDocumentsForDealAsync(
-        Guid dealId, CancellationToken ct = default)
+        Guid dealId, string userId, CancellationToken ct = default)
     {
+        await VerifyDealOwnershipAsync(dealId, userId, ct);
+
         return await _db.UploadedDocuments
             .Where(d => d.DealId == dealId)
             .OrderByDescending(d => d.UploadedAt)
@@ -56,13 +60,24 @@ public class DocumentUploadService : IDocumentUploadService
             .ToListAsync(ct);
     }
 
-    public async Task DeleteDocumentAsync(Guid documentId, CancellationToken ct = default)
+    public async Task DeleteDocumentAsync(Guid documentId, string userId, CancellationToken ct = default)
     {
         var doc = await _db.UploadedDocuments.FindAsync(new object[] { documentId }, ct);
         if (doc is null) return;
 
+        await VerifyDealOwnershipAsync(doc.DealId, userId, ct);
+
         await _storage.DeleteFileAsync(doc.StoredPath, ct);
         _db.UploadedDocuments.Remove(doc);
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task VerifyDealOwnershipAsync(Guid dealId, string userId, CancellationToken ct)
+    {
+        var deal = await _db.Deals.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == dealId, ct);
+
+        if (deal is null || deal.UserId != userId)
+            throw new UnauthorizedAccessException($"User does not have access to deal {dealId}.");
     }
 }

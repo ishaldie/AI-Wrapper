@@ -31,7 +31,6 @@
   <ItemGroup>
     <Compile Remove="Calculations\**" />
     <Compile Remove="Formatting\**" />
-    <Compile Remove="RealAi\**" />
     <Compile Remove="Domain\**" />
     <Compile Remove="Infrastructure\**" />
     <Compile Remove="Components\**" />
@@ -49,7 +48,6 @@
     <Compile Include="Domain\PropertyTests.cs" />
     <Compile Include="Domain\UnderwritingInputTests.cs" />
     <Compile Include="Domain\LoanTermsTests.cs" />
-    <Compile Include="Domain\RealAiDataTests.cs" />
     <Compile Include="Domain\CalculationResultTests.cs" />
     <Compile Include="Domain\UnderwritingReportTests.cs" />
     <Compile Include="Domain\UploadedDocumentTests.cs" />
@@ -78,6 +76,7 @@
     <!-- Document Upload track -->
     <Compile Include="Infrastructure\LocalFileStorageServiceTests.cs" />
     <Compile Include="Constants\FileUploadConstantsTests.cs" />
+    <Compile Include="Services\DocumentUploadServiceTests.cs" />
     <!-- Market Data Enrichment track -->
     <Compile Include="Domain\WebSearchServiceContractTests.cs" />
     <Compile Include="Services\WebSearchServiceTests.cs" />

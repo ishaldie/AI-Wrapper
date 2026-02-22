@@ -1,4 +1,6 @@
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Components.Forms
+@using System.Security.Claims
 @using ZSR.Underwriting.Application.Constants
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
@@ -6,6 +8,7 @@
 @inject IDocumentUploadService UploadService
 @inject IActivityTracker ActivityTracker
 @inject ISnackbar Snackbar
+@inject AuthenticationStateProvider AuthStateProvider
 
 <MudText Typo="Typo.h6" Class="mb-3">Document Upload</MudText>
 
@@ -71,12 +74,16 @@
     private DocumentType _selectedDocType = DocumentType.RentRoll;
     private bool _uploading;
     private List<FileUploadResultDto> _documents = new();
+    private string _userId = string.Empty;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (DealId != Guid.Empty)
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        if (DealId != Guid.Empty && !string.IsNullOrEmpty(_userId))
         {
-            var docs = await UploadService.GetDocumentsForDealAsync(DealId);
+            var docs = await UploadService.GetDocumentsForDealAsync(DealId, _userId);
             _documents = docs.ToList();
         }
     }
@@ -103,7 +110,7 @@
         try
         {
             using var stream = file.OpenReadStream(maxAllowedSize: FileUploadConstants.MaxFileSizeBytes);
-            var result = await UploadService.UploadDocumentAsync(DealId, stream, file.Name, _selectedDocType);
+            var result = await UploadService.UploadDocumentAsync(DealId, stream, file.Name, _selectedDocType, _userId);
             _documents.Insert(0, result);
             await ActivityTracker.TrackEventAsync(ActivityEventType.DocumentUploaded, dealId: DealId, metadata: file.Name);
             Snackbar.Add("File uploaded successfully.", Severity.Success);
@@ -120,7 +127,7 @@
 
     private async Task DeleteDocument(Guid documentId)
     {
-        await UploadService.DeleteDocumentAsync(documentId);
+        await UploadService.DeleteDocumentAsync(documentId, _userId);
         _documents.RemoveAll(d => d.DocumentId == documentId);
         Snackbar.Add("Document removed.", Severity.Info);
     }
