@@ -12,13 +12,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<Deal> Deals => Set<Deal>();
     public DbSet<Property> Properties => Set<Property>();
     public DbSet<UnderwritingInput> UnderwritingInputs => Set<UnderwritingInput>();
-    public DbSet<RealAiData> RealAiDataSets => Set<RealAiData>();
     public DbSet<CalculationResult> CalculationResults => Set<CalculationResult>();
     public DbSet<UnderwritingReport> UnderwritingReports => Set<UnderwritingReport>();
     public DbSet<UploadedDocument> UploadedDocuments => Set<UploadedDocument>();
     public DbSet<FieldOverride> FieldOverrides => Set<FieldOverride>();
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,6 +43,14 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.TargetOccupancy).HasPrecision(5, 2);
             entity.Property(e => e.ValueAddPlans).HasMaxLength(2000);
 
+            // Multi-tenant ownership
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.HasIndex(e => e.UserId);
+            entity.HasOne(e => e.Owner)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Indexes
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.CreatedAt);
@@ -57,12 +65,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.UnderwritingInput)
                 .WithOne(u => u.Deal)
                 .HasForeignKey<UnderwritingInput>(u => u.DealId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // One-to-one: Deal → RealAiData
-            entity.HasOne(e => e.RealAiData)
-                .WithOne(r => r.Deal)
-                .HasForeignKey<RealAiData>(r => r.DealId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             // One-to-one: Deal → CalculationResult
@@ -88,6 +90,12 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithOne(f => f.Deal)
                 .HasForeignKey(f => f.DealId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many: Deal → ChatMessages
+            entity.HasMany(e => e.ChatMessages)
+                .WithOne(m => m.Deal)
+                .HasForeignKey(m => m.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // --- Property ---
@@ -112,23 +120,6 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CapexBudget).HasPrecision(18, 2);
             entity.Property(e => e.TargetOccupancy).HasPrecision(5, 2);
             entity.Property(e => e.ValueAddPlans).HasMaxLength(2000);
-            entity.HasIndex(e => e.DealId).IsUnique();
-        });
-
-        // --- RealAiData ---
-        modelBuilder.Entity<RealAiData>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.InPlaceRent).HasPrecision(18, 2);
-            entity.Property(e => e.Occupancy).HasPrecision(5, 2);
-            entity.Property(e => e.Acreage).HasPrecision(10, 2);
-            entity.Property(e => e.RentToIncomeRatio).HasPrecision(5, 2);
-            entity.Property(e => e.MedianHhi).HasPrecision(18, 2);
-            entity.Property(e => e.MarketCapRate).HasPrecision(5, 2);
-            entity.Property(e => e.RentGrowth).HasPrecision(5, 2);
-            entity.Property(e => e.JobGrowth).HasPrecision(5, 2);
-            entity.Property(e => e.BuildingType).HasMaxLength(100);
-            entity.Property(e => e.Amenities).HasMaxLength(2000);
             entity.HasIndex(e => e.DealId).IsUnique();
         });
 
@@ -210,6 +201,16 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.EventType);
             entity.HasIndex(e => e.OccurredAt);
             entity.HasIndex(e => e.DealId);
+        });
+
+        // --- ChatMessage ---
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Role).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.Content).IsRequired();
+            entity.HasIndex(e => e.DealId);
+            entity.HasIndex(e => e.CreatedAt);
         });
     }
 }
