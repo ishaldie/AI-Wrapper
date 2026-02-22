@@ -31,11 +31,11 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdAsync_Returns_Deal_When_Exists()
     {
-        var deal = new Deal("Test Deal");
+        var deal = new Deal("Test Deal", "test-user");
         _ctx.Deals.Add(deal);
         await _ctx.SaveChangesAsync();
 
-        var result = await _repo.GetByIdAsync(deal.Id);
+        var result = await _repo.GetByIdAsync(deal.Id, "test-user");
 
         Assert.NotNull(result);
         Assert.Equal("Test Deal", result.Name);
@@ -44,7 +44,7 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdAsync_Returns_Null_When_Not_Found()
     {
-        var result = await _repo.GetByIdAsync(Guid.NewGuid());
+        var result = await _repo.GetByIdAsync(Guid.NewGuid(), "test-user");
         Assert.Null(result);
     }
 
@@ -53,7 +53,7 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdWithDetailsAsync_Includes_All_Navigation_Properties()
     {
-        var deal = new Deal("Full Deal");
+        var deal = new Deal("Full Deal", "test-user");
         deal.Property = new Property("100 Main St", 50) { DealId = deal.Id };
         deal.UnderwritingInput = new UnderwritingInput(5_000_000m) { DealId = deal.Id };
         _ctx.Deals.Add(deal);
@@ -65,7 +65,7 @@ public class DealRepositoryTests : IDisposable
         _ctx.UnderwritingReports.Add(report);
         await _ctx.SaveChangesAsync();
 
-        var result = await _repo.GetByIdWithDetailsAsync(deal.Id);
+        var result = await _repo.GetByIdWithDetailsAsync(deal.Id, "test-user");
 
         Assert.NotNull(result);
         Assert.NotNull(result.Property);
@@ -77,7 +77,7 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdWithDetailsAsync_Returns_Null_When_Not_Found()
     {
-        var result = await _repo.GetByIdWithDetailsAsync(Guid.NewGuid());
+        var result = await _repo.GetByIdWithDetailsAsync(Guid.NewGuid(), "test-user");
         Assert.Null(result);
     }
 
@@ -86,15 +86,15 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetAllAsync_Returns_All_Deals_Ordered_By_CreatedAt_Desc()
     {
-        var dealA = new Deal("Deal A");
+        var dealA = new Deal("Deal A", "test-user");
         _ctx.Deals.Add(dealA);
         await _ctx.SaveChangesAsync();
 
-        var dealB = new Deal("Deal B");
+        var dealB = new Deal("Deal B", "test-user");
         _ctx.Deals.Add(dealB);
         await _ctx.SaveChangesAsync();
 
-        var results = await _repo.GetAllAsync();
+        var results = await _repo.GetAllAsync("test-user");
 
         Assert.Equal(2, results.Count);
         Assert.Equal("Deal B", results[0].Name);
@@ -104,7 +104,7 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetAllAsync_Returns_Empty_When_No_Deals()
     {
-        var results = await _repo.GetAllAsync();
+        var results = await _repo.GetAllAsync("test-user");
         Assert.Empty(results);
     }
 
@@ -113,20 +113,20 @@ public class DealRepositoryTests : IDisposable
     [Fact]
     public async Task GetByStatusAsync_Filters_By_Status()
     {
-        var draft = new Deal("Draft Deal");
+        var draft = new Deal("Draft Deal", "test-user");
         _ctx.Deals.Add(draft);
 
-        var inProgress = new Deal("Active Deal");
+        var inProgress = new Deal("Active Deal", "test-user");
         inProgress.UpdateStatus(DealStatus.InProgress);
         _ctx.Deals.Add(inProgress);
 
-        var complete = new Deal("Done Deal");
+        var complete = new Deal("Done Deal", "test-user");
         complete.UpdateStatus(DealStatus.Complete);
         _ctx.Deals.Add(complete);
 
         await _ctx.SaveChangesAsync();
 
-        var results = await _repo.GetByStatusAsync(DealStatus.InProgress);
+        var results = await _repo.GetByStatusAsync(DealStatus.InProgress, "test-user");
 
         Assert.Single(results);
         Assert.Equal("Active Deal", results[0].Name);
@@ -155,6 +155,76 @@ public class DealRepositoryTests : IDisposable
         await _uow.SaveChangesAsync();
 
         Assert.Null(await _ctx.Deals.FindAsync(deal.Id));
+    }
+
+    // --- Multi-tenant isolation ---
+
+    [Fact]
+    public async Task GetByIdAsync_Returns_Null_When_Deal_Belongs_To_Different_User()
+    {
+        var deal = new Deal("Other User Deal", "user-a");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var result = await _repo.GetByIdAsync(deal.Id, "user-b");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_Returns_Deal_When_UserId_Matches()
+    {
+        var deal = new Deal("My Deal", "user-a");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var result = await _repo.GetByIdAsync(deal.Id, "user-a");
+        Assert.NotNull(result);
+        Assert.Equal("My Deal", result.Name);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_Only_Returns_Deals_For_Specified_User()
+    {
+        _ctx.Deals.Add(new Deal("User A Deal 1", "user-a"));
+        _ctx.Deals.Add(new Deal("User B Deal", "user-b"));
+        _ctx.Deals.Add(new Deal("User A Deal 2", "user-a"));
+        await _ctx.SaveChangesAsync();
+
+        var results = await _repo.GetAllAsync("user-a");
+        Assert.Equal(2, results.Count);
+        Assert.All(results, d => Assert.Equal("user-a", d.UserId));
+    }
+
+    [Fact]
+    public async Task GetByStatusAsync_Filters_By_Both_Status_And_UserId()
+    {
+        var draftA = new Deal("Draft A", "user-a");
+        _ctx.Deals.Add(draftA);
+
+        var draftB = new Deal("Draft B", "user-b");
+        _ctx.Deals.Add(draftB);
+
+        var activeA = new Deal("Active A", "user-a");
+        activeA.UpdateStatus(DealStatus.InProgress);
+        _ctx.Deals.Add(activeA);
+
+        await _ctx.SaveChangesAsync();
+
+        var results = await _repo.GetByStatusAsync(DealStatus.Draft, "user-a");
+        Assert.Single(results);
+        Assert.Equal("Draft A", results[0].Name);
+    }
+
+    [Fact]
+    public async Task GetByIdWithDetailsAsync_Returns_Null_When_UserId_Mismatch()
+    {
+        var deal = new Deal("Other Deal", "user-a");
+        deal.Property = new Property("100 Main", 10) { DealId = deal.Id };
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var result = await _repo.GetByIdWithDetailsAsync(deal.Id, "user-b");
+        Assert.Null(result);
     }
 
     // --- IUnitOfWork ---
