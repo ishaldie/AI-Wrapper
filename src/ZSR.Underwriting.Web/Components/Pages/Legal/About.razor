@@ -1,0 +1,105 @@
+@page "/about"
+@using Microsoft.AspNetCore.Authorization
+@attribute [AllowAnonymous]
+@layout Layout.PublicLayout
+
+<PageTitle>About - ZSR Underwriting</PageTitle>
+
+<div style="max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem 4rem;">
+    <a href="/" style="display: inline-flex; align-items: center; gap: 0.5rem; color: #6B7280; text-decoration: none; font-size: 0.875rem; margin-bottom: 1.5rem;">
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small" /> Back
+    </a>
+
+    <h1 style="font-size: 2rem; font-weight: 700; color: #1A1D23; margin: 0 0 0.5rem 0; letter-spacing: -0.02em;">
+        About ZSR Underwriting
+    </h1>
+    <p style="color: #6B7280; font-size: 0.875rem; margin: 0 0 2rem 0;">
+        AI-powered multifamily real estate acquisition underwriting
+    </p>
+
+    <div class="legal-content" style="color: #374151; font-size: 0.9375rem; line-height: 1.7;">
+
+        @* --- Section 1: What We Do --- *@
+        <h2>What We Do</h2>
+        <p>
+            ZSR Underwriting is an AI-powered platform that automates multifamily real estate acquisition underwriting.
+            We help real estate professionals evaluate deals faster and with greater consistency by combining document
+            intelligence with financial analysis.
+        </p>
+
+        <h3>Document Parsing</h3>
+        <p>
+            Upload your deal documents — rent rolls, trailing 12-month operating statements (T12s), loan term sheets,
+            and offering memoranda — and our system extracts the key data points automatically, eliminating hours of
+            manual data entry.
+        </p>
+
+        <h3>AI-Generated Underwriting Reports</h3>
+        <p>
+            Each analysis produces a comprehensive 10-section underwriting report covering net operating income (NOI),
+            internal rate of return (IRR), debt service coverage ratio (DSCR), cap rates, risk assessment, and a
+            GO/NO GO investment recommendation. Reports are generated in minutes, not days.
+        </p>
+
+        <h3>Deal Pipeline</h3>
+        <p>
+            Track and compare opportunities across your pipeline. Organize deals by status, revisit past analyses,
+            and keep your team aligned on active opportunities.
+        </p>
+
+        <h3>Quick Analysis</h3>
+        <p>
+            Need a rapid initial screening? Enter a property address and purchase price to get a high-level assessment
+            before committing to a full underwrite.
+        </p>
+
+        @* --- Section 2: How We Protect Your Data --- *@
+        <h2>How We Protect Your Data</h2>
+        <p>
+            We take data security seriously. Here is how we protect your information:
+        </p>
+        <ul>
+            <li>
+                <strong>Authentication:</strong> Sign in with email and password or through Google and Microsoft OAuth.
+                All passwords are cryptographically hashed — we never store them in plain text.
+            </li>
+            <li>
+                <strong>Encryption in transit:</strong> All data sent between your browser and our servers is encrypted
+                via HTTPS/TLS.
+            </li>
+            <li>
+                <strong>No data sales:</strong> We do not sell your data to third parties. Your deal documents and
+                analysis results are yours.
+            </li>
+            <li>
+                <strong>AI provider data handling:</strong> Our AI provider (Anthropic) does not use data submitted
+                through their API to train models. Your documents and deal information are not used to improve
+                third-party AI systems.
+            </li>
+            <li>
+                <strong>Terms of Service enforcement:</strong> All users must accept our Terms of Service before
+                accessing the platform, ensuring everyone understands how the service operates.
+            </li>
+            <li>
+                <strong>Upload restrictions:</strong> File uploads are restricted by type and size to prevent abuse
+                and protect system integrity.
+            </li>
+        </ul>
+        <p>
+            For full details on how we collect, use, and protect your information, see our
+            <a href="/privacy" style="color: #F97316;">Privacy Policy</a>.
+            Our <a href="/terms" style="color: #F97316;">Terms of Service</a> describe your rights and obligations
+            when using the platform.
+        </p>
+
+        @* --- Section 3: Company --- *@
+        <h2>Company</h2>
+        <p>
+            ZSR Underwriting is built and operated by ZSR Ventures, LLC.
+        </p>
+        <p>
+            Questions or feedback? Reach us at
+            <a href="mailto:privacy@zsrventures.com" style="color: #F97316;">privacy@zsrventures.com</a>.
+        </p>
+    </div>
+</div>

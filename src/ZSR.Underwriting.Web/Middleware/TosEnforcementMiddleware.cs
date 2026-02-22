@@ -13,6 +13,7 @@ public class TosEnforcementMiddleware
         "/accept-terms",
         "/terms",
         "/privacy",
+        "/about",
         "/logout",
         "/login",
         "/register",
@@ -67,7 +68,8 @@ public class TosEnforcementMiddleware
             var requiredVersion = _configuration["Application:TosVersion"] ?? "1.0";
             if (user.TosVersion != requiredVersion)
             {
-                context.Response.Redirect("/accept-terms");
+                var returnUrl = context.Request.Path + context.Request.QueryString;
+                context.Response.Redirect($"/accept-terms?returnUrl={Uri.EscapeDataString(returnUrl)}");
                 return;
             }
         }
