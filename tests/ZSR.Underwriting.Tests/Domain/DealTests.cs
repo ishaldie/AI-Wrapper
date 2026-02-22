@@ -73,4 +73,30 @@ public class DealTests
         Assert.NotNull(deal.UploadedDocuments);
         Assert.Empty(deal.UploadedDocuments);
     }
+
+    // --- Multi-tenant isolation: Deal.UserId ---
+
+    [Fact]
+    public void New_Deal_Stores_UserId()
+    {
+        var deal = new Deal("Test Property", "user-123");
+        Assert.Equal("user-123", deal.UserId);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Constructor_Throws_When_UserId_Is_Empty(string? userId)
+    {
+        Assert.Throws<ArgumentException>(() => new Deal("Test Property", userId!));
+    }
+
+    [Fact]
+    public void New_Deal_Has_Owner_Navigation_Property()
+    {
+        var deal = new Deal("Test Property", "user-123");
+        // Owner navigation is null until EF loads it
+        Assert.Null(deal.Owner);
+    }
 }

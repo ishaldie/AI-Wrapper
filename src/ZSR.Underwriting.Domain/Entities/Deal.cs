@@ -10,14 +10,18 @@ public class Deal
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
 
+    // Multi-tenant ownership
+    public string UserId { get; private set; } = string.Empty;
+    public ApplicationUser? Owner { get; set; }
+
     // Navigation properties (populated in later tasks)
     public Property? Property { get; set; }
     public UnderwritingInput? UnderwritingInput { get; set; }
     public CalculationResult? CalculationResult { get; set; }
     public UnderwritingReport? Report { get; set; }
-    public RealAiData? RealAiData { get; set; }
     public ICollection<UploadedDocument> UploadedDocuments { get; set; } = new List<UploadedDocument>();
     public ICollection<FieldOverride> FieldOverrides { get; set; } = new List<FieldOverride>();
+    public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
 
     // === Temporary flat fields (will migrate to Property/UnderwritingInput entities) ===
     public string PropertyName { get; set; } = string.Empty;
@@ -35,18 +39,26 @@ public class Deal
     public decimal? CapexBudget { get; set; }
     public decimal? TargetOccupancy { get; set; }
     public string? ValueAddPlans { get; set; }
+    public string? QuickAnalysisContent { get; set; }
     // === End temporary fields ===
 
     // EF Core parameterless constructor
     private Deal() { Name = string.Empty; }
 
-    public Deal(string name)
+    public Deal(string name) : this(name, string.Empty, skipUserValidation: true) { }
+
+    public Deal(string name, string userId) : this(name, userId, skipUserValidation: false) { }
+
+    private Deal(string name, string userId, bool skipUserValidation)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Deal name cannot be empty.", nameof(name));
+        if (!skipUserValidation && string.IsNullOrWhiteSpace(userId))
+            throw new ArgumentException("User ID cannot be empty.", nameof(userId));
 
         Id = Guid.NewGuid();
         Name = name;
+        UserId = userId ?? string.Empty;
         Status = DealStatus.Draft;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
