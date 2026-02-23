@@ -22,30 +22,19 @@ Read these files NOW:
 1. Check all tasks in plan.md are marked `[x]`
 2. If any tasks are pending `[ ]` or in-progress `[~]`, warn user
 
-### Archive Process (via MCP Tool)
+### Archive Process
 
-**Use the `conductor_transition_status` MCP tool** to transition the track through completion:
+1. Update tracks.md:
+   - Change status from 🔵 (in-progress) to ✅ (completed)
+   - Add completion date
 
-1. **Mark completed:**
-   ```
-   conductor_transition_status({
-     trackId: "<track-id>",
-     targetStatus: "completed"
-   })
-   ```
+2. Move track directory:
+   - From: conductor/tracks/<track-id>/
+   - To: conductor/archive/<track-id>/
 
-2. **Archive (optional):**
-   ```
-   conductor_transition_status({
-     trackId: "<track-id>",
-     targetStatus: "archived"
-   })
-   ```
-
-3. **Create completion commit:**
+3. Create completion commit:
    - Message: "complete(<track-id>): <description>"
-
-**Fallback:** PATCH `/api/projects/:projectId/tracks/:trackId/transition` with `{ targetStatus: "completed" }`
+   - Include all track file changes
 
 ---
 
@@ -55,4 +44,3 @@ Read these files NOW:
 2. Follow workflow.md EXACTLY as written
 3. Get user approval before archiving
 4. All tasks must be complete before marking track complete
-5. **Prefer MCP tools** (`conductor_transition_status`) for status changes — ensures atomic writes and canonical format

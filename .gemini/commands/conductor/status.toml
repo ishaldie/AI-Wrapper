@@ -4,19 +4,9 @@ prompt = """
 
 Show current project and track status.
 
-## Data Sources (in priority order)
+**FIRST: Read all context files before doing anything else.**
 
-### 1. MCP Tools (Preferred)
-Use these MCP tools to get canonical track data:
-- `conductor_list_tracks` — returns all tracks with status, type, and metadata
-- `conductor_get_status` — returns detailed status of a specific track (pass `{ trackId }`)
-
-### 2. REST API (Fallback)
-- GET `/api/projects/:projectId/tracks/list` — list all tracks
-- GET `/api/projects/:projectId/tracks/:trackId` — get track detail
-
-### 3. Direct File Read (Last Resort)
-Read these files:
+Read these files NOW:
 - conductor/product.md
 - conductor/tracks.md
 - All conductor/tracks/*/metadata.json
@@ -73,7 +63,7 @@ Tracks: <total> | Tasks: <completed>/<total>
 
 ## Critical Rules
 
-1. **Prefer MCP tools** (`conductor_list_tracks`, `conductor_get_status`) for reading track data — returns canonical format
+1. Always read conductor/ context files FIRST
 2. Follow workflow.md EXACTLY as written
 3. Get user approval before making changes
 """

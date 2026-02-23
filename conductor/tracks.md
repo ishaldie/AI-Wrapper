@@ -57,8 +57,18 @@
 
 ---
 
-## [~] Track: UI Redesign & Web Fixes
+## [x] Track: Terms of Service & Privacy Policy (completed 2026-02-16)
+*Link: [./conductor/archive/terms_of_service_20260216/](./conductor/archive/terms_of_service_20260216/)*
+
+---
+
+## [x] Track: UI Redesign & Web Fixes (completed 2026-02-22)
 *Link: [./conductor/tracks/ui-redesign-and-web-fixes/](./conductor/tracks/ui-redesign-and-web-fixes/)*
+
+---
+
+## [x] Track: Document Upload Security Hardening (completed 2026-02-22)
+*Link: [./conductor/tracks/document_upload_security_hardening_20260222/](./conductor/tracks/document_upload_security_hardening_20260222/)*
 
 ---
 
@@ -67,24 +77,12 @@
 
 ---
 
-## [x] Track: Terms of Service & Privacy Policy (completed 2026-02-16)
-*Link: [./conductor/archive/terms_of_service_20260216/](./conductor/archive/terms_of_service_20260216/)*
+## [x] Track: MVP (completed 2026-02-14)
+*Link: [./conductor/tracks/mvp_20260214/](./conductor/tracks/mvp_20260214/)*
 
 ---
 
-## [ ] Track: Document Upload Security Hardening
-*Link: [./conductor/tracks/document_upload_security_hardening_20260222/](./conductor/tracks/document_upload_security_hardening_20260222/)*
-
----
-
-### [x] Track: MVP: Project skeleton, Claude integration, meeting notes generator, and basic web UI
-
-_Link: [./tracks/mvp_20260214/](./tracks/mvp_20260214/)_
-
----
-
-### [ ] Track: Track Set Up
-
-_Link: [./tracks/track_set_up_20260214/](./tracks/track_set_up_20260214/)_
+## [x] Track: Track Set Up (archived)
+*Link: [./conductor/tracks/track_set_up_20260214/](./conductor/tracks/track_set_up_20260214/)*
 
 ---

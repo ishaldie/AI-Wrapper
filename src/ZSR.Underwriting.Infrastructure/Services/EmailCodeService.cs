@@ -68,14 +68,14 @@ public class EmailCodeService : IEmailCodeService
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(_smtp.FromName, _smtp.FromEmail));
         message.To.Add(MailboxAddress.Parse(toEmail));
-        message.Subject = "Your ZSR Underwriting Verification Code";
+        message.Subject = "Your Underwriting Analyst Verification Code";
 
         message.Body = new TextPart("html")
         {
             Text = $"""
                 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 2rem;">
                     <h2 style="color: #1A1D23; margin-bottom: 1rem;">Verification Code</h2>
-                    <p style="color: #6B7280; font-size: 1rem;">Your ZSR Underwriting verification code is:</p>
+                    <p style="color: #6B7280; font-size: 1rem;">Your Underwriting Analyst verification code is:</p>
                     <div style="background: #F3F4F6; border-radius: 8px; padding: 1.25rem; text-align: center; margin: 1.5rem 0;">
                         <span style="font-size: 2rem; font-weight: 700; letter-spacing: 0.3em; color: #1A1D23;">{code}</span>
                     </div>

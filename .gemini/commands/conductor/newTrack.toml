@@ -15,108 +15,64 @@ Read these files NOW:
 
 ---
 
-## Phase 0: Understand the WHY and WHAT (MANDATORY — Do NOT skip)
+## After Reading Context
 
-**Before creating any files, you MUST deeply understand what the user wants and why.** Do not generate a spec, plan, or track directory until this phase is complete.
+### Phase 0: Discovery (MANDATORY — Do NOT skip)
 
-### Step 1: Ask about the WHY
-Focus on motivation and goals. Ask the user:
-- "What problem are you trying to solve?" or "What's driving this change?"
-- "Who benefits from this? What's the user impact?"
-- "What happens if we don't do this?"
+**Before creating any files, you MUST understand what the user wants to build.** Do not generate a spec, plan, or track directory until this phase is complete.
 
-### Step 2: Ask about the WHAT
-Focus on desired behavior and outcomes. Ask the user:
-- "What should the user experience look like when this is done?"
-- "What are the key behaviors or capabilities this needs to have?"
-- "What's explicitly NOT in scope for this work?"
-- "How will we know it's done? What does 'working' look like?"
+**Step 1: Ask what they're building.**
+If the user hasn't already provided a clear description, ask:
+> "What are you trying to build? Describe the feature/fix/change in your own words."
 
-### Step 3: Ask about constraints and priorities
-- "Are there any deadlines or dependencies?"
-- "Should this be a minimal first pass or a complete solution?"
-- "Any existing patterns or decisions this must follow?"
+**Step 2: Ask clarifying questions.**
+Based on their answer, ask 2-5 targeted questions to fill in gaps. Focus on:
+- **User behavior:** What should the user see/do? What's the workflow?
+- **Scope boundaries:** What's explicitly NOT included?
+- **Technical constraints:** Are there existing patterns this must follow? Integration points?
+- **Success criteria:** How will we know it's done? What does "working" look like?
 
-**CRITICAL: Do NOT rush this phase.** A 5-minute conversation here prevents hours of rework later. If the user gives a vague one-liner like "add notifications" or "fix the dashboard", you MUST ask follow-up questions — do not guess and start generating files.
+**Step 3: Summarize your understanding.**
+Write a 3-5 sentence summary of what you'll build and present it to the user. Ask:
+> "Does this match what you have in mind? Anything to add or change?"
 
----
+**Step 4: Get explicit approval to proceed.**
+Only after the user confirms your summary, move to track creation below.
 
-## Phase 1: Research the HOW (MANDATORY — Do NOT skip)
-
-**After understanding what the user wants, YOU must research the codebase to figure out HOW to implement it.** The user should not have to explain the technical approach — that's your job.
-
-### Step 4: Explore the codebase
-Based on the user's requirements, systematically research:
-- **Existing patterns:** Search for similar features already implemented. How do they work?
-- **Entry points:** Where does this change need to hook in? Which files, routes, components?
-- **Data flow:** How does data move through the system for related features?
-- **Test patterns:** How are similar features tested?
-- **Dependencies:** What packages, services, or APIs are involved?
-
-Use Glob, Grep, and Read tools aggressively. Look at:
-- Related route handlers, components, or services
-- Existing test files for similar functionality
-- Type definitions and interfaces involved
-- Configuration files that may need changes
-
-### Step 5: Present your proposed approach
-After researching, present to the user:
-1. **Summary of findings:** "Here's what I found in the codebase..."
-2. **Proposed approach:** "Based on the existing patterns, here's how I'd implement this..."
-3. **Key files involved:** List the main files that will be created or modified
-4. **Estimated scope:** How many phases, rough task count
-5. **Risks or trade-offs:** Anything the user should know
-
-Ask: "Does this approach make sense? Anything you'd change?"
-
-### Step 6: Get explicit approval to proceed
-Only after the user confirms both the WHAT and the HOW, move to track creation below.
+**CRITICAL: Do NOT rush this phase.** A 2-minute conversation here prevents hours of rework later. If the user gives a vague one-liner like "add notifications" or "fix the dashboard", you MUST ask follow-up questions — do not guess and start generating files.
 
 ---
 
-## Phase 2: Create the Track
+## Track Creation (after Discovery is complete)
 
-### 1. Determine Track Type
+### 1. Generate Track ID
+- Convert description to kebab-case
+- Example: "Add user authentication" → `add-user-authentication`
+
+### 2. Determine Track Type
 - feature: New functionality
 - bugfix: Fix existing behavior
 - refactor: Improve code without changing behavior
 - docs: Documentation updates
 
-### 2. Create spec.md
-Generate specification based on the discovery conversation:
-- Overview (the WHY)
-- Requirements (the WHAT — numbered list)
-- Technical approach (the HOW — key decisions from research)
-- Acceptance criteria (how we know it's done)
-- Out of scope (explicitly excluded)
+### 3. Create spec.md
+Generate specification with:
+- Overview
+- Requirements (numbered list)
+- Acceptance criteria
+- Out of scope
 
 **Show spec to user and get approval before proceeding.**
 
-### 3. Create plan.md
-Generate implementation plan informed by codebase research:
-- Phases (logical groupings based on actual code structure)
-- Tasks within each phase (referencing specific files and patterns found)
+### 4. Create plan.md
+Generate implementation plan with:
+- Phases (logical groupings)
+- Tasks within each phase
 - Each task marked `[ ]` (pending)
-- Tasks should be concrete and actionable (not vague)
 
 **Show plan to user and get approval before proceeding.**
 
-### 4. Create Track via MCP Tool (Preferred)
-
-**Use the `conductor_create_track` MCP tool** to create the track. This atomically creates all files (spec.md, plan.md, cgx.md, metadata.json) and updates tracks.md:
-
-```
-conductor_create_track({
-  name: "<track-description>",
-  type: "feature" | "bugfix" | "refactor" | "docs"
-})
-```
-
-Then overwrite the generated spec.md and plan.md with the approved versions.
-
-**Fallback (if MCP tool is unavailable):** POST to `/api/projects/:projectId/tracks/create` with `{ name, type }`.
-
-**Manual fallback (last resort):** Create the track directory and files manually:
+### 5. Create Track Files
 ```
 conductor/tracks/<track-id>/
 ├── spec.md
@@ -125,7 +81,15 @@ conductor/tracks/<track-id>/
 └── metadata.json
 ```
 
-Then update tracks.md with this exact format:
+The `cgx.md` file is automatically created to capture:
+- Frustrations and friction points during implementation
+- Good patterns to encode and anti-patterns to prevent
+- Missing capabilities that would help
+- Improvement candidates for new skills/commands/agents
+
+### 6. Update tracks.md
+Add entry to conductor/tracks.md index. **You MUST use this exact format** for the Conductor UI to detect tracks:
+
 ```markdown
 ---
 
@@ -135,15 +99,19 @@ Then update tracks.md with this exact format:
 ---
 ```
 
+**Format rules:**
+- Use `## [ ] Track: Description` for the heading (with checkbox: `[ ]` = new, `[~]` = in progress, `[x]` = completed)
+- Use `*Link: [./conductor/tracks/<id>/](./conductor/tracks/<id>/)*` for the track link
+- Separate each track entry with `---`
+- Do NOT use numbered headings like "Track 1:", emoji status indicators, or `**Track folder:**` format
+
 ---
 
 ## Critical Rules
 
 1. Always read conductor/ context files FIRST
-2. **Phase 0 (WHY/WHAT) is mandatory** — never skip the user conversation
-3. **Phase 1 (HOW) is mandatory** — always research the codebase before proposing a plan
-4. Get user approval on both the approach AND the spec/plan before creating files
-5. **Prefer MCP tools** (`conductor_create_track`) for track creation — ensures atomic writes and canonical format
-6. Plans should reference specific files and patterns discovered during research
-7. If the user's request is unclear, keep asking questions until you understand
+2. Follow workflow.md EXACTLY as written
+3. Get user approval before making changes
+4. Spec and plan MUST be approved before writing files
+5. tracks.md entries MUST follow the exact format above for UI detection
 """

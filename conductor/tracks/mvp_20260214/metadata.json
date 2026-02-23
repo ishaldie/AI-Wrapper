@@ -1,8 +1,9 @@
 {
   "trackId": "mvp_20260214",
   "type": "feature",
-  "status": "backlog",
+  "status": "completed",
   "description": "MVP: Project skeleton, Claude integration, meeting notes generator, and basic web UI",
   "createdAt": "2026-02-14T18:30:00Z",
-  "updatedAt": "2026-02-14T18:30:00Z"
+  "updatedAt": "2026-02-14T18:30:00Z",
+  "isArchived": false
 }
