@@ -13,7 +13,7 @@
 
 ## Phase 2 — File Validation & Sanitization
 
-- [ ] Add magic byte signatures to `FileUploadConstants` for PDF, XLSX, CSV, DOCX
+- [~] Add magic byte signatures to `FileUploadConstants` for PDF, XLSX, CSV, DOCX
 - [ ] Create `IFileContentValidator` interface in Application layer with `ValidateAsync(Stream, string extension)` method
 - [ ] Implement `FileContentValidator` in Infrastructure — read first N bytes and compare against magic byte map
 - [ ] Add MIME type allowlist to `FileUploadConstants`; validate Content-Type in `FileUpload.razor`
