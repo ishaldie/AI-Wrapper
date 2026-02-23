@@ -77,7 +77,7 @@
 
 ---
 
-### [ ] Track: MVP: Project skeleton, Claude integration, meeting notes generator, and basic web UI
+### [x] Track: MVP: Project skeleton, Claude integration, meeting notes generator, and basic web UI
 
 _Link: [./tracks/mvp_20260214/](./tracks/mvp_20260214/)_
 
