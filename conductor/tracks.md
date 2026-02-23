@@ -87,7 +87,7 @@
 
 ---
 
-## [ ] Track: Deal Tabs
+## [x] Track: Deal Tabs (completed 2026-02-23)
 *Link: [./conductor/tracks/deal-tabs/](./conductor/tracks/deal-tabs/)*
 
 ---
