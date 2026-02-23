@@ -33,12 +33,12 @@
 - [x] Task 3.5: Update back button and breadcrumb navigation
 
 ## Phase 4: Underwriting Tab
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 4.1: Build Underwriting tab — read-only display of CalculationResult metrics (NOI breakdown, cap rates, returns, debt metrics)
-- [ ] Task 4.2: Add Capital Stack section — MudTable with add/edit/remove rows (Source, Amount, Rate, Term)
-- [ ] Task 4.3: Add capital stack save/delete logic
-- [ ] Task 4.4: Add summary totals (total sources, equity required)
+- [x] Task 4.1: Build Underwriting tab — read-only display of CalculationResult metrics (NOI breakdown, cap rates, returns, debt metrics)
+- [x] Task 4.2: Add Capital Stack section — MudTable with add/edit/remove rows (Source, Amount, Rate, Term)
+- [x] Task 4.3: Add capital stack save/delete logic
+- [x] Task 4.4: Add summary totals (total sources, equity required)
 
 ## Phase 5: Checklist Tab
 *Status: Pending*

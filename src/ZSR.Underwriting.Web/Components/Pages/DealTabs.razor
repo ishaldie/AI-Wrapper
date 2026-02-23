@@ -49,7 +49,8 @@ else
     </div>
 
     <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="deal-tabs-container"
-             PanelClass="deal-tab-panel" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged">
+             PanelClass="deal-tab-panel" KeepPanelsAlive="true"
+             ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged">
         <MudTabPanel Text="General" Icon="@Icons.Material.Filled.Info">
             <div class="deal-tab-content">
                 <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #1A2332;">Property Information</MudText>
@@ -110,7 +111,140 @@ else
 
         <MudTabPanel Text="Underwriting" Icon="@Icons.Material.Filled.Analytics">
             <div class="deal-tab-content">
-                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Underwriting metrics will appear here as the AI analyzes your deal.</MudText>
+                @if (_calc is null)
+                {
+                    <MudAlert Severity="Severity.Info" Class="mb-4">
+                        Underwriting metrics will appear here as the AI analyzes your deal.
+                    </MudAlert>
+                }
+                else
+                {
+                    @* NOI Breakdown *@
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">NOI Breakdown</MudText>
+                    <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <tbody>
+                            <tr><td>Gross Potential Rent</td><td style="text-align: right;">@FormatCurrency(_calc.GrossPotentialRent)</td></tr>
+                            <tr><td>Vacancy Loss</td><td style="text-align: right; color: #DC2626;">@FormatCurrencyNeg(_calc.VacancyLoss)</td></tr>
+                            <tr><td>Effective Gross Income</td><td style="text-align: right;">@FormatCurrency(_calc.EffectiveGrossIncome)</td></tr>
+                            <tr><td>Other Income</td><td style="text-align: right;">@FormatCurrency(_calc.OtherIncome)</td></tr>
+                            <tr><td>Operating Expenses</td><td style="text-align: right; color: #DC2626;">@FormatCurrencyNeg(_calc.OperatingExpenses)</td></tr>
+                            <tr style="font-weight: 700; background: #F9FAFB;"><td>Net Operating Income</td><td style="text-align: right;">@FormatCurrency(_calc.NetOperatingIncome)</td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+
+                    @* Key Metrics *@
+                    <MudGrid Class="mb-6">
+                        <MudItem xs="12" md="4">
+                            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Going-In Cap Rate</MudText>
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@FormatPercent(_calc.GoingInCapRate)</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Exit Cap Rate</MudText>
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@FormatPercent(_calc.ExitCapRate)</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Price Per Unit</MudText>
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@FormatCurrency(_calc.PricePerUnit)</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    @* Return Metrics *@
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Return Metrics</MudText>
+                    <MudGrid Class="mb-6">
+                        <MudItem xs="12" md="4">
+                            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Cash-on-Cash Return</MudText>
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@FormatPercent(_calc.CashOnCashReturn)</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">IRR</MudText>
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@FormatPercent(_calc.InternalRateOfReturn)</MudText>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Equity Multiple</MudText>
+                                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@FormatMultiple(_calc.EquityMultiple)</MudText>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+
+                    @* Debt Metrics *@
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Debt Metrics</MudText>
+                    <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <tbody>
+                            <tr><td>Loan Amount</td><td style="text-align: right;">@FormatCurrency(_calc.LoanAmount)</td></tr>
+                            <tr><td>Annual Debt Service</td><td style="text-align: right;">@FormatCurrency(_calc.AnnualDebtService)</td></tr>
+                            <tr><td>DSCR</td><td style="text-align: right;">@FormatMultiple(_calc.DebtServiceCoverageRatio)</td></tr>
+                        </tbody>
+                    </MudSimpleTable>
+                }
+
+                @* Capital Stack *@
+                <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Capital Stack</MudText>
+                <MudTable Items="_capitalStack" Dense="true" Hover="true" Elevation="0"
+                          Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                    <HeaderContent>
+                        <MudTh>Source</MudTh>
+                        <MudTh Style="text-align: right;">Amount</MudTh>
+                        <MudTh Style="text-align: right;">Rate</MudTh>
+                        <MudTh Style="text-align: right;">Term (Yrs)</MudTh>
+                        <MudTh Style="text-align: center;">Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>@context.Source</MudTd>
+                        <MudTd Style="text-align: right;">@FormatCurrency(context.Amount)</MudTd>
+                        <MudTd Style="text-align: right;">@FormatPercent(context.Rate)</MudTd>
+                        <MudTd Style="text-align: right;">@(context.TermYears?.ToString() ?? "\u2014")</MudTd>
+                        <MudTd Style="text-align: center;">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                           OnClick="@(() => RemoveCapitalStackItem(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+
+                @* Summary totals *@
+                <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-3 px-4">
+                    <MudText Typo="Typo.body1" Style="font-weight: 600;">Total Sources</MudText>
+                    <MudText Typo="Typo.body1" Style="font-weight: 700;">@FormatCurrency(_capitalStack.Sum(c => c.Amount))</MudText>
+                </MudStack>
+                @if (_deal!.PurchasePrice > 0)
+                {
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" Class="mt-1 px-4">
+                        <MudText Typo="Typo.body1" Style="font-weight: 600;">Equity Required</MudText>
+                        <MudText Typo="Typo.body1" Style="font-weight: 700; color: #F97316;">
+                            @FormatCurrency(_deal.PurchasePrice - _capitalStack.Where(c => c.Source == CapitalSource.SeniorDebt || c.Source == CapitalSource.Mezzanine).Sum(c => c.Amount))
+                        </MudText>
+                    </MudStack>
+                }
+
+                @* Add new capital stack item *@
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mt-4" Spacing="2">
+                    <MudSelect @bind-Value="_newCapSource" Label="Source" Variant="Variant.Outlined" Style="max-width: 200px;">
+                        @foreach (var cs in Enum.GetValues<CapitalSource>())
+                        {
+                            <MudSelectItem Value="@cs">@cs</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField @bind-Value="_newCapAmount" Label="Amount" Variant="Variant.Outlined"
+                                     Adornment="Adornment.Start" AdornmentText="$" Format="N0" Style="max-width: 200px;" />
+                    <MudNumericField @bind-Value="_newCapRate" Label="Rate %" Variant="Variant.Outlined" Style="max-width: 120px;" />
+                    <MudNumericField @bind-Value="_newCapTerm" Label="Term" Variant="Variant.Outlined" Style="max-width: 100px;" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddCapitalStackItem"
+                               Style="text-transform: none; font-weight: 500;">
+                        Add
+                    </MudButton>
+                </MudStack>
             </div>
         </MudTabPanel>
 
@@ -139,19 +273,31 @@ else
 
     private Deal? _deal;
     private Property _property = null!;
+    private CalculationResult? _calc;
+    private List<CapitalStackItem> _capitalStack = new();
     private bool _loading = true;
     private bool _saving;
     private int _activePanelIndex;
+
+    // New capital stack item form
+    private CapitalSource _newCapSource = CapitalSource.SeniorDebt;
+    private decimal _newCapAmount;
+    private decimal? _newCapRate;
+    private int? _newCapTerm;
 
     protected override async Task OnInitializedAsync()
     {
         _deal = await Db.Deals
             .Include(d => d.Property)
+            .Include(d => d.CalculationResult)
+            .Include(d => d.CapitalStackItems)
             .FirstOrDefaultAsync(d => d.Id == DealId);
 
         if (_deal is not null)
         {
             _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
+            _calc = _deal.CalculationResult;
+            _capitalStack = _deal.CapitalStackItems.OrderBy(c => c.SortOrder).ToList();
         }
 
         _loading = false;
@@ -169,7 +315,6 @@ else
         _saving = true;
         try
         {
-            // Sync property fields back to entity
             if (_deal.Property is null && _property is not null)
             {
                 _property.DealId = _deal.Id;
@@ -189,6 +334,48 @@ else
             _saving = false;
         }
     }
+
+    private async Task AddCapitalStackItem()
+    {
+        if (_deal is null || _newCapAmount <= 0) return;
+
+        var item = new CapitalStackItem(_deal.Id, _newCapSource, _newCapAmount)
+        {
+            Rate = _newCapRate.HasValue ? _newCapRate.Value / 100m : null,
+            TermYears = _newCapTerm,
+            SortOrder = _capitalStack.Count
+        };
+
+        Db.CapitalStackItems.Add(item);
+        await Db.SaveChangesAsync();
+        _capitalStack.Add(item);
+
+        // Reset form
+        _newCapAmount = 0;
+        _newCapRate = null;
+        _newCapTerm = null;
+        Snackbar.Add("Capital stack item added", Severity.Success);
+    }
+
+    private async Task RemoveCapitalStackItem(CapitalStackItem item)
+    {
+        Db.CapitalStackItems.Remove(item);
+        await Db.SaveChangesAsync();
+        _capitalStack.Remove(item);
+        Snackbar.Add("Capital stack item removed", Severity.Success);
+    }
+
+    private static string FormatCurrency(decimal? value)
+        => value.HasValue ? $"${value.Value:N0}" : "\u2014";
+
+    private static string FormatCurrencyNeg(decimal? value)
+        => value.HasValue ? $"(${value.Value:N0})" : "\u2014";
+
+    private static string FormatPercent(decimal? value)
+        => value.HasValue ? $"{value.Value * 100:F1}%" : "\u2014";
+
+    private static string FormatMultiple(decimal? value)
+        => value.HasValue ? $"{value.Value:F2}x" : "\u2014";
 
     private static Color GetStatusColor(string status) => status switch
     {
