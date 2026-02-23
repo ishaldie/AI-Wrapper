@@ -250,7 +250,117 @@ else
 
         <MudTabPanel Text="Investors" Icon="@Icons.Material.Filled.People">
             <div class="deal-tab-content">
-                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Investor contacts will appear here.</MudText>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                    <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">
+                        Investors (@_investors.Count)
+                    </MudText>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.PersonAdd"
+                               OnClick="OpenAddInvestorDialog"
+                               Style="text-transform: none; font-weight: 500;">
+                        Add Investor
+                    </MudButton>
+                </MudStack>
+
+                @if (!_investors.Any())
+                {
+                    <MudPaper Elevation="0" Class="pa-8" Style="text-align: center; border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <MudIcon Icon="@Icons.Material.Outlined.PersonOff" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.body1" Style="color: #6B7280; margin-top: 0.5rem;">
+                            No investors added yet. Click "Add Investor" to get started.
+                        </MudText>
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudTable Items="_investors" Dense="true" Hover="true" Elevation="0"
+                              Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <HeaderContent>
+                            <MudTh>Name</MudTh>
+                            <MudTh>Company</MudTh>
+                            <MudTh>Role</MudTh>
+                            <MudTh>Email</MudTh>
+                            <MudTh>Phone</MudTh>
+                            <MudTh Style="text-align: right;">Net Worth</MudTh>
+                            <MudTh Style="text-align: right;">Liquidity</MudTh>
+                            <MudTh Style="text-align: center;">Actions</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>@context.Name</MudTd>
+                            <MudTd>@(context.Company ?? "\u2014")</MudTd>
+                            <MudTd>@(context.Role ?? "\u2014")</MudTd>
+                            <MudTd>@(context.Email ?? "\u2014")</MudTd>
+                            <MudTd>@(context.Phone ?? "\u2014")</MudTd>
+                            <MudTd Style="text-align: right;">@FormatCurrency(context.NetWorth)</MudTd>
+                            <MudTd Style="text-align: right;">@FormatCurrency(context.Liquidity)</MudTd>
+                            <MudTd Style="text-align: center;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                                               OnClick="@(() => OpenEditInvestorDialog(context))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                               OnClick="@(() => DeleteInvestor(context))" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+
+                @* Add/Edit Investor Inline Form *@
+                @if (_showInvestorForm)
+                {
+                    <MudPaper Elevation="2" Class="pa-4 mt-4" Style="border-radius: 8px;">
+                        <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">
+                            @(_editingInvestorId.HasValue ? "Edit Investor" : "New Investor")
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_invName" Label="Name" Variant="Variant.Outlined" Required="true" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudTextField @bind-Value="_invCompany" Label="Company" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_invRole" Label="Role" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_invEmail" Label="Email" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_invPhone" Label="Phone" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_invAddress" Label="Address" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <MudTextField @bind-Value="_invCity" Label="City" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="2">
+                                <MudTextField @bind-Value="_invState" Label="State" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <MudTextField @bind-Value="_invZip" Label="Zip" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_invNetWorth" Label="Net Worth" Variant="Variant.Outlined"
+                                                 Adornment="Adornment.Start" AdornmentText="$" Format="N0" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudNumericField @bind-Value="_invLiquidity" Label="Liquidity" Variant="Variant.Outlined"
+                                                 Adornment="Adornment.Start" AdornmentText="$" Format="N0" />
+                            </MudItem>
+                            <MudItem xs="12">
+                                <MudTextField @bind-Value="_invNotes" Label="Notes" Variant="Variant.Outlined" Lines="2" />
+                            </MudItem>
+                        </MudGrid>
+                        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-3" Spacing="2">
+                            <MudButton Variant="Variant.Text" OnClick="CancelInvestorForm" Style="text-transform: none;">Cancel</MudButton>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       OnClick="SaveInvestor"
+                                       Style="text-transform: none; font-weight: 500;">
+                                @(_editingInvestorId.HasValue ? "Update" : "Save")
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                }
             </div>
         </MudTabPanel>
 
@@ -317,6 +427,7 @@ else
     private CalculationResult? _calc;
     private List<CapitalStackItem> _capitalStack = new();
     private List<DealChecklistItem> _checklistItems = new();
+    private List<DealInvestor> _investors = new();
     private bool _loading = true;
     private bool _saving;
     private int _activePanelIndex;
@@ -327,6 +438,22 @@ else
     private decimal? _newCapRate;
     private int? _newCapTerm;
 
+    // Investor form
+    private bool _showInvestorForm;
+    private Guid? _editingInvestorId;
+    private string _invName = "";
+    private string? _invCompany;
+    private string? _invRole;
+    private string? _invEmail;
+    private string? _invPhone;
+    private string? _invAddress;
+    private string? _invCity;
+    private string? _invState;
+    private string? _invZip;
+    private decimal? _invNetWorth;
+    private decimal? _invLiquidity;
+    private string? _invNotes;
+
     protected override async Task OnInitializedAsync()
     {
         _deal = await Db.Deals
@@ -334,6 +461,7 @@ else
             .Include(d => d.CalculationResult)
             .Include(d => d.CapitalStackItems)
             .Include(d => d.DealChecklistItems).ThenInclude(i => i.Template)
+            .Include(d => d.DealInvestors)
             .FirstOrDefaultAsync(d => d.Id == DealId);
 
         if (_deal is not null)
@@ -352,6 +480,8 @@ else
                 .OrderBy(i => i.Template.SectionOrder)
                 .ThenBy(i => i.Template.SortOrder)
                 .ToList();
+
+            _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
         }
 
         _loading = false;
@@ -438,6 +568,113 @@ else
         await Db.SaveChangesAsync();
         _capitalStack.Remove(item);
         Snackbar.Add("Capital stack item removed", Severity.Success);
+    }
+
+    private void OpenAddInvestorDialog()
+    {
+        _editingInvestorId = null;
+        ResetInvestorForm();
+        _showInvestorForm = true;
+    }
+
+    private void OpenEditInvestorDialog(DealInvestor investor)
+    {
+        _editingInvestorId = investor.Id;
+        _invName = investor.Name;
+        _invCompany = investor.Company;
+        _invRole = investor.Role;
+        _invEmail = investor.Email;
+        _invPhone = investor.Phone;
+        _invAddress = investor.Address;
+        _invCity = investor.City;
+        _invState = investor.State;
+        _invZip = investor.Zip;
+        _invNetWorth = investor.NetWorth;
+        _invLiquidity = investor.Liquidity;
+        _invNotes = investor.Notes;
+        _showInvestorForm = true;
+    }
+
+    private void CancelInvestorForm()
+    {
+        _showInvestorForm = false;
+        ResetInvestorForm();
+    }
+
+    private void ResetInvestorForm()
+    {
+        _invName = "";
+        _invCompany = null;
+        _invRole = null;
+        _invEmail = null;
+        _invPhone = null;
+        _invAddress = null;
+        _invCity = null;
+        _invState = null;
+        _invZip = null;
+        _invNetWorth = null;
+        _invLiquidity = null;
+        _invNotes = null;
+    }
+
+    private async Task SaveInvestor()
+    {
+        if (_deal is null || string.IsNullOrWhiteSpace(_invName)) return;
+
+        if (_editingInvestorId.HasValue)
+        {
+            var investor = _investors.FirstOrDefault(i => i.Id == _editingInvestorId.Value);
+            if (investor is not null)
+            {
+                investor.Name = _invName;
+                investor.Company = _invCompany;
+                investor.Role = _invRole;
+                investor.Email = _invEmail;
+                investor.Phone = _invPhone;
+                investor.Address = _invAddress;
+                investor.City = _invCity;
+                investor.State = _invState;
+                investor.Zip = _invZip;
+                investor.NetWorth = _invNetWorth;
+                investor.Liquidity = _invLiquidity;
+                investor.Notes = _invNotes;
+                await Db.SaveChangesAsync();
+                Snackbar.Add("Investor updated", Severity.Success);
+            }
+        }
+        else
+        {
+            var investor = new DealInvestor(_deal.Id, _invName)
+            {
+                Company = _invCompany,
+                Role = _invRole,
+                Email = _invEmail,
+                Phone = _invPhone,
+                Address = _invAddress,
+                City = _invCity,
+                State = _invState,
+                Zip = _invZip,
+                NetWorth = _invNetWorth,
+                Liquidity = _invLiquidity,
+                Notes = _invNotes
+            };
+            Db.DealInvestors.Add(investor);
+            await Db.SaveChangesAsync();
+            _investors.Add(investor);
+            _investors = _investors.OrderBy(i => i.Name).ToList();
+            Snackbar.Add("Investor added", Severity.Success);
+        }
+
+        _showInvestorForm = false;
+        ResetInvestorForm();
+    }
+
+    private async Task DeleteInvestor(DealInvestor investor)
+    {
+        Db.DealInvestors.Remove(investor);
+        await Db.SaveChangesAsync();
+        _investors.Remove(investor);
+        Snackbar.Add("Investor removed", Severity.Success);
     }
 
     private async Task UpdateChecklistStatus(DealChecklistItem item, ChecklistStatus newStatus)

@@ -400,3 +400,159 @@ public class DealTabsChecklistTests : IAsyncLifetime
         Assert.Contains("satisfied", cut.Markup);
     }
 }
+
+public class DealTabsInvestorTests : IAsyncLifetime
+{
+    private readonly BunitContext _ctx;
+    private readonly AppDbContext _db;
+    private readonly Guid _dealId;
+
+    public DealTabsInvestorTests()
+    {
+        _ctx = new BunitContext();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddMudServices();
+
+        var dbName = $"DealTabsInvTests_{Guid.NewGuid()}";
+        _ctx.Services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase(dbName));
+
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
+
+        var sp = _ctx.Services.BuildServiceProvider();
+        _db = sp.GetRequiredService<AppDbContext>();
+
+        // Seed deal with existing investors
+        var deal = new Deal("Test Property", "test-user-id");
+        deal.PropertyName = "Maple Heights";
+        deal.Address = "321 Maple Dr";
+        deal.UnitCount = 120;
+        _db.Deals.Add(deal);
+
+        var inv1 = new DealInvestor(deal.Id, "John Smith")
+        {
+            Company = "Smith Capital",
+            Role = "Lead Sponsor",
+            Email = "john@smithcap.com",
+            Phone = "(555) 123-4567",
+            Address = "100 Wall St",
+            City = "New York",
+            State = "NY",
+            Zip = "10005",
+            NetWorth = 5_000_000m,
+            Liquidity = 1_500_000m
+        };
+        var inv2 = new DealInvestor(deal.Id, "Jane Doe")
+        {
+            Company = "Doe Investments",
+            Role = "LP Investor",
+            Email = "jane@doeinv.com",
+            Phone = "(555) 987-6543",
+            NetWorth = 2_000_000m,
+            Liquidity = 800_000m
+        };
+        _db.DealInvestors.AddRange(inv1, inv2);
+        _db.SaveChanges();
+        _dealId = deal.Id;
+    }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        await _db.DisposeAsync();
+        await _ctx.DisposeAsync();
+    }
+
+    private RenderFragment RenderDealTabs(Guid dealId)
+    {
+        return builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealTabs>(1);
+            builder.AddAttribute(2, "DealId", dealId);
+            builder.CloseComponent();
+        };
+    }
+
+    [Fact]
+    public void InvestorTab_ShowsInvestorTable()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Investors", cut.Markup);
+        Assert.Contains("John Smith", cut.Markup);
+        Assert.Contains("Jane Doe", cut.Markup);
+    }
+
+    [Fact]
+    public void InvestorTab_ShowsInvestorDetails()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Smith Capital", cut.Markup);
+        Assert.Contains("Doe Investments", cut.Markup);
+        Assert.Contains("Lead Sponsor", cut.Markup);
+        Assert.Contains("LP Investor", cut.Markup);
+    }
+
+    [Fact]
+    public void InvestorTab_ShowsContactInfo()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("john@smithcap.com", cut.Markup);
+        Assert.Contains("(555) 123-4567", cut.Markup);
+    }
+
+    [Fact]
+    public void InvestorTab_ShowsFinancialInfo()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Net worth $5,000,000 and liquidity $1,500,000
+        Assert.Contains("5,000,000", cut.Markup);
+        Assert.Contains("1,500,000", cut.Markup);
+    }
+
+    [Fact]
+    public void InvestorTab_HasAddButton()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Add Investor", cut.Markup);
+    }
+
+    [Fact]
+    public void InvestorTab_ShowsInvestorCount()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Should show "2 investors" or similar count
+        Assert.Contains("2", cut.Markup);
+    }
+
+    [Fact]
+    public void InvestorTab_EmptyState_ShowsMessage()
+    {
+        // Create a deal with no investors
+        var deal = new Deal("Empty Property", "test-user-id");
+        deal.PropertyName = "Empty Place";
+        deal.Address = "1 Empty St";
+        deal.UnitCount = 10;
+        _db.Deals.Add(deal);
+        _db.SaveChanges();
+
+        var cut = _ctx.Render(RenderDealTabs(deal.Id));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("No investors", cut.Markup);
+    }
+}

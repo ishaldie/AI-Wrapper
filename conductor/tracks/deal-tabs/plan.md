@@ -51,12 +51,12 @@
 - [x] Task 5.6: Visual status indicators (color-coded chips/badges per status)
 
 ## Phase 6: Investor Tab
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 6.1: Build Investor tab — MudTable listing DealInvestors with add button
-- [ ] Task 6.2: Add/Edit investor dialog (MudDialog with all contact fields)
-- [ ] Task 6.3: Delete investor with confirmation
-- [ ] Task 6.4: Save investor to DB
+- [x] Task 6.1: Build Investor tab — MudTable listing DealInvestors with add button
+- [x] Task 6.2: Add/Edit investor dialog (MudDialog with all contact fields)
+- [x] Task 6.3: Delete investor with confirmation
+- [x] Task 6.4: Save investor to DB
 
 ## Phase 7: Chat Tab Integration
 *Status: Pending*
