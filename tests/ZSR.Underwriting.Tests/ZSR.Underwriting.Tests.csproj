@@ -128,6 +128,8 @@
     <Compile Include="Domain\DealChecklistItemTests.cs" />
     <Compile Include="Services\DealUpdateParserTests.cs" />
     <Compile Include="Components\DealTabsTests.cs" />
+    <!-- Document Management track -->
+    <Compile Include="Services\DocumentMatchingServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
