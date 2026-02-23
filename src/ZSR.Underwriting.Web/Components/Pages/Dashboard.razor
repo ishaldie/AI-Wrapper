@@ -213,7 +213,7 @@
             await ActivityTracker.TrackEventAsync(ActivityEventType.SearchPerformed, metadata: _searchQuery);
             var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery, _userId);
             await ActivityTracker.TrackEventAsync(ActivityEventType.QuickAnalysisStarted, dealId: progress.DealId);
-            Navigation.NavigateTo($"/deals/{progress.DealId}/chat");
+            Navigation.NavigateTo($"/deals/{progress.DealId}?tab=chat");
         }
         catch (Exception ex)
         {

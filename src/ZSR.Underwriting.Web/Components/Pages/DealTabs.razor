@@ -412,15 +412,18 @@ else
         </MudTabPanel>
 
         <MudTabPanel Text="Chat" Icon="@Icons.Material.Filled.Chat">
-            <div class="deal-tab-content">
-                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">AI chat will be integrated here.</MudText>
-            </div>
+            @if (_activePanelIndex == 4)
+            {
+                <DealChatTab DealId="DealId" OnDealUpdated="RefreshDealData" />
+            }
         </MudTabPanel>
     </MudTabs>
 }
 
 @code {
     [Parameter] public Guid DealId { get; set; }
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? Tab { get; set; }
 
     private Deal? _deal;
     private Property _property = null!;
@@ -484,7 +487,47 @@ else
             _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
         }
 
+        // Handle tab query parameter
+        if (!string.IsNullOrEmpty(Tab))
+        {
+            _activePanelIndex = Tab.ToLowerInvariant() switch
+            {
+                "general" => 0,
+                "underwriting" => 1,
+                "investors" => 2,
+                "checklist" => 3,
+                "chat" => 4,
+                _ => 0
+            };
+        }
+
         _loading = false;
+    }
+
+    private async Task RefreshDealData()
+    {
+        if (_deal is null) return;
+
+        // Reload deal with all related data
+        await Db.Entry(_deal).ReloadAsync();
+        await Db.Entry(_deal).Collection(d => d.CapitalStackItems).LoadAsync();
+        await Db.Entry(_deal).Reference(d => d.CalculationResult).LoadAsync();
+        await Db.Entry(_deal).Reference(d => d.Property).LoadAsync();
+        await Db.Entry(_deal).Collection(d => d.DealChecklistItems).LoadAsync();
+        foreach (var item in _deal.DealChecklistItems)
+            await Db.Entry(item).Reference(i => i.Template).LoadAsync();
+        await Db.Entry(_deal).Collection(d => d.DealInvestors).LoadAsync();
+
+        _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
+        _calc = _deal.CalculationResult;
+        _capitalStack = _deal.CapitalStackItems.OrderBy(c => c.SortOrder).ToList();
+        _checklistItems = _deal.DealChecklistItems
+            .OrderBy(i => i.Template.SectionOrder)
+            .ThenBy(i => i.Template.SortOrder)
+            .ToList();
+        _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task GenerateChecklistItems()

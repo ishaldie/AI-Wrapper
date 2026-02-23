@@ -1,0 +1,1176 @@
+@using ZSR.Underwriting.Domain.Entities
+@using ZSR.Underwriting.Domain.Interfaces
+@using ZSR.Underwriting.Domain.Models
+@using ZSR.Underwriting.Domain.Enums
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Constants
+@using ZSR.Underwriting.Infrastructure.Data
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using System.Text
+@using System.Text.RegularExpressions
+@using ZSR.Underwriting.Application.Services
+@using DocumentFormat.OpenXml.Packaging
+@inject AppDbContext Db
+@inject IClaudeClient ClaudeClient
+@inject IDocumentUploadService UploadService
+@inject IDocumentParsingService ParsingService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@inject ILogger<DealChatTab> Logger
+
+<div class="deal-chat-tab-container">
+    @* Messages area with drag-and-drop *@
+    <div class="deal-chat-messages" id="chat-messages-container"
+         @ondragenter="HandleDragEnter"
+         @ondragover:preventDefault
+         @ondragleave="HandleDragLeave"
+         @ondrop="HandleDrop" @ondrop:preventDefault>
+
+        @if (_isDragging)
+        {
+            <div class="chat-drop-overlay">
+                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Large"
+                         Style="color: #F97316; font-size: 3rem;" />
+                <MudText Typo="Typo.h6" Style="color: #F97316; margin-top: 0.5rem;">
+                    Drop files here
+                </MudText>
+                <MudText Typo="Typo.caption" Style="color: #9CA3AF;">
+                    .pdf, .xlsx, .csv, .docx &mdash; up to 25 MB
+                </MudText>
+            </div>
+        }
+
+        @if (_loading)
+        {
+            <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+            </div>
+        }
+        else
+        {
+            @foreach (var msg in _messages)
+            {
+                @if (msg.Role == "assistant")
+                {
+                    <div class="chat-bubble chat-bubble-assistant">
+                        <div class="chat-avatar">
+                            <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small"
+                                     Style="color: #F97316;" />
+                        </div>
+                        <div class="chat-content">
+                            <div class="quick-report-content">
+                                @((MarkupString)Markdig.Markdown.ToHtml(DealUpdateParser.StripBlocks(msg.Content)))
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="chat-bubble chat-bubble-user">
+                        <div class="chat-content chat-content-user">
+                            @if (msg.Content.Contains("--- ATTACHED DOCUMENT DATA ---"))
+                            {
+                                var (fileNames, userText) = ExtractAttachments(msg.Content);
+                                @if (fileNames.Count > 0)
+                                {
+                                    <div class="chat-attachments">
+                                        @foreach (var name in fileNames)
+                                        {
+                                            <span class="chat-attachment-chip">
+                                                <MudIcon Icon="@Icons.Material.Filled.Description"
+                                                         Size="Size.Small" Style="font-size: 0.875rem;" />
+                                                @name
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(userText))
+                                {
+                                    <span>@userText</span>
+                                }
+                            }
+                            else
+                            {
+                                @msg.Content
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            @if (_thinking)
+            {
+                <div class="chat-bubble chat-bubble-assistant">
+                    <div class="chat-avatar">
+                        <MudIcon Icon="@Icons.Material.Filled.SmartToy" Size="Size.Small"
+                                 Style="color: #F97316;" />
+                    </div>
+                    <div class="chat-content" style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem;">
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small"
+                                             Style="width: 18px; height: 18px;" />
+                        <span style="color: #9CA3AF; font-size: 0.875rem;">Analyzing...</span>
+                    </div>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Warning" Class="mx-4 mb-2" Variant="Variant.Outlined"
+                          Style="max-width: 600px;">
+                    @_errorMessage
+                </MudAlert>
+            }
+
+            <div id="chat-anchor"></div>
+        }
+    </div>
+
+    @* Pending file chips *@
+    @if (_pendingFiles.Count > 0)
+    {
+        <div class="chat-pending-files">
+            @foreach (var file in _pendingFiles)
+            {
+                <div class="pending-file-chip">
+                    <MudIcon Icon="@Icons.Material.Filled.Description" Size="Size.Small"
+                             Style="color: #F97316; font-size: 1rem;" />
+                    <span>@file.FileName (@FormatFileSize(file.FileSize))</span>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                   OnClick="@(() => RemovePendingFile(file))"
+                                   Style="padding: 2px; width: 20px; height: 20px;" />
+                </div>
+            }
+        </div>
+    }
+
+    @* Hidden file input for both paperclip and drag-drop *@
+    <div id="chat-file-input-wrapper" style="height: 0; overflow: hidden;">
+        <InputFile OnChange="OnFileSelected" multiple accept=".pdf,.xlsx,.csv,.docx" />
+    </div>
+
+    @* Input bar *@
+    <div class="deal-chat-input">
+        <div class="search-bar" style="max-width: 100%;">
+            <button class="chat-attach-btn" type="button"
+                    @onclick="ClickFileInput" disabled="@_thinking"
+                    title="Attach files (.pdf, .xlsx, .csv, .docx)">
+                <MudIcon Icon="@Icons.Material.Filled.AttachFile" Size="Size.Small" />
+            </button>
+            <input type="text" placeholder="Ask about this property..."
+                   @bind="_userInput" @bind:event="oninput" @onkeydown="HandleKeyDown"
+                   disabled="@_thinking" />
+            <button class="search-bar-btn" type="button" @onclick="SendMessage"
+                    disabled="@(_thinking || (string.IsNullOrWhiteSpace(_userInput) && _pendingFiles.Count == 0))">
+                @if (_thinking)
+                {
+                    <MudProgressCircular Indeterminate="true" Size="Size.Small"
+                                         Style="width: 18px; height: 18px; color: #fff;" />
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Send" Size="Size.Small" />
+                }
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .deal-chat-tab-container {
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 14rem);
+        max-width: 860px;
+        margin: 0 auto;
+    }
+
+    .deal-chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        position: relative;
+    }
+
+    .chat-drop-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 247, 237, 0.92);
+        border: 2px dashed #F97316;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    .chat-bubble {
+        display: flex;
+        gap: 0.75rem;
+        padding: 0 1rem;
+        max-width: 100%;
+    }
+
+    .chat-bubble-assistant {
+        align-self: flex-start;
+    }
+
+    .chat-bubble-user {
+        align-self: flex-end;
+        flex-direction: row-reverse;
+    }
+
+    .chat-avatar {
+        flex-shrink: 0;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #FFF7ED;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 0.25rem;
+    }
+
+    .chat-content {
+        background: #F9FAFB;
+        border: 1px solid #E5E7EB;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        max-width: 680px;
+        line-height: 1.6;
+        overflow-wrap: break-word;
+    }
+
+    .chat-content-user {
+        background: #F97316;
+        color: #FFFFFF;
+        border: none;
+        font-size: 0.9375rem;
+    }
+
+    .chat-attachments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.375rem;
+        margin-bottom: 0.375rem;
+    }
+
+    .chat-attachment-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 0.125rem 0.5rem;
+        font-size: 0.75rem;
+        line-height: 1.4;
+    }
+
+    .chat-pending-files {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-top: 1px solid #E5E7EB;
+        background: #FAFAFA;
+    }
+
+    .pending-file-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        background: #FFF7ED;
+        border: 1px solid #FED7AA;
+        border-radius: 8px;
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8125rem;
+        color: #9A3412;
+    }
+
+    .chat-attach-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        border-radius: 8px;
+        color: #6B7280;
+        transition: background 0.15s, color 0.15s;
+        flex-shrink: 0;
+    }
+
+        .chat-attach-btn:hover:not(:disabled) {
+            background: #F3F4F6;
+            color: #F97316;
+        }
+
+        .chat-attach-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .deal-chat-input {
+        flex-shrink: 0;
+        padding: 0.75rem 1rem;
+        border-top: 1px solid #E5E7EB;
+        background: #FFFFFF;
+    }
+
+    /* Markdown styles inside assistant messages */
+    .chat-content .quick-report-content h2 {
+        color: #1A1D23;
+        font-weight: 700;
+        font-size: 1.125rem;
+        margin-top: 1.25rem;
+        margin-bottom: 0.4rem;
+        border-bottom: 1px solid #E5E7EB;
+        padding-bottom: 0.2rem;
+    }
+
+        .chat-content .quick-report-content h2:first-child {
+            margin-top: 0;
+        }
+
+    .chat-content .quick-report-content h3 {
+        color: #374151;
+        font-weight: 600;
+        font-size: 1rem;
+        margin-top: 0.75rem;
+        margin-bottom: 0.3rem;
+    }
+
+    .chat-content .quick-report-content p {
+        color: #4B5563;
+        margin-bottom: 0.5rem;
+        font-size: 0.9375rem;
+    }
+
+    .chat-content .quick-report-content ul,
+    .chat-content .quick-report-content ol {
+        color: #4B5563;
+        padding-left: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .chat-content .quick-report-content li {
+        margin-bottom: 0.2rem;
+        font-size: 0.9375rem;
+    }
+
+    .chat-content .quick-report-content strong {
+        color: #1A1D23;
+    }
+</style>
+
+@code {
+    [Parameter] public Guid DealId { get; set; }
+    [Parameter] public EventCallback OnDealUpdated { get; set; }
+
+    private string? _dealName;
+    private List<ChatMessage> _messages = new();
+    private string _userInput = "";
+    private bool _loading = true;
+    private bool _thinking;
+    private bool _initialAnalysisSent;
+    private string? _errorMessage;
+
+    // File upload state
+    private List<PendingAttachment> _pendingFiles = new();
+    private bool _isDragging;
+    private int _dragCounter;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        var deal = await Db.Deals.AsNoTracking().FirstOrDefaultAsync(d => d.Id == DealId);
+        if (deal == null)
+        {
+            Navigation.NavigateTo("/search");
+            return;
+        }
+
+        _dealName = deal.PropertyName;
+
+        _messages = await Db.ChatMessages
+            .AsNoTracking()
+            .Where(m => m.DealId == DealId)
+            .OrderBy(m => m.CreatedAt)
+            .ToListAsync();
+
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Register file-helper JS (drop zone forwarding + click trigger)
+            await JS.InvokeVoidAsync("eval", """
+                window.chatFileHelper = window.chatFileHelper || {};
+                chatFileHelper.init = function(dropZoneId, wrapperId) {
+                    var dz = document.getElementById(dropZoneId);
+                    if (!dz || dz._chatDropInit) return;
+                    dz._chatDropInit = true;
+                    dz.addEventListener('drop', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        var inp = document.querySelector('#' + wrapperId + ' input[type=file]');
+                        if (inp && e.dataTransfer.files.length > 0) {
+                            inp.files = e.dataTransfer.files;
+                            inp.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    });
+                    dz.addEventListener('dragover', function(e) { e.preventDefault(); });
+                };
+                chatFileHelper.clickFileInput = function(wrapperId) {
+                    var inp = document.querySelector('#' + wrapperId + ' input[type=file]');
+                    if (inp) inp.click();
+                };
+            """);
+
+            await JS.InvokeVoidAsync("chatFileHelper.init",
+                "chat-messages-container", "chat-file-input-wrapper");
+
+            if (_messages.Count == 0 && _dealName != null && !_initialAnalysisSent)
+            {
+                _initialAnalysisSent = true;
+                await SendInitialAnalysis();
+            }
+        }
+
+        // Auto-scroll to bottom
+        try
+        {
+            await JS.InvokeVoidAsync("eval",
+                "document.getElementById('chat-anchor')?.scrollIntoView({behavior:'smooth'})");
+        }
+        catch { /* ignore during prerender */ }
+    }
+
+    // --- Drag-and-drop visual state ---
+
+    private void HandleDragEnter(DragEventArgs e)
+    {
+        _dragCounter++;
+        _isDragging = true;
+    }
+
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        _dragCounter--;
+        if (_dragCounter <= 0)
+        {
+            _isDragging = false;
+            _dragCounter = 0;
+        }
+    }
+
+    private void HandleDrop(DragEventArgs e)
+    {
+        _isDragging = false;
+        _dragCounter = 0;
+    }
+
+    // --- File input handlers ---
+
+    private async Task ClickFileInput()
+    {
+        await JS.InvokeVoidAsync("chatFileHelper.clickFileInput", "chat-file-input-wrapper");
+    }
+
+    private void OnFileSelected(InputFileChangeEventArgs e)
+    {
+        foreach (var file in e.GetMultipleFiles(maximumFileCount: 10))
+        {
+            if (!FileUploadConstants.IsValidExtension(file.Name))
+            {
+                Snackbar.Add($"'{file.Name}' is not a supported file type. Use .pdf, .xlsx, .csv, or .docx.",
+                    Severity.Error);
+                continue;
+            }
+
+            if (!FileUploadConstants.IsValidFileSize(file.Size))
+            {
+                Snackbar.Add($"'{file.Name}' exceeds the 25 MB size limit.", Severity.Error);
+                continue;
+            }
+
+            _pendingFiles.Add(new PendingAttachment
+            {
+                FileName = file.Name,
+                FileSize = file.Size,
+                DocumentType = DetectDocumentType(file.Name),
+                BrowserFile = file
+            });
+        }
+
+        StateHasChanged();
+    }
+
+    private void RemovePendingFile(PendingAttachment file)
+    {
+        _pendingFiles.Remove(file);
+    }
+
+    // --- Messaging ---
+
+    private async Task SendInitialAnalysis()
+    {
+        _thinking = true;
+        _errorMessage = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var userContent = _dealName!;
+
+            var userMsg = new ChatMessage(DealId, "user", userContent);
+            Db.ChatMessages.Add(userMsg);
+            await Db.SaveChangesAsync();
+            _messages.Add(userMsg);
+            await InvokeAsync(StateHasChanged);
+
+            var request = new ClaudeRequest
+            {
+                SystemPrompt = BuildSystemPrompt(),
+                UserMessage = $"Analyze this property for commercial real estate underwriting: {userContent}",
+                MaxTokens = 4000
+            };
+
+            var response = await ClaudeClient.SendMessageAsync(request);
+            Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
+                DealId, response.Content?.Length ?? 0);
+
+            await ProcessAiResponse(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Initial analysis failed for deal {DealId}", DealId);
+            _errorMessage = "Failed to start analysis. Please type a message below to retry.";
+        }
+        finally
+        {
+            _thinking = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        var hasText = !string.IsNullOrWhiteSpace(_userInput);
+        var hasFiles = _pendingFiles.Count > 0;
+
+        if ((!hasText && !hasFiles) || _thinking) return;
+
+        var input = _userInput.Trim();
+        _userInput = "";
+        var filesToProcess = new List<PendingAttachment>(_pendingFiles);
+        _pendingFiles.Clear();
+        _thinking = true;
+        _errorMessage = null;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var contentBuilder = new StringBuilder();
+
+            // Upload & parse each attached file
+            if (filesToProcess.Count > 0)
+            {
+                contentBuilder.AppendLine("--- ATTACHED DOCUMENT DATA ---");
+
+                foreach (var file in filesToProcess)
+                {
+                    try
+                    {
+                        await using var stream = file.BrowserFile.OpenReadStream(
+                            maxAllowedSize: FileUploadConstants.MaxFileSizeBytes);
+                        using var buffer = new MemoryStream();
+                        await stream.CopyToAsync(buffer);
+
+                        buffer.Position = 0;
+                        var uploadResult = await UploadService.UploadDocumentAsync(
+                            DealId, buffer, file.FileName, file.DocumentType, _userId);
+
+                        var parseResult = await ParsingService.ParseDocumentAsync(uploadResult.DocumentId);
+
+                        if (parseResult.Success)
+                        {
+                            contentBuilder.AppendLine(FormatParsedData(parseResult, file.FileName));
+                        }
+                        else
+                        {
+                            Logger.LogInformation(
+                                "Structured parser failed for {FileName}: {Error}. Falling back to raw text.",
+                                file.FileName, parseResult.ErrorMessage);
+
+                            buffer.Position = 0;
+                            var rawText = ExtractRawText(buffer, file.FileName);
+                            contentBuilder.AppendLine($"[Raw Data from: {file.FileName} (Type: {file.DocumentType})]");
+                            contentBuilder.AppendLine(rawText);
+                            contentBuilder.AppendLine();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogWarning(ex, "Failed to process file {FileName}", file.FileName);
+                        contentBuilder.AppendLine(
+                            $"[File: {file.FileName} \u2014 upload/parse failed: {ex.Message}]");
+                    }
+                }
+
+                contentBuilder.AppendLine("--- END DOCUMENT DATA ---");
+                contentBuilder.AppendLine();
+            }
+
+            if (hasText)
+            {
+                contentBuilder.Append(input);
+            }
+            else if (hasFiles)
+            {
+                var fileNames = string.Join(", ", filesToProcess.Select(f => f.FileName));
+                contentBuilder.Append(
+                    $"I've attached {filesToProcess.Count} file(s): {fileNames}. Please analyze the data above.");
+            }
+
+            var fullContent = contentBuilder.ToString();
+
+            var userMsg = new ChatMessage(DealId, "user", fullContent);
+            Db.ChatMessages.Add(userMsg);
+            await Db.SaveChangesAsync();
+            _messages.Add(userMsg);
+            await InvokeAsync(StateHasChanged);
+
+            var history = _messages
+                .Select(m => new ConversationMessage { Role = m.Role, Content = m.Content })
+                .ToList();
+
+            var request = new ClaudeRequest
+            {
+                SystemPrompt = BuildSystemPrompt(),
+                ConversationHistory = history,
+                MaxTokens = 4000
+            };
+
+            var response = await ClaudeClient.SendMessageAsync(request);
+            Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
+                DealId, response.Content?.Length ?? 0);
+
+            await ProcessAiResponse(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Message send failed for deal {DealId}", DealId);
+            _errorMessage = "Failed to send message. Please try again.";
+        }
+        finally
+        {
+            _thinking = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+            await SendMessage();
+    }
+
+    // --- AI Response Processing ---
+
+    private async Task ProcessAiResponse(ClaudeResponse response)
+    {
+        var rawContent = response.Content ?? "";
+
+        var dealUpdate = DealUpdateParser.Parse(rawContent);
+        var displayContent = DealUpdateParser.StripBlocks(rawContent);
+
+        var asstMsg = new ChatMessage(DealId, "assistant", rawContent);
+        asstMsg.InputTokens = response.InputTokens;
+        asstMsg.OutputTokens = response.OutputTokens;
+        Db.ChatMessages.Add(asstMsg);
+        await Db.SaveChangesAsync();
+
+        _messages.Add(asstMsg);
+
+        if (dealUpdate != null)
+        {
+            try
+            {
+                await ApplyDealUpdate(dealUpdate);
+                await OnDealUpdated.InvokeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to apply deal update for {DealId}", DealId);
+            }
+        }
+    }
+
+    private async Task ApplyDealUpdate(DealUpdateDto update)
+    {
+        var deal = await Db.Deals
+            .Include(d => d.Property)
+            .Include(d => d.CalculationResult)
+            .Include(d => d.CapitalStackItems)
+            .Include(d => d.DealChecklistItems)
+            .FirstOrDefaultAsync(d => d.Id == DealId);
+
+        if (deal == null) return;
+
+        if (update.General != null)
+        {
+            var g = update.General;
+
+            if (g.PropertyName != null)
+                deal.PropertyName = g.PropertyName;
+            if (g.Address != null)
+                deal.Address = g.Address;
+            if (g.UnitCount.HasValue)
+                deal.UnitCount = g.UnitCount.Value;
+            if (g.PurchasePrice.HasValue)
+                deal.PurchasePrice = g.PurchasePrice.Value;
+
+            if (deal.Property == null && (g.Address != null || g.UnitCount.HasValue))
+            {
+                deal.Property = new Property(
+                    g.Address ?? deal.Address ?? "Unknown",
+                    g.UnitCount ?? (deal.UnitCount > 0 ? deal.UnitCount : 1));
+                deal.Property.DealId = deal.Id;
+            }
+
+            if (deal.Property != null)
+            {
+                if (g.Address != null) deal.Property.Address = g.Address;
+                if (g.UnitCount.HasValue) deal.Property.UnitCount = g.UnitCount.Value;
+                if (g.YearBuilt.HasValue) deal.Property.YearBuilt = g.YearBuilt.Value;
+                if (g.BuildingType != null) deal.Property.BuildingType = g.BuildingType;
+                if (g.SquareFootage.HasValue) deal.Property.SquareFootage = g.SquareFootage.Value;
+                if (g.Acreage.HasValue) deal.Property.Acreage = g.Acreage.Value;
+            }
+        }
+
+        if (update.Underwriting != null)
+        {
+            var u = update.Underwriting;
+
+            if (deal.CalculationResult == null)
+            {
+                deal.CalculationResult = new CalculationResult(deal.Id);
+            }
+
+            var calc = deal.CalculationResult;
+            if (u.GrossPotentialRent.HasValue) calc.GrossPotentialRent = u.GrossPotentialRent;
+            if (u.VacancyLoss.HasValue) calc.VacancyLoss = u.VacancyLoss;
+            if (u.EffectiveGrossIncome.HasValue) calc.EffectiveGrossIncome = u.EffectiveGrossIncome;
+            if (u.OtherIncome.HasValue) calc.OtherIncome = u.OtherIncome;
+            if (u.OperatingExpenses.HasValue) calc.OperatingExpenses = u.OperatingExpenses;
+            if (u.NetOperatingIncome.HasValue) calc.NetOperatingIncome = u.NetOperatingIncome;
+            if (u.GoingInCapRate.HasValue) calc.GoingInCapRate = u.GoingInCapRate / 100m;
+            if (u.ExitCapRate.HasValue) calc.ExitCapRate = u.ExitCapRate / 100m;
+            if (u.PricePerUnit.HasValue) calc.PricePerUnit = u.PricePerUnit;
+            if (u.LoanAmount.HasValue) calc.LoanAmount = u.LoanAmount;
+            if (u.AnnualDebtService.HasValue) calc.AnnualDebtService = u.AnnualDebtService;
+            if (u.DebtServiceCoverageRatio.HasValue) calc.DebtServiceCoverageRatio = u.DebtServiceCoverageRatio;
+            if (u.CashOnCashReturn.HasValue) calc.CashOnCashReturn = u.CashOnCashReturn / 100m;
+            if (u.InternalRateOfReturn.HasValue) calc.InternalRateOfReturn = u.InternalRateOfReturn / 100m;
+            if (u.EquityMultiple.HasValue) calc.EquityMultiple = u.EquityMultiple;
+
+            if (u.CapitalStack is { Count: > 0 })
+            {
+                Db.CapitalStackItems.RemoveRange(deal.CapitalStackItems);
+
+                for (int i = 0; i < u.CapitalStack.Count; i++)
+                {
+                    var entry = u.CapitalStack[i];
+                    var source = Enum.TryParse<CapitalSource>(entry.Source, true, out var parsed)
+                        ? parsed : CapitalSource.Other;
+
+                    var item = new CapitalStackItem(deal.Id, source, entry.Amount)
+                    {
+                        Rate = entry.Rate,
+                        TermYears = entry.TermYears,
+                        SortOrder = i
+                    };
+                    Db.CapitalStackItems.Add(item);
+                }
+            }
+        }
+
+        if (update.Checklist is { Count: > 0 })
+        {
+            var templates = await Db.ChecklistTemplates.ToListAsync();
+
+            foreach (var entry in update.Checklist)
+            {
+                var template = templates.FirstOrDefault(t =>
+                    t.ItemName.Equals(entry.Item, StringComparison.OrdinalIgnoreCase)) ??
+                    templates.FirstOrDefault(t =>
+                        t.ItemName.Contains(entry.Item, StringComparison.OrdinalIgnoreCase) ||
+                        entry.Item.Contains(t.ItemName, StringComparison.OrdinalIgnoreCase));
+
+                if (template == null) continue;
+
+                var existing = deal.DealChecklistItems
+                    .FirstOrDefault(ci => ci.ChecklistTemplateId == template.Id);
+
+                if (existing == null)
+                {
+                    existing = new DealChecklistItem(deal.Id, template.Id);
+                    Db.DealChecklistItems.Add(existing);
+                }
+
+                if (Enum.TryParse<ChecklistStatus>(entry.Status, true, out var status))
+                {
+                    existing.UpdateStatus(status);
+                }
+            }
+        }
+
+        await Db.SaveChangesAsync();
+        Logger.LogInformation("Applied deal update for {DealId}: general={HasGeneral}, underwriting={HasUnderwriting}, checklist={ChecklistCount}",
+            DealId, update.General != null, update.Underwriting != null, update.Checklist?.Count ?? 0);
+    }
+
+    // --- Helpers ---
+
+    private static DocumentType DetectDocumentType(string fileName)
+    {
+        var name = Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant();
+
+        if (name.Contains("rent") && name.Contains("roll")) return DocumentType.RentRoll;
+        if (name.Contains("t12") || name.Contains("p&l") || name.Contains("pandl") || name.Contains("trailing"))
+            return DocumentType.T12PAndL;
+        if (name.Contains("loan") || (name.Contains("term") && name.Contains("sheet")))
+            return DocumentType.LoanTermSheet;
+        if (name.Contains("offering") || name.Contains("memo"))
+            return DocumentType.OfferingMemorandum;
+        if (name.Contains("appraisal"))
+            return DocumentType.Appraisal;
+        if (name.Contains("phase") || name.Contains("pca") || name.Contains("environmental"))
+            return DocumentType.PhaseIPCA;
+
+        return DocumentType.OfferingMemorandum;
+    }
+
+    private static string FormatParsedData(ParsedDocumentResult result, string fileName)
+    {
+        if (!result.Success)
+            return $"[File: {fileName} \u2014 uploaded but could not be parsed: {result.ErrorMessage}]";
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"[Parsed Data from: {fileName} (Type: {result.DocumentType})]");
+
+        switch (result.DocumentType)
+        {
+            case DocumentType.RentRoll:
+                if (result.UnitCount.HasValue) sb.AppendLine($"Unit Count: {result.UnitCount}");
+                if (result.AverageRent.HasValue) sb.AppendLine($"Average Rent: {result.AverageRent:C0}");
+                if (result.TotalMonthlyRent.HasValue) sb.AppendLine($"Total Monthly Rent: {result.TotalMonthlyRent:C0}");
+                if (result.OccupancyRate.HasValue) sb.AppendLine($"Occupancy Rate: {result.OccupancyRate:P1}");
+                if (result.Units.Count > 0)
+                {
+                    sb.AppendLine("Unit Details:");
+                    sb.AppendLine("  Unit | Type | Rent | Occupied | Lease Exp | SqFt");
+                    foreach (var u in result.Units)
+                        sb.AppendLine($"  {u.UnitNumber} | {u.UnitType ?? "-"} | {u.MonthlyRent:C0} | " +
+                                      $"{(u.IsOccupied ? "Yes" : "No")} | " +
+                                      $"{u.LeaseExpiration?.ToString("MM/yyyy") ?? "-"} | " +
+                                      $"{u.SquareFeet?.ToString() ?? "-"}");
+                }
+                break;
+
+            case DocumentType.T12PAndL:
+                if (result.GrossRevenue.HasValue) sb.AppendLine($"Gross Revenue: {result.GrossRevenue:C0}");
+                if (result.EffectiveGrossIncome.HasValue) sb.AppendLine($"Effective Gross Income: {result.EffectiveGrossIncome:C0}");
+                if (result.TotalExpenses.HasValue) sb.AppendLine($"Total Expenses: {result.TotalExpenses:C0}");
+                if (result.NetOperatingIncome.HasValue) sb.AppendLine($"Net Operating Income: {result.NetOperatingIncome:C0}");
+                if (result.RevenueItems.Count > 0)
+                {
+                    sb.AppendLine("Revenue Items:");
+                    foreach (var item in result.RevenueItems)
+                        sb.AppendLine($"  {item.Category}: {item.AnnualAmount:C0}/yr");
+                }
+                if (result.ExpenseItems.Count > 0)
+                {
+                    sb.AppendLine("Expense Items:");
+                    foreach (var item in result.ExpenseItems)
+                        sb.AppendLine($"  {item.Category}: {item.AnnualAmount:C0}/yr");
+                }
+                break;
+
+            case DocumentType.LoanTermSheet:
+                if (result.LoanAmount.HasValue) sb.AppendLine($"Loan Amount: {result.LoanAmount:C0}");
+                if (result.InterestRate.HasValue) sb.AppendLine($"Interest Rate: {result.InterestRate:P2}");
+                if (result.LtvRatio.HasValue) sb.AppendLine($"LTV: {result.LtvRatio:P1}");
+                if (result.LoanTermYears.HasValue) sb.AppendLine($"Loan Term: {result.LoanTermYears} years");
+                if (result.AmortizationYears.HasValue) sb.AppendLine($"Amortization: {result.AmortizationYears} years");
+                if (result.IsInterestOnly == true)
+                {
+                    sb.AppendLine("Interest Only: Yes");
+                    if (result.IoTermMonths.HasValue) sb.AppendLine($"IO Period: {result.IoTermMonths} months");
+                }
+                if (!string.IsNullOrEmpty(result.PrepaymentTerms))
+                    sb.AppendLine($"Prepayment: {result.PrepaymentTerms}");
+                break;
+
+            default:
+                sb.AppendLine("File attached. No structured parser available for this document type.");
+                break;
+        }
+
+        return sb.ToString();
+    }
+
+    private static (List<string> FileNames, string UserText) ExtractAttachments(string content)
+    {
+        var fileNames = new List<string>();
+        const string startMarker = "--- ATTACHED DOCUMENT DATA ---";
+        const string endMarker = "--- END DOCUMENT DATA ---";
+
+        var startIdx = content.IndexOf(startMarker);
+        var endIdx = content.IndexOf(endMarker);
+
+        if (startIdx >= 0 && endIdx > startIdx)
+        {
+            var dataBlock = content[startIdx..(endIdx + endMarker.Length)];
+
+            foreach (Match m in Regex.Matches(dataBlock, @"\[Parsed Data from: (.+?) \(Type:"))
+                fileNames.Add(m.Groups[1].Value);
+
+            foreach (Match m in Regex.Matches(dataBlock, @"\[Raw Data from: (.+?) \(Type:"))
+                fileNames.Add(m.Groups[1].Value);
+
+            foreach (Match m in Regex.Matches(dataBlock, @"\[File: (.+?) \u2014"))
+                fileNames.Add(m.Groups[1].Value);
+
+            var userText = content[(endIdx + endMarker.Length)..].Trim();
+            return (fileNames, userText);
+        }
+
+        return (fileNames, content);
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+    private static string BuildSystemPrompt() =>
+        """
+        You are a commercial real estate underwriting analyst. You help investors analyze multifamily and commercial properties for acquisition.
+
+        IMPORTANT: When given a property name or address, you MUST use web search to research it before responding.
+        Search for the property listing, public records, and market data. Look for:
+        - The property listing (LoopNet, CoStar, Crexi, Apartments.com, Zillow, Redfin)
+        - Property details: unit count, year built, square footage, recent sale price, current asking price
+        - Submarket data: average rents, cap rates, vacancy rates, employment trends
+        - Comparable sales in the area
+        - Neighborhood context: major employers, transportation, development pipeline
+
+        After researching, provide a comprehensive analysis covering:
+        - Property overview with REAL data found online (not estimates)
+        - Market conditions and trends backed by actual data
+        - Financial metrics (cap rate, price per unit/SF, market rent) using real comps
+        - Risk factors and opportunities
+        - Preliminary investment recommendation (GO / CAUTION / NO GO)
+
+        Always cite your sources when presenting data you found online.
+
+        STRUCTURED DATA OUTPUT (REQUIRED):
+        In EVERY response where you discover or calculate property data, you MUST include a deal-update JSON block.
+        This block populates the deal management tabs automatically. Include it at the END of your response.
+        Only include fields you have actual data for — omit fields you don't know. Example format:
+
+        ```deal-update
+        {
+          "general": {
+            "propertyName": "Sunrise Apartments",
+            "address": "123 Main St, Austin, TX 78701",
+            "unitCount": 50,
+            "yearBuilt": 1985,
+            "buildingType": "Garden",
+            "squareFootage": 45000,
+            "purchasePrice": 5000000
+          },
+          "underwriting": {
+            "grossPotentialRent": 600000,
+            "vacancyLoss": 30000,
+            "effectiveGrossIncome": 570000,
+            "operatingExpenses": 228000,
+            "netOperatingIncome": 342000,
+            "goingInCapRate": 6.84,
+            "pricePerUnit": 100000,
+            "capitalStack": [
+              {"source": "SeniorDebt", "amount": 3500000, "rate": 5.5, "termYears": 10},
+              {"source": "SponsorEquity", "amount": 1500000}
+            ]
+          },
+          "checklist": [
+            {"item": "Current Months Rent Roll", "status": "Outstanding"},
+            {"item": "Trailing 12 Month Operating Statement", "status": "Outstanding"}
+          ]
+        }
+        ```
+
+        Rules for the deal-update block:
+        - Include it in EVERY response where you have property data to report
+        - Only include fields you have actual data for (web search results, uploaded docs, calculations)
+        - For "general": populate property details as you discover them
+        - For "underwriting": populate financial metrics as you calculate or find them
+        - For "underwriting.capitalStack": source must be one of: SeniorDebt, Mezzanine, PreferredEquity, SponsorEquity, Other
+        - For "checklist": list due diligence items you identify as needed or received. Status: Outstanding, Satisfied, or NotApplicable
+        - Cap rates should be percentages (6.84 = 6.84%, not 0.0684)
+        - Monetary values in whole dollars (no cents)
+        - The block is stripped from the displayed message — the user sees your analysis text only
+
+        After your analysis, proactively suggest what you can help with next.
+
+        DOCUMENT HANDLING:
+        When the user uploads .docx files, the system extracts the text content automatically using OpenXML.
+        For .xlsx files, raw cell data is extracted sheet by sheet. For .csv files, the raw text is passed through.
+        For .pdf files, the structured parser attempts to extract financial data.
+
+        When the user attaches documents, their data appears between "--- ATTACHED DOCUMENT DATA ---" and
+        "--- END DOCUMENT DATA ---" markers in the user message. Analyze thoroughly:
+        - Rent rolls: unit mix, occupancy, average rent vs. market, lease rollover
+        - T12 P&L: NOI, expense ratios, revenue growth, expense reduction opportunities
+        - Loan term sheets: LTV, DSCR, interest rate risk, prepayment flexibility
+        Cross-reference multiple documents when available. Update the deal-update block with any new data found.
+
+        Format responses in markdown. Be data-informed, conversational, and professional.
+        Build on previous messages rather than repeating information already discussed.
+        """;
+
+    // --- Raw text extraction (fallback when structured parser fails) ---
+
+    private static string ExtractRawText(MemoryStream ms, string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        ms.Position = 0;
+
+        try
+        {
+            if (ext == ".csv")
+            {
+                using var reader = new StreamReader(ms, leaveOpen: true);
+                var text = reader.ReadToEnd();
+                return text.Length > 20000 ? text[..20000] + "\n... (truncated)" : text;
+            }
+
+            if (ext == ".xlsx")
+                return ExtractXlsxText(ms);
+
+            if (ext == ".docx")
+                return ExtractDocxText(ms);
+
+            return "[Binary file attached — content cannot be extracted as text.]";
+        }
+        catch (Exception ex)
+        {
+            return $"[Failed to extract text from {fileName}: {ex.Message}]";
+        }
+    }
+
+    private static string ExtractXlsxText(Stream stream)
+    {
+        var sb = new StringBuilder();
+        using var doc = SpreadsheetDocument.Open(stream, false);
+        var wbPart = doc.WorkbookPart;
+        if (wbPart == null) return "[Empty workbook]";
+
+        var sst = wbPart.SharedStringTablePart?.SharedStringTable;
+
+        foreach (var wsPart in wbPart.WorksheetParts)
+        {
+            var sheetId = wbPart.Workbook.Descendants<DocumentFormat.OpenXml.Spreadsheet.Sheet>()
+                .FirstOrDefault(s => s.Id?.Value == wbPart.GetIdOfPart(wsPart));
+            if (sheetId?.Name?.Value is { } name)
+                sb.AppendLine($"--- Sheet: {name} ---");
+
+            var rows = wsPart.Worksheet.Descendants<DocumentFormat.OpenXml.Spreadsheet.Row>().ToList();
+
+            foreach (var row in rows)
+            {
+                var cells = row.Elements<DocumentFormat.OpenXml.Spreadsheet.Cell>().ToList();
+                var values = new List<string>();
+
+                foreach (var cell in cells)
+                {
+                    var val = cell.CellValue?.Text ?? "";
+                    if (cell.DataType?.Value == DocumentFormat.OpenXml.Spreadsheet.CellValues.SharedString
+                        && sst != null
+                        && int.TryParse(val, out var idx))
+                    {
+                        val = sst.ElementAt(idx).InnerText;
+                    }
+                    values.Add(val);
+                }
+
+                sb.AppendLine(string.Join('\t', values));
+
+                if (sb.Length > 20000)
+                {
+                    sb.AppendLine("... (truncated)");
+                    return sb.ToString();
+                }
+            }
+
+            sb.AppendLine();
+        }
+
+        return sb.Length > 0 ? sb.ToString() : "[No data found in workbook]";
+    }
+
+    private static string ExtractDocxText(Stream stream)
+    {
+        var sb = new StringBuilder();
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var body = doc.MainDocumentPart?.Document?.Body;
+        if (body == null) return "[Empty document]";
+
+        foreach (var para in body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+        {
+            var text = para.InnerText;
+            if (!string.IsNullOrWhiteSpace(text))
+                sb.AppendLine(text);
+
+            if (sb.Length > 20000)
+            {
+                sb.AppendLine("... (truncated)");
+                return sb.ToString();
+            }
+        }
+
+        return sb.Length > 0 ? sb.ToString() : "[No text found in document]";
+    }
+
+    // --- Inner types ---
+
+    private class PendingAttachment
+    {
+        public string FileName { get; set; } = "";
+        public long FileSize { get; set; }
+        public DocumentType DocumentType { get; set; }
+        public IBrowserFile BrowserFile { get; set; } = null!;
+    }
+}

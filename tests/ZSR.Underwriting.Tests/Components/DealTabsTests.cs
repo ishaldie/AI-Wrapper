@@ -2,11 +2,16 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
+using ZSR.Underwriting.Application.DTOs;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
+using ZSR.Underwriting.Domain.Interfaces;
+using ZSR.Underwriting.Domain.Models;
 using ZSR.Underwriting.Infrastructure.Data;
 using ZSR.Underwriting.Web.Components.Pages;
 
@@ -555,4 +560,152 @@ public class DealTabsInvestorTests : IAsyncLifetime
 
         Assert.Contains("No investors", cut.Markup);
     }
+}
+
+public class DealTabsChatTests : IAsyncLifetime
+{
+    private readonly BunitContext _ctx;
+    private readonly AppDbContext _db;
+    private readonly Guid _dealId;
+
+    public DealTabsChatTests()
+    {
+        _ctx = new BunitContext();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddMudServices();
+
+        var dbName = $"DealTabsChatTests_{Guid.NewGuid()}";
+        _ctx.Services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase(dbName));
+
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
+
+        // Register stub services required by DealChatTab
+        _ctx.Services.AddSingleton<IClaudeClient>(new StubClaudeClient());
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentParsingService>(new StubDocumentParsingService());
+        _ctx.Services.AddLogging();
+
+        var sp = _ctx.Services.BuildServiceProvider();
+        _db = sp.GetRequiredService<AppDbContext>();
+
+        // Seed deal with existing chat messages (avoids auto-analysis trigger)
+        var deal = new Deal("Test Property", "test-user-id");
+        deal.PropertyName = "Chat Test Apts";
+        deal.Address = "555 Chat Blvd";
+        deal.UnitCount = 80;
+        _db.Deals.Add(deal);
+
+        _db.ChatMessages.Add(new ChatMessage(deal.Id, "user", "Analyze this property"));
+        _db.ChatMessages.Add(new ChatMessage(deal.Id, "assistant", "Here is the analysis for Chat Test Apts."));
+
+        _db.SaveChanges();
+        _dealId = deal.Id;
+    }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        await _db.DisposeAsync();
+        await _ctx.DisposeAsync();
+    }
+
+    [Fact]
+    public void ChatTab_RendersChatComponent()
+    {
+        var cut = _ctx.Render(builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealChatTab>(1);
+            builder.AddAttribute(2, "DealId", _dealId);
+            builder.CloseComponent();
+        });
+
+        // Wait for messages to load
+        cut.WaitForState(() => cut.Markup.Contains("Chat Test Apts") || cut.Markup.Contains("Analyze this"), TimeSpan.FromSeconds(3));
+
+        // Should show the chat messages
+        Assert.Contains("Here is the analysis", cut.Markup);
+    }
+
+    [Fact]
+    public void ChatTab_ShowsInputBar()
+    {
+        var cut = _ctx.Render(builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealChatTab>(1);
+            builder.AddAttribute(2, "DealId", _dealId);
+            builder.CloseComponent();
+        });
+
+        cut.WaitForState(() => cut.Markup.Contains("Ask about this property"), TimeSpan.FromSeconds(3));
+
+        Assert.Contains("Ask about this property", cut.Markup);
+    }
+
+    [Fact]
+    public void ChatTab_ShowsMessageHistory()
+    {
+        var cut = _ctx.Render(builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealChatTab>(1);
+            builder.AddAttribute(2, "DealId", _dealId);
+            builder.CloseComponent();
+        });
+
+        cut.WaitForState(() => cut.Markup.Contains("Analyze this"), TimeSpan.FromSeconds(3));
+
+        // Both user and assistant messages should appear
+        Assert.Contains("Analyze this property", cut.Markup);
+        Assert.Contains("Here is the analysis", cut.Markup);
+    }
+
+    [Fact]
+    public void DealTabs_ChatTabHeader_Exists()
+    {
+        var cut = _ctx.Render(builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealTabs>(1);
+            builder.AddAttribute(2, "DealId", _dealId);
+            builder.CloseComponent();
+        });
+
+        cut.WaitForState(() => cut.Markup.Contains("General"), TimeSpan.FromSeconds(3));
+
+        // Chat tab header should be rendered
+        Assert.Contains("Chat", cut.Markup);
+    }
+}
+
+// Stub implementations for chat service dependencies
+internal class StubClaudeClient : IClaudeClient
+{
+    public Task<ClaudeResponse> SendMessageAsync(ClaudeRequest request, CancellationToken ct = default)
+        => Task.FromResult(new ClaudeResponse { Content = "Test AI response" });
+}
+
+internal class StubDocumentUploadService : IDocumentUploadService
+{
+    public Task<FileUploadResultDto> UploadDocumentAsync(Guid dealId, Stream fileStream, string fileName, DocumentType documentType, string userId, CancellationToken ct = default)
+        => Task.FromResult(new FileUploadResultDto { DocumentId = Guid.NewGuid(), FileName = fileName });
+
+    public Task<IReadOnlyList<FileUploadResultDto>> GetDocumentsForDealAsync(Guid dealId, string userId, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyList<FileUploadResultDto>>(new List<FileUploadResultDto>());
+
+    public Task DeleteDocumentAsync(Guid documentId, string userId, CancellationToken ct = default)
+        => Task.CompletedTask;
+}
+
+internal class StubDocumentParsingService : IDocumentParsingService
+{
+    public Task<ParsedDocumentResult> ParseDocumentAsync(Guid documentId, CancellationToken ct = default)
+        => Task.FromResult(new ParsedDocumentResult { Success = false, ErrorMessage = "Stub" });
 }

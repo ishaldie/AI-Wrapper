@@ -59,12 +59,12 @@
 - [x] Task 6.4: Save investor to DB
 
 ## Phase 7: Chat Tab Integration
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 7.1: Refactor DealChat.razor into `DealChatTab.razor` component (extract from page to component, accept DealId as parameter)
-- [ ] Task 7.2: Embed DealChatTab in DealTabs as 5th tab
-- [ ] Task 7.3: Add callback/event — after AI response applies deal-update, notify parent DealTabs to refresh other tabs
-- [ ] Task 7.4: Keep `/deals/{id}/chat` route working (redirect to `/deals/{id}?tab=chat`)
+- [x] Task 7.1: Refactor DealChat.razor into `DealChatTab.razor` component (extract from page to component, accept DealId as parameter)
+- [x] Task 7.2: Embed DealChatTab in DealTabs as 5th tab
+- [x] Task 7.3: Add callback/event — after AI response applies deal-update, notify parent DealTabs to refresh other tabs
+- [x] Task 7.4: Keep `/deals/{id}/chat` route working (redirect to `/deals/{id}?tab=chat`)
 
 ## Phase 8: Tests & Polish
 *Status: Pending*
