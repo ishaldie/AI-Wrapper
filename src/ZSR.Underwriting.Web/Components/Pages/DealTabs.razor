@@ -1,0 +1,201 @@
+@page "/deals/{DealId:guid}"
+@using ZSR.Underwriting.Domain.Entities
+@using ZSR.Underwriting.Domain.Enums
+@using ZSR.Underwriting.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
+
+@if (_loading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
+}
+else if (_deal is null)
+{
+    <MudStack AlignItems="AlignItems.Center" Spacing="4" Class="pa-8">
+        <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" Style="color: #D1D5DB;" />
+        <MudText Typo="Typo.h6" Style="color: #6B7280;">Deal not found</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="@(() => Navigation.NavigateTo("/deals"))"
+                   Style="text-transform: none;">
+            Back to Pipeline
+        </MudButton>
+    </MudStack>
+}
+else
+{
+    <div class="deal-tabs-header">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="@(() => Navigation.NavigateTo("/deals"))"
+                       Style="color: #6B7280;" />
+        <div style="flex: 1; min-width: 0;">
+            <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                @_deal.PropertyName
+            </MudText>
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                @_deal.Address
+            </MudText>
+        </div>
+        <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_deal.Status.ToString())">
+            @_deal.Status
+        </MudChip>
+    </div>
+
+    <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="deal-tabs-container"
+             PanelClass="deal-tab-panel" ActivePanelIndex="_activePanelIndex" ActivePanelIndexChanged="OnTabChanged">
+        <MudTabPanel Text="General" Icon="@Icons.Material.Filled.Info">
+            <div class="deal-tab-content">
+                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #1A2332;">Property Information</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_deal.PropertyName" Label="Property Name" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_deal.Address" Label="Address" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField @bind-Value="_deal.UnitCount" Label="Unit Count" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField @bind-Value="_property.YearBuilt" Label="Year Built" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField @bind-Value="_property.BuildingType" Label="Building Type" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField @bind-Value="_property.SquareFootage" Label="Square Footage" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField @bind-Value="_property.Acreage" Label="Acreage" Variant="Variant.Outlined" />
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudNumericField @bind-Value="_deal.PurchasePrice" Label="Purchase Price" Variant="Variant.Outlined"
+                                         Format="N0" Adornment="Adornment.Start" AdornmentText="$" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Deal Classification</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">
+                        <MudSelect @bind-Value="_deal.ExecutionType" Label="Execution Type" Variant="Variant.Outlined">
+                            @foreach (var et in Enum.GetValues<ExecutionType>())
+                            {
+                                <MudSelectItem Value="@et">@et</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudTextField @bind-Value="_deal.TransactionType" Label="Transaction Type" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+
+                <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-6">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               StartIcon="@Icons.Material.Filled.Save"
+                               OnClick="SaveGeneralAsync"
+                               Disabled="_saving"
+                               Style="text-transform: none; font-weight: 500;">
+                        @(_saving ? "Saving..." : "Save Changes")
+                    </MudButton>
+                </MudStack>
+            </div>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Underwriting" Icon="@Icons.Material.Filled.Analytics">
+            <div class="deal-tab-content">
+                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Underwriting metrics will appear here as the AI analyzes your deal.</MudText>
+            </div>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Investors" Icon="@Icons.Material.Filled.People">
+            <div class="deal-tab-content">
+                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Investor contacts will appear here.</MudText>
+            </div>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Checklist" Icon="@Icons.Material.Filled.Checklist">
+            <div class="deal-tab-content">
+                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Due diligence checklist will appear here.</MudText>
+            </div>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Chat" Icon="@Icons.Material.Filled.Chat">
+            <div class="deal-tab-content">
+                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">AI chat will be integrated here.</MudText>
+            </div>
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    [Parameter] public Guid DealId { get; set; }
+
+    private Deal? _deal;
+    private Property _property = null!;
+    private bool _loading = true;
+    private bool _saving;
+    private int _activePanelIndex;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _deal = await Db.Deals
+            .Include(d => d.Property)
+            .FirstOrDefaultAsync(d => d.Id == DealId);
+
+        if (_deal is not null)
+        {
+            _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
+        }
+
+        _loading = false;
+    }
+
+    private void OnTabChanged(int index)
+    {
+        _activePanelIndex = index;
+    }
+
+    private async Task SaveGeneralAsync()
+    {
+        if (_deal is null) return;
+
+        _saving = true;
+        try
+        {
+            // Sync property fields back to entity
+            if (_deal.Property is null && _property is not null)
+            {
+                _property.DealId = _deal.Id;
+                Db.Properties.Add(_property);
+                _deal.Property = _property;
+            }
+
+            await Db.SaveChangesAsync();
+            Snackbar.Add("Changes saved", Severity.Success);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to save changes", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static Color GetStatusColor(string status) => status switch
+    {
+        "Draft" => Color.Default,
+        "InProgress" => Color.Warning,
+        "Complete" => Color.Success,
+        "Archived" => Color.Dark,
+        _ => Color.Default
+    };
+}

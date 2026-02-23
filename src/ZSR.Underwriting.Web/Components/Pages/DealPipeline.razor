@@ -71,7 +71,8 @@ else
         {
             <MudDataGrid T="DealSummaryDto" Items="@FilteredDeals" SortMode="SortMode.Single"
                          Hover="true" Elevation="0"
-                         MultiSelection="true" @bind-SelectedItems="_selectedItems">
+                         MultiSelection="true" @bind-SelectedItems="_selectedItems"
+                         RowClick="@(args => Navigation.NavigateTo($"/deals/{args.Item.Id}"))">
                 <Columns>
                     <SelectColumn T="DealSummaryDto" ShowInFooter="false" />
                     <PropertyColumn Property="x => x.PropertyName" Title="Property Name" Sortable="true" />
@@ -97,6 +98,10 @@ else
                     <TemplateColumn Title="Actions" Sortable="false">
                         <CellTemplate>
                             <MudStack Row="true" Spacing="1">
+                                <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                               Size="Size.Small"
+                                               aria-label="Open"
+                                               OnClick="@(() => Navigation.NavigateTo($"/deals/{context.Item.Id}"))" />
                                 @if (context.Item.Status != "Archived")
                                 {
                                     <MudIconButton Icon="@Icons.Material.Filled.Archive"

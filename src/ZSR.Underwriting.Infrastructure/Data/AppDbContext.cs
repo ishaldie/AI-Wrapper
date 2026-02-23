@@ -19,6 +19,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<UserSession> UserSessions => Set<UserSession>();
     public DbSet<ActivityEvent> ActivityEvents => Set<ActivityEvent>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<DealInvestor> DealInvestors => Set<DealInvestor>();
+    public DbSet<CapitalStackItem> CapitalStackItems => Set<CapitalStackItem>();
+    public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
+    public DbSet<DealChecklistItem> DealChecklistItems => Set<DealChecklistItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -96,6 +100,28 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithOne(m => m.Deal)
                 .HasForeignKey(m => m.DealId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many: Deal → DealInvestors
+            entity.HasMany(e => e.DealInvestors)
+                .WithOne(i => i.Deal)
+                .HasForeignKey(i => i.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many: Deal → CapitalStackItems
+            entity.HasMany(e => e.CapitalStackItems)
+                .WithOne(c => c.Deal)
+                .HasForeignKey(c => c.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // One-to-many: Deal → DealChecklistItems
+            entity.HasMany(e => e.DealChecklistItems)
+                .WithOne(ci => ci.Deal)
+                .HasForeignKey(ci => ci.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Deal classification
+            entity.Property(e => e.ExecutionType).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.TransactionType).HasMaxLength(50);
         });
 
         // --- Property ---
@@ -214,6 +240,67 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Content).IsRequired();
             entity.HasIndex(e => e.DealId);
             entity.HasIndex(e => e.CreatedAt);
+        });
+
+        // --- DealInvestor ---
+        modelBuilder.Entity<DealInvestor>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Company).HasMaxLength(200);
+            entity.Property(e => e.Role).HasMaxLength(100);
+            entity.Property(e => e.Address).HasMaxLength(500);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.State).HasMaxLength(50);
+            entity.Property(e => e.Zip).HasMaxLength(20);
+            entity.Property(e => e.Phone).HasMaxLength(30);
+            entity.Property(e => e.Email).HasMaxLength(200);
+            entity.Property(e => e.NetWorth).HasPrecision(18, 2);
+            entity.Property(e => e.Liquidity).HasPrecision(18, 2);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.HasIndex(e => e.DealId);
+        });
+
+        // --- CapitalStackItem ---
+        modelBuilder.Entity<CapitalStackItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Source).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.Property(e => e.Rate).HasPrecision(5, 2);
+            entity.Property(e => e.Notes).HasMaxLength(500);
+            entity.HasIndex(e => e.DealId);
+        });
+
+        // --- ChecklistTemplate ---
+        modelBuilder.Entity<ChecklistTemplate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Section).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.ItemName).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.ExecutionType).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.TransactionType).HasMaxLength(100);
+            entity.HasIndex(e => new { e.SectionOrder, e.SortOrder });
+        });
+
+        // --- DealChecklistItem ---
+        modelBuilder.Entity<DealChecklistItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.HasIndex(e => e.DealId);
+            entity.HasIndex(e => e.ChecklistTemplateId);
+
+            entity.HasOne(e => e.Template)
+                .WithMany()
+                .HasForeignKey(e => e.ChecklistTemplateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Document)
+                .WithMany()
+                .HasForeignKey(e => e.DocumentId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

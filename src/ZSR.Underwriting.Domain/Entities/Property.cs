@@ -6,8 +6,8 @@ public class Property
     public Guid DealId { get; set; }
     public Deal Deal { get; set; } = null!;
 
-    public string Address { get; private set; }
-    public int UnitCount { get; private set; }
+    public string Address { get; set; }
+    public int UnitCount { get; set; }
     public int? YearBuilt { get; set; }
     public string? BuildingType { get; set; }
     public decimal? Acreage { get; set; }

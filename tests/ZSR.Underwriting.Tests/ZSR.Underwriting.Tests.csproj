@@ -120,6 +120,14 @@
     <Compile Include="Services\VirusScanServiceTests.cs" />
     <Compile Include="Services\SecurityAuditTests.cs" />
     <Compile Include="Parsing\FormulaInjectionTests.cs" />
+    <!-- Deal Tabs track -->
+    <Compile Include="Domain\DealTabsEnumTests.cs" />
+    <Compile Include="Domain\DealInvestorTests.cs" />
+    <Compile Include="Domain\CapitalStackItemTests.cs" />
+    <Compile Include="Domain\ChecklistTemplateTests.cs" />
+    <Compile Include="Domain\DealChecklistItemTests.cs" />
+    <Compile Include="Services\DealUpdateParserTests.cs" />
+    <Compile Include="Components\DealTabsTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

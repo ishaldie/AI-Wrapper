@@ -14,6 +14,10 @@ public class Deal
     public string UserId { get; private set; } = string.Empty;
     public ApplicationUser? Owner { get; set; }
 
+    // Deal classification (for checklist filtering)
+    public ExecutionType ExecutionType { get; set; } = ExecutionType.All;
+    public string TransactionType { get; set; } = "All";
+
     // Navigation properties (populated in later tasks)
     public Property? Property { get; set; }
     public UnderwritingInput? UnderwritingInput { get; set; }
@@ -22,6 +26,9 @@ public class Deal
     public ICollection<UploadedDocument> UploadedDocuments { get; set; } = new List<UploadedDocument>();
     public ICollection<FieldOverride> FieldOverrides { get; set; } = new List<FieldOverride>();
     public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+    public ICollection<DealInvestor> DealInvestors { get; set; } = new List<DealInvestor>();
+    public ICollection<CapitalStackItem> CapitalStackItems { get; set; } = new List<CapitalStackItem>();
+    public ICollection<DealChecklistItem> DealChecklistItems { get; set; } = new List<DealChecklistItem>();
 
     // === Temporary flat fields (will migrate to Property/UnderwritingInput entities) ===
     public string PropertyName { get; set; } = string.Empty;

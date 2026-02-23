@@ -86,3 +86,8 @@
 *Link: [./conductor/tracks/track_set_up_20260214/](./conductor/tracks/track_set_up_20260214/)*
 
 ---
+
+## [ ] Track: Deal Tabs
+*Link: [./conductor/tracks/deal-tabs/](./conductor/tracks/deal-tabs/)*
+
+---

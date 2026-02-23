@@ -13,6 +13,7 @@
 @using System.Security.Claims
 @using System.Text
 @using System.Text.RegularExpressions
+@using ZSR.Underwriting.Application.Services
 @using DocumentFormat.OpenXml.Packaging
 @inject AppDbContext Db
 @inject IClaudeClient ClaudeClient
@@ -31,7 +32,7 @@
     @* Header *@
     <div class="deal-chat-header">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       OnClick="@(() => Navigation.NavigateTo("/search"))"
+                       OnClick="@(() => Navigation.NavigateTo($"/deals/{DealId}"))"
                        Style="color: #6B7280;" />
         <div style="flex: 1; min-width: 0;">
             <MudText Typo="Typo.subtitle1" Style="font-weight: 700; color: #1A1D23; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
@@ -83,7 +84,7 @@
                         </div>
                         <div class="chat-content">
                             <div class="quick-report-content">
-                                @((MarkupString)Markdig.Markdown.ToHtml(msg.Content))
+                                @((MarkupString)Markdig.Markdown.ToHtml(DealUpdateParser.StripBlocks(msg.Content)))
                             </div>
                         </div>
                     </div>
@@ -405,6 +406,7 @@
 
 @code {
     [Parameter] public Guid DealId { get; set; }
+    [Parameter] public EventCallback OnDealUpdated { get; set; }
 
     private string? _dealName;
     private List<ChatMessage> _messages = new();
@@ -585,12 +587,7 @@
             Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
                 DealId, response.Content?.Length ?? 0);
 
-            var asstMsg = new ChatMessage(DealId, "assistant", response.Content ?? "");
-            asstMsg.InputTokens = response.InputTokens;
-            asstMsg.OutputTokens = response.OutputTokens;
-            Db.ChatMessages.Add(asstMsg);
-            await Db.SaveChangesAsync();
-            _messages.Add(asstMsg);
+            await ProcessAiResponse(response);
         }
         catch (Exception ex)
         {
@@ -713,12 +710,7 @@
             Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
                 DealId, response.Content?.Length ?? 0);
 
-            var asstMsg = new ChatMessage(DealId, "assistant", response.Content ?? "");
-            asstMsg.InputTokens = response.InputTokens;
-            asstMsg.OutputTokens = response.OutputTokens;
-            Db.ChatMessages.Add(asstMsg);
-            await Db.SaveChangesAsync();
-            _messages.Add(asstMsg);
+            await ProcessAiResponse(response);
         }
         catch (Exception ex)
         {
@@ -736,6 +728,179 @@
     {
         if (e.Key == "Enter" && !e.ShiftKey)
             await SendMessage();
+    }
+
+    // --- AI Response Processing ---
+
+    private async Task ProcessAiResponse(ClaudeResponse response)
+    {
+        var rawContent = response.Content ?? "";
+
+        // Parse structured data from the response
+        var dealUpdate = DealUpdateParser.Parse(rawContent);
+
+        // Strip the deal-update blocks from the displayed message
+        var displayContent = DealUpdateParser.StripBlocks(rawContent);
+
+        // Save the assistant message (with stripped content for display, raw for history)
+        var asstMsg = new ChatMessage(DealId, "assistant", rawContent);
+        asstMsg.InputTokens = response.InputTokens;
+        asstMsg.OutputTokens = response.OutputTokens;
+        Db.ChatMessages.Add(asstMsg);
+        await Db.SaveChangesAsync();
+
+        // Add message with display-friendly content to UI list
+        // We store raw in DB but show stripped in UI
+        _messages.Add(asstMsg);
+
+        // Apply structured data updates to deal entities
+        if (dealUpdate != null)
+        {
+            try
+            {
+                await ApplyDealUpdate(dealUpdate);
+                await OnDealUpdated.InvokeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to apply deal update for {DealId}", DealId);
+            }
+        }
+    }
+
+    private async Task ApplyDealUpdate(DealUpdateDto update)
+    {
+        var deal = await Db.Deals
+            .Include(d => d.Property)
+            .Include(d => d.CalculationResult)
+            .Include(d => d.CapitalStackItems)
+            .Include(d => d.DealChecklistItems)
+            .FirstOrDefaultAsync(d => d.Id == DealId);
+
+        if (deal == null) return;
+
+        // Apply general/property updates
+        if (update.General != null)
+        {
+            var g = update.General;
+
+            if (g.PropertyName != null)
+                deal.PropertyName = g.PropertyName;
+            if (g.Address != null)
+                deal.Address = g.Address;
+            if (g.UnitCount.HasValue)
+                deal.UnitCount = g.UnitCount.Value;
+            if (g.PurchasePrice.HasValue)
+                deal.PurchasePrice = g.PurchasePrice.Value;
+
+            // Update or create Property entity
+            if (deal.Property == null && (g.Address != null || g.UnitCount.HasValue))
+            {
+                deal.Property = new Property(
+                    g.Address ?? deal.Address ?? "Unknown",
+                    g.UnitCount ?? (deal.UnitCount > 0 ? deal.UnitCount : 1));
+                deal.Property.DealId = deal.Id;
+            }
+
+            if (deal.Property != null)
+            {
+                if (g.Address != null) deal.Property.Address = g.Address;
+                if (g.UnitCount.HasValue) deal.Property.UnitCount = g.UnitCount.Value;
+                if (g.YearBuilt.HasValue) deal.Property.YearBuilt = g.YearBuilt.Value;
+                if (g.BuildingType != null) deal.Property.BuildingType = g.BuildingType;
+                if (g.SquareFootage.HasValue) deal.Property.SquareFootage = g.SquareFootage.Value;
+                if (g.Acreage.HasValue) deal.Property.Acreage = g.Acreage.Value;
+            }
+        }
+
+        // Apply underwriting/calculation updates
+        if (update.Underwriting != null)
+        {
+            var u = update.Underwriting;
+
+            if (deal.CalculationResult == null)
+            {
+                deal.CalculationResult = new CalculationResult(deal.Id);
+            }
+
+            var calc = deal.CalculationResult;
+            if (u.GrossPotentialRent.HasValue) calc.GrossPotentialRent = u.GrossPotentialRent;
+            if (u.VacancyLoss.HasValue) calc.VacancyLoss = u.VacancyLoss;
+            if (u.EffectiveGrossIncome.HasValue) calc.EffectiveGrossIncome = u.EffectiveGrossIncome;
+            if (u.OtherIncome.HasValue) calc.OtherIncome = u.OtherIncome;
+            if (u.OperatingExpenses.HasValue) calc.OperatingExpenses = u.OperatingExpenses;
+            if (u.NetOperatingIncome.HasValue) calc.NetOperatingIncome = u.NetOperatingIncome;
+            if (u.GoingInCapRate.HasValue) calc.GoingInCapRate = u.GoingInCapRate / 100m; // Convert from percentage
+            if (u.ExitCapRate.HasValue) calc.ExitCapRate = u.ExitCapRate / 100m;
+            if (u.PricePerUnit.HasValue) calc.PricePerUnit = u.PricePerUnit;
+            if (u.LoanAmount.HasValue) calc.LoanAmount = u.LoanAmount;
+            if (u.AnnualDebtService.HasValue) calc.AnnualDebtService = u.AnnualDebtService;
+            if (u.DebtServiceCoverageRatio.HasValue) calc.DebtServiceCoverageRatio = u.DebtServiceCoverageRatio;
+            if (u.CashOnCashReturn.HasValue) calc.CashOnCashReturn = u.CashOnCashReturn / 100m;
+            if (u.InternalRateOfReturn.HasValue) calc.InternalRateOfReturn = u.InternalRateOfReturn / 100m;
+            if (u.EquityMultiple.HasValue) calc.EquityMultiple = u.EquityMultiple;
+
+            // Apply capital stack
+            if (u.CapitalStack is { Count: > 0 })
+            {
+                // Replace existing capital stack items
+                Db.CapitalStackItems.RemoveRange(deal.CapitalStackItems);
+
+                for (int i = 0; i < u.CapitalStack.Count; i++)
+                {
+                    var entry = u.CapitalStack[i];
+                    var source = Enum.TryParse<CapitalSource>(entry.Source, true, out var parsed)
+                        ? parsed : CapitalSource.Other;
+
+                    var item = new CapitalStackItem(deal.Id, source, entry.Amount)
+                    {
+                        Rate = entry.Rate,
+                        TermYears = entry.TermYears,
+                        SortOrder = i
+                    };
+                    Db.CapitalStackItems.Add(item);
+                }
+            }
+        }
+
+        // Apply checklist updates
+        if (update.Checklist is { Count: > 0 })
+        {
+            // Load all templates for matching
+            var templates = await Db.ChecklistTemplates.ToListAsync();
+
+            foreach (var entry in update.Checklist)
+            {
+                // Find matching template by item name (fuzzy match)
+                var template = templates.FirstOrDefault(t =>
+                    t.ItemName.Equals(entry.Item, StringComparison.OrdinalIgnoreCase)) ??
+                    templates.FirstOrDefault(t =>
+                        t.ItemName.Contains(entry.Item, StringComparison.OrdinalIgnoreCase) ||
+                        entry.Item.Contains(t.ItemName, StringComparison.OrdinalIgnoreCase));
+
+                if (template == null) continue;
+
+                // Find or create DealChecklistItem
+                var existing = deal.DealChecklistItems
+                    .FirstOrDefault(ci => ci.ChecklistTemplateId == template.Id);
+
+                if (existing == null)
+                {
+                    existing = new DealChecklistItem(deal.Id, template.Id);
+                    Db.DealChecklistItems.Add(existing);
+                }
+
+                // Parse and apply status
+                if (Enum.TryParse<ChecklistStatus>(entry.Status, true, out var status))
+                {
+                    existing.UpdateStatus(status);
+                }
+            }
+        }
+
+        await Db.SaveChangesAsync();
+        Logger.LogInformation("Applied deal update for {DealId}: general={HasGeneral}, underwriting={HasUnderwriting}, checklist={ChecklistCount}",
+            DealId, update.General != null, update.Underwriting != null, update.Checklist?.Count ?? 0);
     }
 
     // --- Helpers ---
@@ -886,51 +1051,69 @@
 
         Always cite your sources when presenting data you found online.
 
-        After your analysis, proactively suggest what you can help with next. For example:
-        - "Would you like me to dig deeper into the rent comps for this submarket?"
-        - "I can model different financing scenarios if you share the loan terms."
-        - "Want me to analyze the value-add potential in more detail?"
+        STRUCTURED DATA OUTPUT (REQUIRED):
+        In EVERY response where you discover or calculate property data, you MUST include a deal-update JSON block.
+        This block populates the deal management tabs automatically. Include it at the END of your response.
+        Only include fields you have actual data for — omit fields you don't know. Example format:
+
+        ```deal-update
+        {
+          "general": {
+            "propertyName": "Sunrise Apartments",
+            "address": "123 Main St, Austin, TX 78701",
+            "unitCount": 50,
+            "yearBuilt": 1985,
+            "buildingType": "Garden",
+            "squareFootage": 45000,
+            "purchasePrice": 5000000
+          },
+          "underwriting": {
+            "grossPotentialRent": 600000,
+            "vacancyLoss": 30000,
+            "effectiveGrossIncome": 570000,
+            "operatingExpenses": 228000,
+            "netOperatingIncome": 342000,
+            "goingInCapRate": 6.84,
+            "pricePerUnit": 100000,
+            "capitalStack": [
+              {"source": "SeniorDebt", "amount": 3500000, "rate": 5.5, "termYears": 10},
+              {"source": "SponsorEquity", "amount": 1500000}
+            ]
+          },
+          "checklist": [
+            {"item": "Current Months Rent Roll", "status": "Outstanding"},
+            {"item": "Trailing 12 Month Operating Statement", "status": "Outstanding"}
+          ]
+        }
+        ```
+
+        Rules for the deal-update block:
+        - Include it in EVERY response where you have property data to report
+        - Only include fields you have actual data for (web search results, uploaded docs, calculations)
+        - For "general": populate property details as you discover them
+        - For "underwriting": populate financial metrics as you calculate or find them
+        - For "underwriting.capitalStack": source must be one of: SeniorDebt, Mezzanine, PreferredEquity, SponsorEquity, Other
+        - For "checklist": list due diligence items you identify as needed or received. Status: Outstanding, Satisfied, or NotApplicable
+        - Cap rates should be percentages (6.84 = 6.84%, not 0.0684)
+        - Monetary values in whole dollars (no cents)
+        - The block is stripped from the displayed message — the user sees your analysis text only
+
+        After your analysis, proactively suggest what you can help with next.
 
         DOCUMENT HANDLING:
         When the user uploads .docx files, the system extracts the text content automatically using OpenXML.
         For .xlsx files, raw cell data is extracted sheet by sheet. For .csv files, the raw text is passed through.
         For .pdf files, the structured parser attempts to extract financial data.
 
-        EXCEL / FINANCIAL MODEL STANDARDS:
-        When analyzing uploaded Excel data or producing financial analysis, follow these standards:
-        - Color coding: Blue text = hardcoded inputs, Black = formulas/calculations, Green = cross-sheet links
-        - Number formatting: Currency as $#,##0, percentages as 0.0%, multiples as 0.0x, negatives in parentheses
-        - Years formatted as text (e.g., "2024" not "2,024"), zeros displayed as "-"
-        - Always use Excel formulas (=SUM, =AVERAGE, etc.) not hardcoded calculated values
-        - Place all assumptions in separate cells with cell references in formulas
-        - Document sources for hardcoded values: "Source: [System], [Date], [Reference]"
-        - Use openpyxl for complex formatting/formulas, pandas for data analysis
-        - Verify: no #REF!, #DIV/0!, #VALUE!, #N/A, or #NAME? errors
-
-        WORD DOCUMENT STANDARDS:
-        If you need to generate a Word document report, use the docx npm library (docx-js) approach:
-        create a Node.js script that builds the document using the Document, Packer, Paragraph, TextRun, Table classes,
-        with US Letter page size (12240 x 15840 DXA), Arial font, proper table widths (DXA not percentage),
-        and numbered lists via LevelFormat.BULLET/DECIMAL config. Never use unicode bullets — use LevelFormat.BULLET.
-        Tables need dual widths: columnWidths on table AND width on each cell, both in DXA.
-        Use ShadingType.CLEAR (not SOLID) for table shading. Always validate with scripts/office/validate.py.
-
         When the user attaches documents, their data appears between "--- ATTACHED DOCUMENT DATA ---" and
-        "--- END DOCUMENT DATA ---" markers in the user message. The data may be in two formats:
-        1. Structured parsed data (labeled "[Parsed Data from: ...]") with pre-extracted fields.
-        2. Raw tabular data (labeled "[Raw Data from: ...]") containing the original spreadsheet rows/columns.
-        For raw data, YOU must interpret the column headers and row values to extract the relevant metrics.
-        Analyze the data thoroughly:
-        - Rent rolls: Evaluate unit mix, occupancy levels, average rent vs. market, lease rollover exposure.
-        - T12 P&L statements: Analyze NOI, expense ratios, revenue growth, and identify expense reduction opportunities.
-        - Loan term sheets: Assess leverage (LTV), debt service coverage (DSCR), interest rate risk, and prepayment flexibility.
-        Integrate the attached data with your property analysis. Cross-reference multiple documents when available.
+        "--- END DOCUMENT DATA ---" markers in the user message. Analyze thoroughly:
+        - Rent rolls: unit mix, occupancy, average rent vs. market, lease rollover
+        - T12 P&L: NOI, expense ratios, revenue growth, expense reduction opportunities
+        - Loan term sheets: LTV, DSCR, interest rate risk, prepayment flexibility
+        Cross-reference multiple documents when available. Update the deal-update block with any new data found.
 
-        Format responses in markdown for readability. Use realistic ranges rather than single-point estimates.
-        Be data-informed, conversational, and professional.
-
-        If the user provides additional details (financials, rent rolls, loan terms), incorporate them into your ongoing analysis.
-        Build on previous messages in the conversation rather than repeating information already discussed.
+        Format responses in markdown. Be data-informed, conversational, and professional.
+        Build on previous messages rather than repeating information already discussed.
         """;
 
     // --- Raw text extraction (fallback when structured parser fails) ---

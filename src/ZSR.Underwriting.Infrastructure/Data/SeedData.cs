@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using ZSR.Underwriting.Domain.Entities;
 
@@ -11,6 +12,7 @@ public static class SeedData
         using var scope = serviceProvider.CreateScope();
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         // Create roles
         string[] roles = ["Admin", "Analyst"];
@@ -48,6 +50,14 @@ public static class SeedData
             }
 
             await userManager.AddToRoleAsync(admin, "Admin");
+        }
+
+        // Seed checklist templates (idempotent — only if table is empty)
+        if (!await db.ChecklistTemplates.AnyAsync())
+        {
+            var templates = ChecklistTemplateSeed.GetTemplates();
+            db.ChecklistTemplates.AddRange(templates);
+            await db.SaveChangesAsync();
         }
     }
 }

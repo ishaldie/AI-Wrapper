@@ -1,0 +1,12 @@
+{
+  "id": "deal-tabs",
+  "name": "Deal Tabs",
+  "type": "feature",
+  "status": "new",
+  "created": "2026-02-23",
+  "description": "AI-driven tabbed deal management view with General, Underwriting, Investors, Checklist, and Chat tabs",
+  "trackId": "deal-tabs",
+  "createdAt": "2026-02-23T19:15:00.719Z",
+  "updatedAt": "2026-02-23T19:15:00.719Z",
+  "isArchived": false
+}
