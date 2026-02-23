@@ -821,6 +821,10 @@
         if (update.Checklist is { Count: > 0 })
         {
             var templates = await Db.ChecklistTemplates.ToListAsync();
+            var unlinkedDocs = await Db.UploadedDocuments
+                .Where(d => d.DealId == DealId)
+                .Where(d => !Db.DealChecklistItems.Any(ci => ci.DocumentId == d.Id))
+                .ToListAsync();
 
             foreach (var entry in update.Checklist)
             {
@@ -843,6 +847,33 @@
 
                 if (Enum.TryParse<ChecklistStatus>(entry.Status, true, out var status))
                 {
+                    // When marking Satisfied without a linked document, try to auto-link
+                    if (status == ChecklistStatus.Satisfied && existing.DocumentId == null && unlinkedDocs.Count > 0)
+                    {
+                        var candidate = new ChecklistMatchCandidate(existing.Id, template.ItemName);
+                        var candidates = new List<ChecklistMatchCandidate> { candidate };
+
+                        DocumentMatchResult? bestDocMatch = null;
+                        UploadedDocument? bestDoc = null;
+
+                        foreach (var doc in unlinkedDocs)
+                        {
+                            var match = MatchingService.FindBestMatch(doc.FileName, doc.DocumentType, candidates);
+                            if (match != null && (bestDocMatch == null || match.Score > bestDocMatch.Score))
+                            {
+                                bestDocMatch = match;
+                                bestDoc = doc;
+                            }
+                        }
+
+                        if (bestDoc != null)
+                        {
+                            existing.MarkSatisfied(bestDoc.Id);
+                            unlinkedDocs.Remove(bestDoc);
+                            continue;
+                        }
+                    }
+
                     existing.UpdateStatus(status);
                 }
             }
