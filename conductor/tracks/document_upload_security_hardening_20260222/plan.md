@@ -13,15 +13,15 @@
 
 ## Phase 2 — File Validation & Sanitization
 
-- [~] Add magic byte signatures to `FileUploadConstants` for PDF, XLSX, CSV, DOCX
-- [ ] Create `IFileContentValidator` interface in Application layer with `ValidateAsync(Stream, string extension)` method
-- [ ] Implement `FileContentValidator` in Infrastructure — read first N bytes and compare against magic byte map
-- [ ] Add MIME type allowlist to `FileUploadConstants`; validate Content-Type in `FileUpload.razor`
-- [ ] Sanitize filename with `Path.GetFileName()` in `DocumentUploadService.UploadDocumentAsync` before any use
-- [ ] Add formula injection sanitization in `RentRollParser` — strip leading `=`, `+`, `-`, `@` from cell values
-- [ ] Add formula injection sanitization in `T12Parser` — same pattern
-- [ ] Wire `IFileContentValidator` into `DocumentUploadService` — reject mismatched files before storage
-- [ ] Write tests: mismatched content/extension rejected; path traversal filenames sanitized; formula-prefixed cells stripped
+- [x] Add magic byte signatures to `FileUploadConstants` for PDF, XLSX, CSV, DOCX
+- [~] Create `IFileContentValidator` interface in Application layer with `ValidateAsync(Stream, string extension)` method
+- [~] Implement `FileContentValidator` in Infrastructure — read first N bytes and compare against magic byte map
+- [~] Add MIME type allowlist to `FileUploadConstants`; validate Content-Type in `FileUpload.razor`
+- [~] Sanitize filename with `Path.GetFileName()` in `DocumentUploadService.UploadDocumentAsync` before any use
+- [~] Add formula injection sanitization in `RentRollParser` — strip leading `=`, `+`, `-`, `@` from cell values
+- [~] Add formula injection sanitization in `T12Parser` — same pattern
+- [~] Wire `IFileContentValidator` into `DocumentUploadService` — reject mismatched files before storage
+- [~] Write tests: mismatched content/extension rejected; path traversal filenames sanitized; formula-prefixed cells stripped
 
 ## Phase 3 — Rate Limiting & Malware Scanning
 

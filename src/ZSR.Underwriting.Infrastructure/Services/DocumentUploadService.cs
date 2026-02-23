@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZSR.Underwriting.Application.Constants;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
@@ -12,11 +13,13 @@ public class DocumentUploadService : IDocumentUploadService
 {
     private readonly AppDbContext _db;
     private readonly IFileStorageService _storage;
+    private readonly IFileContentValidator? _contentValidator;
 
-    public DocumentUploadService(AppDbContext db, IFileStorageService storage)
+    public DocumentUploadService(AppDbContext db, IFileStorageService storage, IFileContentValidator? contentValidator = null)
     {
         _db = db;
         _storage = storage;
+        _contentValidator = contentValidator;
     }
 
     public async Task<FileUploadResultDto> UploadDocumentAsync(
@@ -24,6 +27,22 @@ public class DocumentUploadService : IDocumentUploadService
         DocumentType documentType, string userId, CancellationToken ct = default)
     {
         await VerifyDealOwnershipAsync(dealId, userId, ct);
+
+        // Sanitize filename to prevent path traversal
+        fileName = Path.GetFileName(fileName);
+
+        // Validate extension
+        if (!FileUploadConstants.IsValidExtension(fileName))
+            throw new InvalidOperationException($"File extension is not allowed: {Path.GetExtension(fileName)}");
+
+        // Validate file content matches extension (magic bytes)
+        if (_contentValidator != null)
+        {
+            var extension = Path.GetExtension(fileName);
+            var validation = await _contentValidator.ValidateAsync(fileStream, extension, ct);
+            if (!validation.IsValid)
+                throw new InvalidOperationException($"File content validation failed: {validation.ErrorMessage}");
+        }
 
         var storedPath = await _storage.SaveFileAsync(fileStream, fileName, $"deals/{dealId}", ct);
 

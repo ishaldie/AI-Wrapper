@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
@@ -12,6 +13,7 @@ public class DocumentUploadServiceTests : IDisposable
     private readonly AppDbContext _db;
     private readonly string _tempDir;
     private readonly DocumentUploadService _sut;
+    private readonly DocumentUploadService _sutWithValidator;
 
     public DocumentUploadServiceTests()
     {
@@ -25,6 +27,7 @@ public class DocumentUploadServiceTests : IDisposable
 
         var storage = new LocalFileStorageService(_tempDir);
         _sut = new DocumentUploadService(_db, storage);
+        _sutWithValidator = new DocumentUploadService(_db, storage, new FileContentValidator());
     }
 
     public void Dispose()
@@ -154,6 +157,72 @@ public class DocumentUploadServiceTests : IDisposable
 
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => _sut.DeleteDocumentAsync(result.DocumentId, "other-user"));
+    }
+
+    // --- Filename sanitization ---
+
+    [Fact]
+    public async Task UploadDocumentAsync_Sanitizes_PathTraversal_Filename()
+    {
+        var dealId = await SeedDealAsync();
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        var result = await _sut.UploadDocumentAsync(
+            dealId, stream, "../../etc/passwd.csv", DocumentType.RentRoll, "test-user");
+
+        // The stored filename should be sanitized — no path traversal
+        Assert.Equal("passwd.csv", result.FileName);
+    }
+
+    [Fact]
+    public async Task UploadDocumentAsync_Sanitizes_Backslash_PathTraversal()
+    {
+        var dealId = await SeedDealAsync();
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        var result = await _sut.UploadDocumentAsync(
+            dealId, stream, @"..\..\etc\passwd.csv", DocumentType.RentRoll, "test-user");
+
+        Assert.Equal("passwd.csv", result.FileName);
+    }
+
+    // --- Content validation wiring ---
+
+    [Fact]
+    public async Task UploadDocumentAsync_WithValidator_Rejects_Mismatched_Content()
+    {
+        var dealId = await SeedDealAsync();
+        // PNG magic bytes in a .pdf file
+        using var stream = new MemoryStream(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sutWithValidator.UploadDocumentAsync(
+                dealId, stream, "fake.pdf", DocumentType.RentRoll, "test-user"));
+    }
+
+    [Fact]
+    public async Task UploadDocumentAsync_WithValidator_Accepts_Valid_Pdf()
+    {
+        var dealId = await SeedDealAsync();
+        // PDF magic bytes
+        using var stream = new MemoryStream(new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34 });
+
+        var result = await _sutWithValidator.UploadDocumentAsync(
+            dealId, stream, "real.pdf", DocumentType.RentRoll, "test-user");
+
+        Assert.NotEqual(Guid.Empty, result.DocumentId);
+        Assert.Equal("real.pdf", result.FileName);
+    }
+
+    [Fact]
+    public async Task UploadDocumentAsync_Rejects_Disallowed_Extension()
+    {
+        var dealId = await SeedDealAsync();
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.UploadDocumentAsync(
+                dealId, stream, "malware.exe", DocumentType.RentRoll, "test-user"));
     }
 
     private async Task<Guid> SeedDealAsync(string userId = "test-user")

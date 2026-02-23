@@ -157,6 +157,7 @@ try
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
     builder.Services.AddScoped<ZSR.Underwriting.Domain.Interfaces.IFileStorageService>(sp =>
         new LocalFileStorageService(Path.Combine(builder.Environment.ContentRootPath, "uploads")));
+    builder.Services.AddScoped<IFileContentValidator, FileContentValidator>();
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
 
     // Add document parsers

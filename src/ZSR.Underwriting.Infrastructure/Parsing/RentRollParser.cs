@@ -97,8 +97,8 @@ public class RentRollParser : IDocumentParser
 
             var unit = new RentRollUnit
             {
-                UnitNumber = Field("Unit"),
-                UnitType = Field("Type"),
+                UnitNumber = CellSanitizer.SanitizeCellValue(Field("Unit")),
+                UnitType = CellSanitizer.SanitizeCellValue(Field("Type")),
                 MonthlyRent = ParseDecimal(Field("MonthlyRent")),
                 IsOccupied = ParseOccupied(Field("Occupied")),
                 SquareFeet = ParseIntOrNull(Field("SquareFeet")),
@@ -151,8 +151,8 @@ public class RentRollParser : IDocumentParser
 
             var unit = new RentRollUnit
             {
-                UnitNumber = CellVal("Unit"),
-                UnitType = colMap.ContainsKey("Type") ? CellVal("Type") : null,
+                UnitNumber = CellSanitizer.SanitizeCellValue(CellVal("Unit")),
+                UnitType = colMap.ContainsKey("Type") ? CellSanitizer.SanitizeCellValue(CellVal("Type")) : null,
                 MonthlyRent = ParseDecimal(CellVal("MonthlyRent")),
                 IsOccupied = ParseOccupied(CellVal("Occupied")),
                 SquareFeet = ParseIntOrNull(CellVal("SquareFeet")),

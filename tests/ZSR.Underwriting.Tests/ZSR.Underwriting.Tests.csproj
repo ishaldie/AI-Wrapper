@@ -115,6 +115,9 @@
     <Compile Include="Infrastructure\ActivityTrackingDbTests.cs" />
     <!-- Terms of Service track -->
     <Compile Include="Components\LegalPageTests.cs" />
+    <!-- Document Upload Security Hardening track -->
+    <Compile Include="Services\FileContentValidatorTests.cs" />
+    <Compile Include="Parsing\FormulaInjectionTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

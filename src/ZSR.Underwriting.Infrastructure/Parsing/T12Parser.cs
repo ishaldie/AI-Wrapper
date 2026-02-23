@@ -91,7 +91,8 @@ public class T12Parser : IDocumentParser
 
         while (csv.Read())
         {
-            var category = (categoryHeader != null ? csv.GetField(categoryHeader) : csv.GetField(0))?.Trim() ?? "";
+            var rawCategory = (categoryHeader != null ? csv.GetField(categoryHeader) : csv.GetField(0))?.Trim() ?? "";
+            var category = CellSanitizer.SanitizeCellValue(rawCategory);
             var amountStr = (amountHeader != null ? csv.GetField(amountHeader) : csv.GetField(1))?.Trim() ?? "";
 
             var normalized = NormalizeHeader(category);
@@ -159,7 +160,7 @@ public class T12Parser : IDocumentParser
         {
             var cellsByCol = GetCellsByColumn(rows[i], wbPart);
 
-            var category = cellsByCol.TryGetValue(categoryCol, out var catVal) ? catVal.Trim() : "";
+            var category = cellsByCol.TryGetValue(categoryCol, out var catVal) ? CellSanitizer.SanitizeCellValue(catVal.Trim()) : "";
             var amountStr = cellsByCol.TryGetValue(amountCol, out var amtVal) ? amtVal.Trim() : "";
 
             var normalized = NormalizeHeader(category);
