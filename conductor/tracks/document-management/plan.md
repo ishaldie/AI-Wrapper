@@ -4,7 +4,7 @@
 *Status: In Progress*
 
 - [x] Task 1.1: Create `DocumentMatchingService` in Application/Services — keyword-based matching of filename + DocumentType against ChecklistTemplate.ItemName
-- [ ] Task 1.2: Wire auto-match into `DealChatTab` upload flow — after `UploadDocumentAsync`, call matching service, then `MarkSatisfied(documentId)` on best match
+- [x] Task 1.2: Wire auto-match into `DealChatTab` upload flow — after `UploadDocumentAsync`, call matching service, then `MarkSatisfied(documentId)` on best match
 - [ ] Task 1.3: Wire auto-match into `ApplyDealUpdate` checklist handling — when AI references a document, link if available
 - [ ] Task 1.4: Unit tests for DocumentMatchingService (exact match, partial match, no match, ambiguous)
 

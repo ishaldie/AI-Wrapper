@@ -9,6 +9,7 @@ using Polly;
 using Polly.Extensions.Http;
 using Serilog;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Application.Services;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Configuration;
@@ -163,6 +164,7 @@ try
     builder.Services.AddScoped<IFileContentValidator, FileContentValidator>();
     builder.Services.AddScoped<IVirusScanService, WindowsDefenderScanService>();
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
+    builder.Services.AddSingleton<IDocumentMatchingService, DocumentMatchingService>();
 
     // Rate limiting — per-user upload throttle
     builder.Services.AddRateLimiter(options =>

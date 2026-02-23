@@ -22,6 +22,7 @@
 @inject IJSRuntime JS
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ISnackbar Snackbar
+@inject IDocumentMatchingService MatchingService
 @inject ILogger<DealChatTab> Logger
 
 <div class="deal-chat-tab-container">
@@ -608,6 +609,9 @@
                         var uploadResult = await UploadService.UploadDocumentAsync(
                             DealId, buffer, file.FileName, file.DocumentType, _userId);
 
+                        // Auto-match to checklist items
+                        await TryAutoMatchChecklist(uploadResult.DocumentId, file.FileName, file.DocumentType);
+
                         var parseResult = await ParsingService.ParseDocumentAsync(uploadResult.DocumentId);
 
                         if (parseResult.Success)
@@ -847,6 +851,42 @@
         await Db.SaveChangesAsync();
         Logger.LogInformation("Applied deal update for {DealId}: general={HasGeneral}, underwriting={HasUnderwriting}, checklist={ChecklistCount}",
             DealId, update.General != null, update.Underwriting != null, update.Checklist?.Count ?? 0);
+    }
+
+    // --- Auto-match ---
+
+    private async Task TryAutoMatchChecklist(Guid documentId, string fileName, DocumentType docType)
+    {
+        try
+        {
+            var checklistItems = await Db.DealChecklistItems
+                .Include(ci => ci.Template)
+                .Where(ci => ci.DealId == DealId && ci.Status == ChecklistStatus.Outstanding)
+                .ToListAsync();
+
+            if (checklistItems.Count == 0) return;
+
+            var candidates = checklistItems
+                .Select(ci => new ChecklistMatchCandidate(ci.Id, ci.Template.ItemName))
+                .ToList();
+
+            var match = MatchingService.FindBestMatch(fileName, docType, candidates);
+            if (match == null) return;
+
+            var item = checklistItems.First(ci => ci.Id == match.ChecklistItemId);
+            item.MarkSatisfied(documentId);
+            await Db.SaveChangesAsync();
+
+            Logger.LogInformation(
+                "Auto-matched '{FileName}' to checklist item '{ItemName}' (score: {Score:F2})",
+                fileName, match.ItemName, match.Score);
+
+            Snackbar.Add($"Matched to: {match.ItemName}", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Auto-match failed for '{FileName}'", fileName);
+        }
     }
 
     // --- Helpers ---
