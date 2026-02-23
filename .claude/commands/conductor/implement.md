@@ -27,6 +27,28 @@ Also check for project notes that may provide additional context:
 
 ---
 
+## IMPORTANT: Use MCP Tools for All Track Operations
+
+**Before editing ANY conductor file manually, check if the `conductor` MCP server is connected.** If available, you MUST use MCP tools instead of editing files directly:
+
+| Operation | MCP Tool |
+|-----------|----------|
+| Change track status | `conductor_transition_status({ trackId, targetStatus })` |
+| Mark task complete | `conductor_complete_task({ trackId, taskText, commitSha })` |
+| Checkpoint a phase | `conductor_checkpoint_phase({ trackId, phaseHeading, commitSha })` |
+| Create a new track | `conductor_create_track({ name, type })` |
+| Get track status | `conductor_get_status({ trackId })` |
+| List all tracks | `conductor_list_tracks()` |
+| Add a task to a phase | `conductor_add_task({ trackId, phaseText, taskText })` |
+| Edit a task description | `conductor_edit_task({ trackId, oldTaskText, newTaskText })` |
+| Remove a task | `conductor_remove_task({ trackId, taskText })` |
+| Start a task (mark [~]) | `conductor_start_task({ trackId, taskText })` |
+| Add a learning | `conductor_add_learning({ trackId, category, content })` |
+
+MCP tools ensure atomic writes, canonical formatting, and keep metadata.json + tracks.md in sync.
+
+---
+
 ## After Reading Context
 
 ### Find Next Task
@@ -36,7 +58,9 @@ Also check for project notes that may provide additional context:
 ### Execute TDD Workflow (per workflow.md)
 
 1. **Mark In Progress**
-   - Update plan.md: `[ ]` → `[~]`
+   - **Preferred (task):** Use `conductor_start_task({ trackId, taskText })` to mark the task `[~]`
+   - **Preferred (track):** Use `conductor_transition_status({ trackId, targetStatus: "in_progress" })` for track-level status
+   - **Fallback:** Update plan.md: `[ ]` → `[~]`
 
 2. **Red Phase**
    - Write failing tests first
@@ -54,8 +78,10 @@ Also check for project notes that may provide additional context:
    - Conventional commit message
    - Attach git note with task summary
 
-6. **Mark Complete**
-   - Update plan.md: `[~]` → `[x] <commit-sha>`
+6. **Mark Complete (via MCP Tool)**
+   - **Preferred:** Use `conductor_complete_task` MCP tool: `conductor_complete_task({ trackId, taskText, commitSha })`
+   - **Fallback:** POST to `/api/projects/:projectId/tracks/:trackId/complete-task` with `{ taskText, commitSha }`
+   - **Manual fallback:** Update plan.md: `[~]` → `[x] <commit-sha>`
    - Commit plan update
 
 ### Phase Completion Protocol
@@ -68,17 +94,21 @@ When ALL tasks in a phase are complete:
 4. **WAIT for explicit user "yes"**
 5. Create checkpoint commit
 6. Attach verification report as git note
-7. Update plan.md with `[checkpoint: <sha>]`
+7. **Preferred:** Use `conductor_checkpoint_phase` MCP tool: `conductor_checkpoint_phase({ trackId, phaseHeading, commitSha })`
+8. **Fallback:** POST to `/api/projects/:projectId/tracks/:trackId/checkpoint-phase` with `{ phaseHeading, commitSha }`
+9. **Manual fallback:** Update plan.md with `[checkpoint: <sha>]`
 
 ### CGX Logging (Continuous Improvement)
 
-During implementation, **actively log observations to cgx.md**:
+During implementation, **actively log observations to cgx.md**.
+Use `conductor_add_learning` MCP tool when available: `conductor_add_learning({ trackId, category, content })`
 
-1. **Frustrations** - Any friction, confusion, or repeated attempts
-2. **Good Patterns** - Workflows that worked well (to encode as skills/commands)
-3. **Anti-Patterns** - Mistakes or inefficiencies to prevent
-4. **Missing Capabilities** - Tools or features that would have helped
-5. **Improvement Candidates** - Concrete suggestions for new extensions
+Categories:
+1. **frustration** - Any friction, confusion, or repeated attempts
+2. **good-pattern** - Workflows that worked well (to encode as skills/commands)
+3. **anti-pattern** - Mistakes or inefficiencies to prevent
+4. **missing-capability** - Tools or features that would have helped
+5. **improvement** - Concrete suggestions for new extensions
 
 Format entries with dates: `- [YYYY-MM-DD] Description`
 
@@ -94,3 +124,4 @@ At track completion, run `/conductor:improve` to analyze and generate improvemen
 4. NEVER skip the Red phase - tests first!
 5. ALWAYS wait for user approval at phase checkpoints
 6. Log observations to cgx.md during implementation
+7. **ALWAYS prefer MCP tools** (`conductor_transition_status`, `conductor_complete_task`, `conductor_checkpoint_phase`, `conductor_add_learning`) over manual file editing — MCP ensures atomic writes and keeps all files in sync

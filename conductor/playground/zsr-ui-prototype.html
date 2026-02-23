@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZSR Underwriting — UI Prototype Playground</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ctrl-bg: #111317;
+    --ctrl-surface: #1a1d23;
+    --ctrl-border: #2a2e36;
+    --ctrl-text: #e0e0e0;
+    --ctrl-muted: #888;
+    --ctrl-accent: #F97316;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    background: var(--ctrl-bg);
+    color: var(--ctrl-text);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ===== CONTROLS PANEL ===== */
+  .controls {
+    width: 280px;
+    min-width: 280px;
+    background: var(--ctrl-bg);
+    border-right: 1px solid var(--ctrl-border);
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .controls h1 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ctrl-accent);
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+  }
+  .controls h1 span { color: var(--ctrl-muted); font-weight: 400; }
+
+  .ctrl-group {
+    background: var(--ctrl-surface);
+    border: 1px solid var(--ctrl-border);
+    border-radius: 8px;
+    padding: 12px;
+  }
+  .ctrl-group h3 {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ctrl-muted);
+    margin-bottom: 10px;
+  }
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .ctrl-row:last-child { margin-bottom: 0; }
+  .ctrl-row label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ctrl-text);
+  }
+  .ctrl-row .val {
+    font-size: 11px;
+    color: var(--ctrl-muted);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    min-width: 50px;
+    text-align: right;
+  }
+
+  /* View buttons */
+  .view-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .view-btn {
+    padding: 8px 6px;
+    border: 1.5px solid var(--ctrl-border);
+    border-radius: 8px;
+    background: var(--ctrl-surface);
+    color: var(--ctrl-text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    text-align: center;
+  }
+  .view-btn:hover { border-color: var(--ctrl-accent); color: #fff; }
+  .view-btn.active {
+    background: var(--ctrl-accent);
+    border-color: var(--ctrl-accent);
+    color: #fff;
+  }
+
+  /* Presets */
+  .preset-btns {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .preset-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--ctrl-border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ctrl-muted);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .preset-btn:hover { border-color: var(--ctrl-accent); color: var(--ctrl-text); }
+  .preset-btn.active { background: var(--ctrl-accent); border-color: var(--ctrl-accent); color: #fff; }
+
+  /* Inputs */
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    -webkit-appearance: none;
+    background: var(--ctrl-border);
+    outline: none;
+    cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--ctrl-accent);
+    cursor: pointer;
+  }
+  input[type="color"] {
+    width: 28px; height: 28px;
+    border: 2px solid var(--ctrl-border);
+    border-radius: 6px;
+    cursor: pointer;
+    background: transparent;
+    padding: 0;
+  }
+  select {
+    padding: 4px 8px;
+    border: 1px solid var(--ctrl-border);
+    border-radius: 6px;
+    background: var(--ctrl-surface);
+    color: var(--ctrl-text);
+    font-size: 11px;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  /* Toggle */
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toggle {
+    width: 36px; height: 20px;
+    border-radius: 10px;
+    background: var(--ctrl-border);
+    cursor: pointer;
+    position: relative;
+    transition: background 0.2s;
+    border: none;
+  }
+  .toggle::after {
+    content: '';
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 2px; left: 2px;
+    transition: transform 0.2s;
+  }
+  .toggle.on { background: var(--ctrl-accent); }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* ===== MAIN AREA ===== */
+  .main-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Preview */
+  .preview-wrap {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2a2e36;
+    padding: 16px;
+  }
+  .preview-frame {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    transition: width 0.3s ease, height 0.3s ease;
+    height: 100%;
+    position: relative;
+  }
+  .preview-content {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+
+  /* Prompt */
+  .prompt-area {
+    background: var(--ctrl-bg);
+    border-top: 1px solid var(--ctrl-border);
+    padding: 12px 16px;
+    min-height: 80px;
+    max-height: 140px;
+    overflow-y: auto;
+    position: relative;
+  }
+  .prompt-area h4 {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ctrl-muted);
+    margin-bottom: 6px;
+  }
+  .prompt-text {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ctrl-text);
+    font-family: 'SF Mono', 'Consolas', monospace;
+    white-space: pre-wrap;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 10px; right: 16px;
+    padding: 4px 12px;
+    border: 1px solid var(--ctrl-border);
+    border-radius: 6px;
+    background: var(--ctrl-surface);
+    color: var(--ctrl-text);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { border-color: var(--ctrl-accent); color: var(--ctrl-accent); }
+  .copy-btn.copied { background: var(--ctrl-accent); border-color: var(--ctrl-accent); color: #fff; }
+
+  /* ===== PREVIEW STYLES (injected inside preview) ===== */
+</style>
+</head>
+<body>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <h1>ZSR Underwriting <span>UI Prototype</span></h1>
+
+  <!-- Views -->
+  <div class="ctrl-group">
+    <h3>View</h3>
+    <div class="view-btns">
+      <button class="view-btn active" onclick="setView('landing')">Landing</button>
+      <button class="view-btn" onclick="setView('login')">Login</button>
+      <button class="view-btn" onclick="setView('dashboard')">Dashboard</button>
+      <button class="view-btn" onclick="setView('analysis')">New Analysis</button>
+    </div>
+  </div>
+
+  <!-- Presets -->
+  <div class="ctrl-group">
+    <h3>Presets</h3>
+    <div class="preset-btns">
+      <button class="preset-btn active" onclick="applyPreset('default')">Default</button>
+      <button class="preset-btn" onclick="applyPreset('midnight')">Midnight</button>
+      <button class="preset-btn" onclick="applyPreset('forest')">Forest</button>
+      <button class="preset-btn" onclick="applyPreset('royal')">Royal</button>
+      <button class="preset-btn" onclick="applyPreset('rose')">Rose</button>
+    </div>
+  </div>
+
+  <!-- Viewport -->
+  <div class="ctrl-group">
+    <h3>Viewport</h3>
+    <div class="ctrl-row">
+      <label>Width</label>
+      <span class="val" id="vpVal">1280px</span>
+    </div>
+    <input type="range" id="vpWidth" min="375" max="1440" value="1280" oninput="state.vpWidth=+this.value;updateAll()">
+    <div style="display:flex;gap:4px;margin-top:8px;">
+      <button class="preset-btn" onclick="state.vpWidth=375;document.getElementById('vpWidth').value=375;updateAll()">Mobile</button>
+      <button class="preset-btn" onclick="state.vpWidth=768;document.getElementById('vpWidth').value=768;updateAll()">Tablet</button>
+      <button class="preset-btn" onclick="state.vpWidth=1280;document.getElementById('vpWidth').value=1280;updateAll()">Desktop</button>
+    </div>
+  </div>
+
+  <!-- Colors -->
+  <div class="ctrl-group">
+    <h3>Colors</h3>
+    <div class="ctrl-row">
+      <label>Accent / CTA</label>
+      <input type="color" id="accentColor" value="#F97316" onchange="state.accent=this.value;updateAll()">
+    </div>
+    <div class="ctrl-row">
+      <label>Primary</label>
+      <input type="color" id="primaryColor" value="#1E3A5F" onchange="state.primary=this.value;updateAll()">
+    </div>
+    <div class="ctrl-row">
+      <label>Background</label>
+      <input type="color" id="bgColor" value="#F5F5F5" onchange="state.background=this.value;updateAll()">
+    </div>
+    <div class="ctrl-row">
+      <label>Surface</label>
+      <input type="color" id="surfColor" value="#FFFFFF" onchange="state.surface=this.value;updateAll()">
+    </div>
+  </div>
+
+  <!-- Mode -->
+  <div class="ctrl-group">
+    <h3>Mode</h3>
+    <div class="ctrl-row">
+      <label>Dark mode</label>
+      <div class="toggle-wrap">
+        <button class="toggle" id="darkToggle" onclick="state.dark=!state.dark;this.classList.toggle('on');updateAll()"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Typography -->
+  <div class="ctrl-group">
+    <h3>Typography</h3>
+    <div class="ctrl-row">
+      <label>Hero size</label>
+      <span class="val" id="heroSizeVal">3rem</span>
+    </div>
+    <input type="range" id="heroSize" min="2" max="4.5" step="0.125" value="3" oninput="state.heroSize=+this.value;updateAll()">
+    <div class="ctrl-row" style="margin-top:8px;">
+      <label>Border radius</label>
+      <span class="val" id="radiusVal">12px</span>
+    </div>
+    <input type="range" id="radius" min="0" max="24" value="12" oninput="state.radius=+this.value;updateAll()">
+  </div>
+
+  <!-- Sidebar -->
+  <div class="ctrl-group">
+    <h3>Sidebar</h3>
+    <div class="ctrl-row">
+      <label>Width</label>
+      <span class="val" id="sidebarVal">56px</span>
+    </div>
+    <input type="range" id="sidebarWidth" min="48" max="80" value="56" oninput="state.sidebarWidth=+this.value;updateAll()">
+    <div class="ctrl-row" style="margin-top:8px;">
+      <label>Style</label>
+      <select id="sidebarStyle" onchange="state.sidebarStyle=this.value;updateAll()">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+        <option value="glass">Glass</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="ctrl-group">
+    <h3>Search Bar</h3>
+    <div class="ctrl-row">
+      <label>Height</label>
+      <span class="val" id="searchHVal">52px</span>
+    </div>
+    <input type="range" id="searchH" min="40" max="64" value="52" oninput="state.searchHeight=+this.value;updateAll()">
+    <div class="ctrl-row" style="margin-top:8px;">
+      <label>Shadow</label>
+      <div class="toggle-wrap">
+        <button class="toggle" id="searchShadow" onclick="state.searchShadow=!state.searchShadow;this.classList.toggle('on');updateAll()"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main-area">
+  <div class="preview-wrap">
+    <div class="preview-frame" id="previewFrame">
+      <div class="preview-content" id="preview"></div>
+    </div>
+  </div>
+  <div class="prompt-area">
+    <h4>Generated Prompt</h4>
+    <button class="copy-btn" id="copyBtn" onclick="copyPrompt()">Copy</button>
+    <div class="prompt-text" id="promptText"></div>
+  </div>
+</div>
+
+<script>
+// ===== STATE =====
+const DEFAULTS = {
+  view: 'landing',
+  vpWidth: 1280,
+  accent: '#F97316',
+  primary: '#1E3A5F',
+  background: '#F5F5F5',
+  surface: '#FFFFFF',
+  text: '#1A1D23',
+  muted: '#6B7280',
+  dark: false,
+  heroSize: 3,
+  radius: 12,
+  sidebarWidth: 56,
+  sidebarStyle: 'light',
+  searchHeight: 52,
+  searchShadow: false,
+};
+
+const state = { ...DEFAULTS };
+
+const presets = {
+  default: { accent: '#F97316', primary: '#1E3A5F', background: '#F5F5F5', surface: '#FFFFFF', dark: false },
+  midnight: { accent: '#818CF8', primary: '#312E81', background: '#0F0E17', surface: '#1A1A2E', dark: true },
+  forest: { accent: '#22C55E', primary: '#14532D', background: '#F0FDF4', surface: '#FFFFFF', dark: false },
+  royal: { accent: '#A855F7', primary: '#581C87', background: '#FAF5FF', surface: '#FFFFFF', dark: false },
+  rose: { accent: '#F43F5E', primary: '#881337', background: '#FFF1F2', surface: '#FFFFFF', dark: false },
+};
+
+function applyPreset(name) {
+  const p = presets[name];
+  Object.assign(state, p);
+  document.getElementById('accentColor').value = state.accent;
+  document.getElementById('primaryColor').value = state.primary;
+  document.getElementById('bgColor').value = state.background;
+  document.getElementById('surfColor').value = state.surface;
+  const dt = document.getElementById('darkToggle');
+  state.dark ? dt.classList.add('on') : dt.classList.remove('on');
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.preset-btn[onclick*="${name}"]`)?.classList.add('active');
+  updateAll();
+}
+
+function setView(v) {
+  state.view = v;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.view-btn[onclick*="${v}"]`)?.classList.add('active');
+  updateAll();
+}
+
+// ===== HELPERS =====
+function hex2rgb(h) {
+  const r = parseInt(h.slice(1,3),16), g = parseInt(h.slice(3,5),16), b = parseInt(h.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+function lighten(hex, pct) {
+  let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  r = Math.min(255, r + Math.round((255-r)*pct));
+  g = Math.min(255, g + Math.round((255-g)*pct));
+  b = Math.min(255, b + Math.round((255-b)*pct));
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+function darken(hex, pct) {
+  let r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+  r = Math.max(0, Math.round(r*(1-pct)));
+  g = Math.max(0, Math.round(g*(1-pct)));
+  b = Math.max(0, Math.round(b*(1-pct)));
+  return `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
+}
+
+// ===== RENDER =====
+function updateAll() {
+  // Update value displays
+  document.getElementById('vpVal').textContent = state.vpWidth + 'px';
+  document.getElementById('heroSizeVal').textContent = state.heroSize + 'rem';
+  document.getElementById('radiusVal').textContent = state.radius + 'px';
+  document.getElementById('sidebarVal').textContent = state.sidebarWidth + 'px';
+  document.getElementById('searchHVal').textContent = state.searchHeight + 'px';
+
+  // Frame size
+  const frame = document.getElementById('previewFrame');
+  frame.style.width = Math.min(state.vpWidth, frame.parentElement.clientWidth - 32) + 'px';
+
+  // Computed colors for dark mode
+  const bg = state.dark ? '#0F0F12' : state.background;
+  const surf = state.dark ? '#1A1D23' : state.surface;
+  const txt = state.dark ? '#E5E7EB' : state.text;
+  const mtd = state.dark ? '#9CA3AF' : state.muted;
+  const border = state.dark ? '#2A2E36' : '#E5E7EB';
+  const sidebarBg = state.sidebarStyle === 'dark' ? '#1A1D23' :
+                    state.sidebarStyle === 'glass' ? `rgba(${hex2rgb(surf)},0.8)` :
+                    state.dark ? '#16181D' : '#FAFAFA';
+  const sidebarBorder = state.sidebarStyle === 'glass' ? `rgba(${hex2rgb(border)},0.5)` : border;
+  const rad = state.radius;
+  const searchSh = state.searchShadow ? `0 2px 12px rgba(${hex2rgb(state.accent)},0.1)` : 'none';
+
+  const preview = document.getElementById('preview');
+  preview.style.background = bg;
+
+  // Common styles
+  const css = `
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, div, span, p, h1, h2, h3, h4, a, button, input, table, th, td {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: ${txt};
+    }
+    a { text-decoration: none; color: inherit; }
+    .accent { color: ${state.accent}; }
+    .accent-bg { background: ${state.accent}; color: #fff; }
+    .btn-accent {
+      background: ${state.accent};
+      color: #fff;
+      border: none;
+      border-radius: ${rad}px;
+      padding: 10px 24px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+    .btn-accent:hover { background: ${darken(state.accent, 0.12)}; }
+    .btn-outline {
+      background: transparent;
+      color: ${txt};
+      border: 1.5px solid ${border};
+      border-radius: ${rad}px;
+      padding: 10px 20px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.15s;
+    }
+    .btn-outline:hover { border-color: ${state.accent}; color: ${state.accent}; }
+    .search-bar {
+      display: flex;
+      align-items: center;
+      background: ${surf};
+      border: 1.5px solid ${border};
+      border-radius: ${rad}px;
+      padding: 0 4px 0 16px;
+      height: ${state.searchHeight}px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: ${searchSh};
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-bar:focus-within { border-color: ${state.accent}; box-shadow: 0 0 0 3px rgba(${hex2rgb(state.accent)},0.1); }
+    .search-bar input {
+      flex: 1; border: none; outline: none; background: transparent;
+      font-size: 14px; color: ${txt};
+    }
+    .search-bar input::placeholder { color: ${mtd}; }
+    .search-bar-btn {
+      width: ${state.searchHeight - 12}px;
+      height: ${state.searchHeight - 12}px;
+      border-radius: ${rad}px;
+      background: ${state.accent};
+      color: #fff;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .search-bar-btn svg { width: 18px; height: 18px; }
+    .chip {
+      padding: 6px 14px;
+      background: ${state.dark ? '#2A2E36' : '#F3F4F6'};
+      border-radius: 20px;
+      font-size: 12px;
+      color: ${state.dark ? '#D1D5DB' : '#374151'};
+      font-weight: 500;
+      border: 1px solid ${state.dark ? '#374151' : '#E5E7EB'};
+      display: inline-block;
+    }
+    .card {
+      background: ${surf};
+      border: 1px solid ${border};
+      border-radius: ${rad}px;
+      padding: 20px;
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .card-cta:hover { border-color: ${state.accent}; box-shadow: 0 4px 16px rgba(${hex2rgb(state.accent)},0.1); }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+  `;
+
+  const arrowSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
+  const homeSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`;
+  const shieldSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>`;
+  const settingsSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>`;
+  const plusSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`;
+  const logoutSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>`;
+
+  // Sidebar HTML (for dashboard & analysis views)
+  const sidebarHtml = `
+    <nav style="position:fixed;top:0;left:0;width:${state.sidebarWidth}px;height:100%;
+      background:${sidebarBg};border-right:1px solid ${sidebarBorder};
+      display:flex;flex-direction:column;align-items:center;padding:12px 0;z-index:10;
+      ${state.sidebarStyle==='glass'?'backdrop-filter:blur(12px);':''}">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="width:36px;height:36px;border-radius:10px;background:${state.accent};
+          display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;
+          font-size:16px;margin-bottom:12px;">Z</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:${state.accent};
+          display:flex;align-items:center;justify-content:center;color:#fff;margin:8px 0;">
+          <span style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;">${plusSvg}</span>
+        </div>
+        <div style="width:40px;height:40px;border-radius:10px;
+          display:flex;align-items:center;justify-content:center;color:${mtd};
+          background:${state.dark?'#2A2E36':'#F3F4F6'};">
+          <span style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;">${homeSvg}</span>
+        </div>
+        <div style="width:40px;height:40px;border-radius:10px;
+          display:flex;align-items:center;justify-content:center;color:${mtd};">
+          <span style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;">${shieldSvg}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:8px;">
+        <div style="width:40px;height:40px;border-radius:10px;
+          display:flex;align-items:center;justify-content:center;color:${mtd};">
+          <span style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;">${settingsSvg}</span>
+        </div>
+        <div style="width:40px;height:40px;border-radius:10px;
+          display:flex;align-items:center;justify-content:center;color:${mtd};">
+          <span style="width:20px;height:20px;display:flex;align-items:center;justify-content:center;">${logoutSvg}</span>
+        </div>
+      </div>
+    </nav>`;
+
+  // ===== VIEWS =====
+  let html = `<style>${css}</style>`;
+
+  if (state.view === 'landing') {
+    html += `
+      <div style="min-height:100%;background:${state.dark?'#0F0F12':'#fff'};">
+        <!-- Nav -->
+        <nav style="display:flex;align-items:center;justify-content:space-between;padding:16px 32px;max-width:1100px;margin:0 auto;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="width:32px;height:32px;border-radius:8px;background:${state.accent};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;">Z</div>
+            <span style="font-weight:700;font-size:18px;letter-spacing:-0.02em;">ZSR</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:20px;">
+            <span style="font-size:13px;font-weight:500;color:${mtd};">Log in</span>
+            <button class="btn-accent" style="padding:8px 20px;font-size:13px;border-radius:8px;">Sign up</button>
+          </div>
+        </nav>
+        <!-- Hero -->
+        <section style="text-align:center;padding:80px 32px 40px;max-width:800px;margin:0 auto;">
+          <h1 style="font-size:${state.heroSize}rem;font-weight:800;line-height:1.08;letter-spacing:-0.03em;margin-bottom:16px;">
+            Answer any real estate<br>question in seconds
+          </h1>
+          <p style="font-size:17px;color:${mtd};margin-bottom:32px;">
+            AI-powered underwriting and analysis for multifamily real estate.
+          </p>
+          <div style="display:flex;justify-content:center;margin-bottom:12px;">
+            <div class="search-bar" style="max-width:540px;">
+              <input placeholder="Search a property, market, or deal..." />
+              <button class="search-bar-btn">${arrowSvg}</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:${mtd};margin-bottom:24px;">Free to try. No credit card required.</p>
+          <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:8px;">
+            <span class="chip">Underwrite a deal</span>
+            <span class="chip">Market analysis</span>
+            <span class="chip">Comp search</span>
+            <span class="chip">Risk assessment</span>
+          </div>
+        </section>
+        <!-- Dark showcase -->
+        <div style="background:${state.dark?'#1A1D23':'#1A1D23'};border-radius:${rad+8}px;margin:48px 32px;padding:64px 32px;text-align:center;max-width:1040px;margin-left:auto;margin-right:auto;">
+          <h2 style="color:#fff;font-size:22px;font-weight:700;margin-bottom:12px;">Institutional-quality underwriting in minutes</h2>
+          <p style="color:#9CA3AF;font-size:15px;">Comprehensive 10-section reports with financial analysis, risk assessment, and GO/NO GO decisions.</p>
+          <div style="margin-top:32px;display:flex;justify-content:center;gap:40px;">
+            <div><span style="color:${state.accent};font-size:28px;font-weight:800;">< 5 min</span><br><span style="color:#9CA3AF;font-size:12px;">Report generation</span></div>
+            <div><span style="color:${state.accent};font-size:28px;font-weight:800;">10</span><br><span style="color:#9CA3AF;font-size:12px;">Report sections</span></div>
+            <div><span style="color:${state.accent};font-size:28px;font-weight:800;">0.1%</span><br><span style="color:#9CA3AF;font-size:12px;">Calculation accuracy</span></div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  else if (state.view === 'login') {
+    html += `
+      <div style="min-height:100%;background:${state.dark?'#0F0F12':'#fff'};display:flex;align-items:center;justify-content:center;padding:32px;">
+        <div style="width:100%;max-width:400px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="display:inline-flex;align-items:center;gap:10px;margin-bottom:16px;">
+              <div style="width:36px;height:36px;border-radius:10px;background:${state.accent};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;">Z</div>
+              <span style="font-size:20px;font-weight:700;letter-spacing:-0.02em;">ZSR Underwriting</span>
+            </div>
+          </div>
+          <div class="card" style="padding:32px;">
+            <h2 style="font-size:22px;font-weight:700;text-align:center;margin-bottom:4px;">Welcome</h2>
+            <p style="font-size:14px;color:${mtd};text-align:center;margin-bottom:24px;">Sign in to your account to continue.</p>
+            <!-- Social buttons -->
+            <button class="btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;height:44px;">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Continue with Google
+            </button>
+            <button class="btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;height:44px;">
+              <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
+              Continue with Microsoft
+            </button>
+            <!-- Divider -->
+            <div style="display:flex;align-items:center;gap:12px;margin:20px 0;">
+              <div style="flex:1;height:1px;background:${border};"></div>
+              <span style="font-size:11px;color:${mtd};font-weight:600;text-transform:uppercase;">or</span>
+              <div style="flex:1;height:1px;background:${border};"></div>
+            </div>
+            <!-- Email -->
+            <div style="margin-bottom:16px;">
+              <label style="display:block;font-size:13px;font-weight:600;color:${state.dark?'#D1D5DB':'#374151'};margin-bottom:6px;">Email</label>
+              <input style="width:100%;padding:10px 14px;border:1.5px solid ${border};border-radius:${rad}px;
+                font-size:14px;color:${txt};background:${surf};outline:none;font-family:inherit;"
+                placeholder="you@company.com" />
+            </div>
+            <button class="btn-accent" style="width:100%;height:46px;font-size:15px;border-radius:${rad}px;">Continue</button>
+            <p style="font-size:14px;color:${mtd};text-align:center;margin-top:20px;">
+              Don't have an account? <span style="color:${state.accent};font-weight:600;cursor:pointer;">Sign up</span>
+            </p>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  else if (state.view === 'dashboard') {
+    html += `
+      <div style="min-height:100%;position:relative;">
+        ${sidebarHtml}
+        <div style="margin-left:${state.sidebarWidth}px;padding:32px 40px;max-width:960px;">
+          <p style="color:${mtd};font-size:14px;margin-bottom:4px;">Welcome back, Alex</p>
+          <h2 style="font-size:22px;font-weight:800;margin-bottom:24px;">Start a new analysis</h2>
+          <!-- Search -->
+          <div style="margin-bottom:32px;">
+            <div class="search-bar">
+              <input placeholder="Search a property, market, or deal..." />
+              <button class="search-bar-btn">${arrowSvg}</button>
+            </div>
+          </div>
+          <!-- Recommended -->
+          <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Recommended for you</h3>
+          <div style="display:grid;grid-template-columns:repeat(${state.vpWidth<600?1:3},1fr);gap:12px;margin-bottom:32px;">
+            <div class="card">
+              <span class="tag" style="background:#EFF6FF;color:#2563EB;">New</span>
+              <h4 style="font-size:14px;font-weight:600;margin:8px 0 4px;">Underwrite a deal</h4>
+              <p style="font-size:12px;color:${mtd};">Start a new multifamily acquisition analysis with AI-powered insights.</p>
+            </div>
+            <div class="card">
+              <span class="tag" style="background:#FEF3C7;color:#D97706;">Trending</span>
+              <h4 style="font-size:14px;font-weight:600;margin:8px 0 4px;">Market analysis</h4>
+              <p style="font-size:12px;color:${mtd};">Explore market trends, comps, and submarket data for any metro area.</p>
+            </div>
+            <div class="card">
+              <span class="tag" style="background:#F0FDF4;color:#16A34A;">For you</span>
+              <h4 style="font-size:14px;font-weight:600;margin:8px 0 4px;">Review recent work</h4>
+              <p style="font-size:12px;color:${mtd};">Pick up where you left off with your most recent analyses.</p>
+            </div>
+          </div>
+          <!-- Table -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <h3 style="font-size:15px;font-weight:700;">Your analyses</h3>
+            <span style="font-size:13px;font-weight:600;color:${state.accent};cursor:pointer;">View All →</span>
+          </div>
+          <div class="card" style="padding:0;overflow:hidden;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="background:${state.dark?'#1E2028':surf};">
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:${mtd};font-size:11px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid ${border};">Name</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:${mtd};font-size:11px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid ${border};">Status</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:${mtd};font-size:11px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid ${border};">Address</th>
+                  <th style="text-align:left;padding:12px 16px;font-weight:600;color:${mtd};font-size:11px;text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid ${border};">Modified</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${[
+                  ['Sunset Apts','Draft','123 Sunset Blvd, LA','Feb 15, 2026'],
+                  ['Oak Manor','InProgress','456 Oak St, Dallas','Feb 14, 2026'],
+                  ['Pine Ridge','Complete','789 Pine Rd, Phoenix','Feb 13, 2026'],
+                  ['Elm Court','InProgress','321 Elm Ave, Denver','Feb 12, 2026'],
+                ].map(([n,s,a,d],i) => `
+                  <tr style="border-bottom:1px solid ${border};${i%2===1?`background:${state.dark?'#14161A':'#F9FAFB'};`:''}">
+                    <td style="padding:12px 16px;font-weight:600;">${n}</td>
+                    <td style="padding:12px 16px;">
+                      <span class="tag" style="background:${s==='Draft'?state.dark?'#2A2E36':'#F3F4F6':s==='InProgress'?'#FEF3C7':'#F0FDF4'};
+                        color:${s==='Draft'?mtd:s==='InProgress'?'#D97706':'#16A34A'};">${s}</span>
+                    </td>
+                    <td style="padding:12px 16px;color:${mtd};">${a}</td>
+                    <td style="padding:12px 16px;color:${mtd};">${d}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  else if (state.view === 'analysis') {
+    html += `
+      <div style="min-height:100%;position:relative;">
+        ${sidebarHtml}
+        <div style="margin-left:${state.sidebarWidth}px;padding:32px 40px;max-width:960px;">
+          <h2 style="font-size:22px;font-weight:800;margin-bottom:6px;">Start a new analysis</h2>
+          <p style="color:${mtd};font-size:14px;margin-bottom:24px;">Choose a category to get started.</p>
+          <!-- Search -->
+          <div style="margin-bottom:32px;">
+            <div class="search-bar">
+              <input placeholder="Search a property, market, or deal..." />
+              <button class="search-bar-btn">${arrowSvg}</button>
+            </div>
+          </div>
+          <!-- Category grid -->
+          <div style="display:grid;grid-template-columns:repeat(${state.vpWidth<600?1:3},1fr);gap:20px;">
+            <!-- Homeowners -->
+            <div>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Homeowners</h3>
+              <div class="card card-cta" style="margin-bottom:12px;cursor:pointer;">
+                <div style="width:48px;height:48px;border-radius:12px;background:#EFF6FF;color:#2563EB;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                  <span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">${homeSvg}</span>
+                </div>
+                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px;">Home valuation</h4>
+                <p style="font-size:12px;color:${mtd};">Get an AI-powered estimate for any residential property.</p>
+              </div>
+              <div class="card card-cta" style="cursor:pointer;">
+                <div style="width:48px;height:48px;border-radius:12px;background:#F0FDF4;color:#16A34A;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                  <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="currentColor"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                </div>
+                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px;">Market trends</h4>
+                <p style="font-size:12px;color:${mtd};">Explore neighborhood trends and market conditions.</p>
+              </div>
+            </div>
+            <!-- Investors -->
+            <div>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Investors</h3>
+              <div class="card" style="margin-bottom:12px;cursor:pointer;border-color:${state.accent};">
+                <div style="width:48px;height:48px;border-radius:12px;background:${lighten(state.accent,0.85)};color:${state.accent};display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                  <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/></svg>
+                </div>
+                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px;">Underwrite a deal</h4>
+                <p style="font-size:12px;color:${mtd};">Full acquisition underwriting with 10-section AI report.</p>
+              </div>
+              <div class="card card-cta" style="cursor:pointer;">
+                <div style="width:48px;height:48px;border-radius:12px;background:#FEF3C7;color:#D97706;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                  <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="currentColor"><path d="M10 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h5v-2H5V5h5V3zm4 18h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-5v2h5v14h-5v2z"/></svg>
+                </div>
+                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px;">Comp analysis</h4>
+                <p style="font-size:12px;color:${mtd};">Find and analyze comparable sales in any market.</p>
+              </div>
+            </div>
+            <!-- Institutions -->
+            <div>
+              <h3 style="font-size:15px;font-weight:700;margin-bottom:12px;">Institutions</h3>
+              <div class="card card-cta" style="margin-bottom:12px;cursor:pointer;">
+                <div style="width:48px;height:48px;border-radius:12px;background:#F5F3FF;color:#7C3AED;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                  <svg style="width:24px;height:24px;" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v7h3v-7H4zm6 0v7h3v-7h-3zM2 22h19v-3H2v3zm14-12v7h3v-7h-3zm-4.5-9L2 6v2h19V6l-9.5-5z"/></svg>
+                </div>
+                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px;">Portfolio review</h4>
+                <p style="font-size:12px;color:${mtd};">Bulk analysis across your entire property portfolio.</p>
+              </div>
+              <div class="card card-cta" style="cursor:pointer;">
+                <div style="width:48px;height:48px;border-radius:12px;background:#FEE2E2;color:#DC2626;display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+                  <span style="width:24px;height:24px;display:flex;align-items:center;justify-content:center;">${shieldSvg}</span>
+                </div>
+                <h4 style="font-size:14px;font-weight:600;margin-bottom:4px;">Risk assessment</h4>
+                <p style="font-size:12px;color:${mtd};">Deep-dive risk analysis for institutional-grade diligence.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  preview.innerHTML = html;
+  updatePrompt();
+}
+
+// ===== PROMPT =====
+function updatePrompt() {
+  const parts = [];
+  parts.push(`Showing the "${state.view}" view at ${state.vpWidth}px width.`);
+
+  const diffs = [];
+  if (state.accent !== DEFAULTS.accent) diffs.push(`accent color ${state.accent}`);
+  if (state.primary !== DEFAULTS.primary) diffs.push(`primary color ${state.primary}`);
+  if (state.dark) diffs.push('dark mode enabled');
+  if (state.heroSize !== DEFAULTS.heroSize) diffs.push(`hero text at ${state.heroSize}rem`);
+  if (state.radius !== DEFAULTS.radius) diffs.push(`${state.radius}px border radius`);
+  if (state.sidebarWidth !== DEFAULTS.sidebarWidth) diffs.push(`${state.sidebarWidth}px sidebar`);
+  if (state.sidebarStyle !== DEFAULTS.sidebarStyle) diffs.push(`${state.sidebarStyle} sidebar style`);
+  if (state.searchHeight !== DEFAULTS.searchHeight) diffs.push(`${state.searchHeight}px search bar`);
+  if (state.searchShadow) diffs.push('search bar shadow enabled');
+  if (state.background !== DEFAULTS.background) diffs.push(`background ${state.background}`);
+  if (state.surface !== DEFAULTS.surface) diffs.push(`surface ${state.surface}`);
+
+  if (diffs.length > 0) {
+    parts.push(`\nCustomizations: ${diffs.join(', ')}.`);
+  }
+
+  parts.push(`\nUpdate the ZSR Underwriting Blazor app to match this design:`);
+  parts.push(`- Font: Plus Jakarta Sans`);
+  parts.push(`- Accent/CTA: ${state.accent} (buttons, links, sidebar logo, search arrow)`);
+  parts.push(`- Primary: ${state.primary}`);
+  parts.push(`- Background: ${state.dark ? '#0F0F12' : state.background}, Surface: ${state.dark ? '#1A1D23' : state.surface}`);
+  parts.push(`- Border radius: ${state.radius}px throughout`);
+
+  if (state.view === 'landing') {
+    parts.push(`- Hero heading: ${state.heroSize}rem, weight 800`);
+    parts.push(`- Search bar: ${state.searchHeight}px height, centered, orange arrow button`);
+    parts.push(`- Quick action chips below search`);
+    parts.push(`- Dark showcase section with stats`);
+  } else if (state.view === 'login') {
+    parts.push(`- Centered auth card, max-width 400px`);
+    parts.push(`- Social login buttons (Google/Microsoft) as outlined buttons`);
+    parts.push(`- OR divider, then email-only input`);
+    parts.push(`- Orange "Continue" CTA button`);
+  } else if (state.view === 'dashboard' || state.view === 'analysis') {
+    parts.push(`- Icon sidebar: ${state.sidebarWidth}px wide, ${state.sidebarStyle} style`);
+    parts.push(`- Icons: logo (Z), + (orange circle), home, shield, settings, logout`);
+    if (state.view === 'dashboard') {
+      parts.push(`- Recommended cards: 3-column grid with colored tags`);
+      parts.push(`- Data table for analyses with Name, Status, Address, Modified columns`);
+    } else {
+      parts.push(`- 3-column category grid: Homeowners, Investors, Institutions`);
+      parts.push(`- "Underwrite a deal" card highlighted with orange border`);
+    }
+  }
+
+  if (state.dark) parts.push(`- Dark mode: dark backgrounds, light text, adjusted borders`);
+
+  document.getElementById('promptText').textContent = parts.join('\n');
+}
+
+// ===== COPY =====
+function copyPrompt() {
+  const text = document.getElementById('promptText').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// ===== INIT =====
+updateAll();
+window.addEventListener('resize', updateAll);
+</script>
+</body>
+</html>

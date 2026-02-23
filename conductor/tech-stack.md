@@ -10,7 +10,7 @@
 - **Solution structure**:
   - `ZSR.Underwriting.Domain` — Entities, value objects, interfaces
   - `ZSR.Underwriting.Application` — Use cases, services, DTOs, calculation engine
-  - `ZSR.Underwriting.Infrastructure` — EF Core, RealAI client, Claude client, file storage
+  - `ZSR.Underwriting.Infrastructure` — EF Core, Claude client, file storage
   - `ZSR.Underwriting.Web` — Blazor Server app, pages, components, layout
 
 ## Database
@@ -23,7 +23,6 @@
 - Anthropic .NET SDK or direct HTTP client
 
 ## External Integrations
-- **RealAI API** (app.realai.com) — property data, tenant metrics, market data, sales comps
 - **Web search** — supplemental market context (employers, pipeline, rates)
 
 ## Authentication

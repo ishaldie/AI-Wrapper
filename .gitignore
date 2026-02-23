@@ -6,6 +6,15 @@
 # dotenv files
 .env
 
+# SQLite databases
+*.db
+
+# Upload storage
+src/ZSR.Underwriting.Web/uploads/
+
+# Windows NUL artifact
+nul
+
 # Python build artifacts
 *.egg-info/
 

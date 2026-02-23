@@ -1,8 +1,8 @@
 {
-  "track_id": "realai_api_integration_20260214",
+  "trackId": "realai_api_integration_20260214",
   "type": "feature",
-  "status": "planned",
-  "created_at": "2026-02-14T00:00:00.000Z",
-  "updated_at": "2026-02-14T00:00:00.000Z",
-  "description": "RealAI API Integration — HTTP client for property, tenant, market data and sales comps from app.realai.com"
+  "status": "archived",
+  "description": "RealAI API Integration — HTTP client for property, tenant, market data and sales comps from app.realai.com",
+  "createdAt": "2026-02-14T00:00:00.000Z",
+  "updatedAt": "2026-02-14T00:00:00.000Z"
 }

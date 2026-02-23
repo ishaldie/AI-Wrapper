@@ -1,41 +1,74 @@
-description = "Sync Conductor commands, skills, and related configuration across supported AI CLIs; use after extension or config changes."
+description = "Sync this worktree branch with main: pull latest changes, resolve merge conflicts, and ensure no work is lost before completing."
 prompt = """
 # Conductor Sync
 
-Sync Conductor configuration to all registered AI engine CLIs.
+Sync this worktree's branch with the main branch to stay up to date and prevent merge conflicts at completion time.
 
-This command syncs:
-- Context files (CLAUDE.md, GEMINI.md, CODEX.md)
-- Commands to all platforms
-- Skills to platforms that support them
-- Agents to platforms that support them (Claude only)
+**This is a git operation** — it pulls changes from main into the current worktree branch, resolves any conflicts, and ensures no work on either side is lost.
+
+---
+
+## Pre-flight Checks
+
+1. **Verify clean working tree**
+   - Run `git status` — must have no uncommitted changes
+   - If dirty, ask user to commit or stash first
+
+2. **Identify branches**
+   - Current branch: `git branch --show-current`
+   - Main branch: usually `main` or `master`
+   - Confirm the merge direction with user: "I'll merge main into your current branch"
 
 ---
 
 ## Sync Process
 
-1. **Generate Context File**
-   - Read conductor/product.md, workflow.md, tech-stack.md
-   - Include active track information
-   - Include code styleguides
+### Step 1: Fetch Latest
+```bash
+git fetch origin main
+```
 
-2. **Sync to Engines**
-   - Claude: CLAUDE.md, .claude/commands/, .claude/skills/
-   - Gemini: GEMINI.md, .gemini/commands/, .gemini/skills/
-   - Codex: CODEX.md, .codex/commands/, .codex/skills/
+### Step 2: Merge Main into Worktree Branch
+```bash
+git merge origin/main --no-edit
+```
 
-3. **Report Status**
-   - Show which engines were synced
-   - Report any errors or skipped engines
+### Step 3: Handle Merge Conflicts (if any)
+
+If conflicts occur:
+1. List all conflicting files
+2. For each conflict:
+   - Show both sides of the conflict
+   - Explain what changed on main vs. the worktree
+   - Ask the user how to resolve (keep ours, keep theirs, or manual merge)
+3. After all conflicts are resolved:
+   - Stage resolved files
+   - Complete the merge commit
+
+### Step 4: Verify
+
+1. Run the test suite to make sure nothing is broken
+2. Report summary:
+   - How many commits were merged from main
+   - Any files that had conflicts and how they were resolved
+   - Test results
 
 ---
 
 ## When to Sync
 
-Sync automatically happens when:
-- Project is registered with Conductor
-- Context files are modified
-- Extensions are added/removed
+Use this command:
+- **Before completing a track** — ensures clean merge when the worktree is merged back
+- **After main has significant changes** — avoid drift that causes painful conflicts later
+- **Periodically during long-running tracks** — sync weekly or after major main branch merges
 
-You can also trigger a manual sync with this command.
+---
+
+## Critical Rules
+
+1. **Never force-push** after syncing — this rewrites history and can lose work
+2. **Always verify with tests** after the merge
+3. Working directory MUST be clean before starting
+4. If the merge is complex, walk through each conflict with the user
+5. Get user approval before completing the merge commit
 """

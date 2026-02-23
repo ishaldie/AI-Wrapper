@@ -1,8 +1,8 @@
 {
-  "track_id": "deal_entry_ui_20260214",
+  "trackId": "deal_entry_ui_20260214",
   "type": "feature",
-  "status": "planned",
-  "created_at": "2026-02-14T00:00:00.000Z",
-  "updated_at": "2026-02-14T00:00:00.000Z",
-  "description": "Deal Entry UI — Blazor multi-step form wizard for collecting underwriting inputs per ZSR protocol"
+  "status": "archived",
+  "description": "Deal Entry UI — Blazor multi-step form wizard for collecting underwriting inputs per ZSR protocol",
+  "createdAt": "2026-02-14T00:00:00.000Z",
+  "updatedAt": "2026-02-14T00:00:00.000Z"
 }

@@ -7,9 +7,19 @@ description: Display current project and track progress from Conductor artifacts
 
 Show current project and track status.
 
-**FIRST: Read all context files before doing anything else.**
+## Data Sources (in priority order)
 
-Read these files NOW:
+### 1. MCP Tools (Preferred)
+Use these MCP tools to get canonical track data:
+- `conductor_list_tracks` — returns all tracks with status, type, and metadata
+- `conductor_get_status` — returns detailed status of a specific track (pass `{ trackId }`)
+
+### 2. REST API (Fallback)
+- GET `/api/projects/:projectId/tracks/list` — list all tracks
+- GET `/api/projects/:projectId/tracks/:trackId` — get track detail
+
+### 3. Direct File Read (Last Resort)
+Read these files:
 - conductor/product.md
 - conductor/tracks.md
 - All conductor/tracks/*/metadata.json
@@ -66,6 +76,6 @@ Tracks: <total> | Tasks: <completed>/<total>
 
 ## Critical Rules
 
-1. Always read conductor/ context files FIRST
+1. **Prefer MCP tools** (`conductor_list_tracks`, `conductor_get_status`) for reading track data — returns canonical format
 2. Follow workflow.md EXACTLY as written
 3. Get user approval before making changes

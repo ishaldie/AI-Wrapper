@@ -1,9 +1,17 @@
 {
-  "id": "ui-redesign-and-web-fixes",
+  "trackId": "ui-redesign-and-web-fixes",
   "type": "refactor",
   "status": "in_progress",
-  "created": "2026-02-16",
   "description": "UI redesign with frontend-design skill principles, SSR form fixes, and site-wide error resolution",
-  "currentPhase": 5,
-  "completedPhases": [1, 2, 3, 4]
+  "createdAt": "2026-02-22T01:31:38.342Z",
+  "updatedAt": "2026-02-22T01:31:38.342Z",
+  "sessions": [
+    {
+      "slotIndex": 0,
+      "engineType": "claude",
+      "aiSessionId": "71a32456-c5e1-47b0-a93c-80c1132d053e",
+      "updatedAt": "2026-02-22T01:26:35.231Z",
+      "accountId": "system-claude"
+    }
+  ]
 }

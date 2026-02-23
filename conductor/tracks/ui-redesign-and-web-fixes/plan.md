@@ -24,7 +24,7 @@
 - [x] Task 3.1: Dashboard.razor - Welcome header with AuthorizeView, KPI cards with colored left-borders and animated fade-in, recent activity section
 - [x] Task 3.2: DealPipeline.razor - Page header, bordered MudPaper wrapper, Elevation="0" on DataGrid
 - [x] Task 3.3: UserManagement.razor - Page header, Elevation="0" MudTable with border
-- [x] Task 3.4: DealWizard.razor - Added subtitle
+- [x] Task 3.4: ~~DealWizard.razor~~ - Removed (replaced by AnalysisStart + DealChat flow)
 - [x] Task 3.5: DealCard.razor - Elevation="0" with border, muted labels
 - [x] Task 3.6: Error.razor - Rewritten with MudBlazor components
 - [x] Task 3.7: NotFound.razor - Rewritten with MudBlazor components
@@ -40,15 +40,35 @@
 ## Phase 5: Site Walkthrough & Bug Fixes
 *Status: Pending*
 
-- [ ] Task 5.1: Verify login flow - Log in with admin@zsr.com, confirm redirect to dashboard
-- [ ] Task 5.2: Review Dashboard page - KPI cards, animations, layout at 100% zoom
-- [ ] Task 5.3: Review Deal Pipeline page - DataGrid, filters, search, empty state
-- [ ] Task 5.4: Review New Deal (DealWizard) page - Stepper, form inputs
-- [ ] Task 5.5: Review Deal Edit/Card page - Data display, overrides
-- [ ] Task 5.6: Review Report Viewer page - Sections, PDF export button
-- [ ] Task 5.7: Review User Management page (admin) - Table, role chips
-- [ ] Task 5.8: Review Register page - Form submission, validation display
-- [ ] Task 5.9: Review Error & NotFound pages - Navigate to /not-found, verify styling
-- [ ] Task 5.10: Fix any visual or functional issues discovered during walkthrough
-- [ ] Task 5.11: Final build + test verification
-- [ ] Task 5.12: Commit all changes
+### 5A: Public pages (PublicLayout, unauthenticated)
+- [~] Task 5.1: Review Landing page - "UA" logo, "Underwriting Analyst" brand text, nav links, hero section
+- [ ] Task 5.2: Review Login page - branded card, SSR form submission, social login buttons, validation
+- [ ] Task 5.3: Review Register page - branded card, SSR form submission, validation display
+- [ ] Task 5.4: Review VerifyCode page - branded card, code input, resend flow
+- [ ] Task 5.5: Review About page - heading, body copy, "Underwriting Analyst" references (not "ZSR Underwriting")
+- [ ] Task 5.6: Review Terms & Privacy pages - legal content renders, back link works
+- [ ] Task 5.7: Review Error & NotFound pages - navigate to /not-found, verify styling
+
+### 5B: Auth gate
+- [ ] Task 5.8: Review AcceptTerms page - "Underwriting Analyst" branding, checkbox, submit flow
+
+### 5C: Authenticated pages (AppLayout + IconSidebar)
+- [ ] Task 5.9: Review IconSidebar - "UA" logo, nav icons, active states, logout button
+- [ ] Task 5.10: Review Dashboard page - KPI cards, animations, recent activity, layout at 100% zoom
+- [ ] Task 5.11: Review AnalysisStart page - form inputs, file upload, quick analysis flow
+- [ ] Task 5.12: Review DealPipeline page - DataGrid, filters, search, empty state
+- [ ] Task 5.13: Review DealChat page - chat UI, message rendering, document upload
+- [ ] Task 5.14: Review DealReport page - report sections, navigation
+- [ ] Task 5.15: Review QuickAnalysisPage - progress steps, loading states
+- [ ] Task 5.16: Review QuickReport page - report display, data formatting
+- [ ] Task 5.17: Review DealComparison page - side-by-side layout, data display
+- [ ] Task 5.18: Review DealCard component - elevation, borders, labels
+- [ ] Task 5.19: Review ReportViewer component - sections, elevation, borders
+
+### 5D: Admin
+- [ ] Task 5.20: Review User Management page (admin) - table, role chips, actions
+
+### 5E: Wrap-up
+- [ ] Task 5.21: Fix any visual or functional issues discovered during walkthrough
+- [ ] Task 5.22: Final build + test verification
+- [ ] Task 5.23: Commit all changes

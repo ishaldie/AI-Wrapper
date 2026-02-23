@@ -1,8 +1,8 @@
 {
-  "track_id": "terms_of_service_20260216",
+  "trackId": "terms_of_service_20260216",
   "type": "feature",
-  "status": "planned",
-  "created_at": "2026-02-16T22:38:57.663Z",
-  "updated_at": "2026-02-16T23:15:00.000Z",
-  "description": "Terms of Service & Privacy Policy"
+  "status": "archived",
+  "description": "Terms of Service & Privacy Policy",
+  "createdAt": "2026-02-16T22:38:57.663Z",
+  "updatedAt": "2026-02-16T23:15:00.000Z"
 }

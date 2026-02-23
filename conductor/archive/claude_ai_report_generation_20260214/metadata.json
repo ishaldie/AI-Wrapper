@@ -1,8 +1,8 @@
 {
-  "track_id": "claude_ai_report_generation_20260214",
+  "trackId": "claude_ai_report_generation_20260214",
   "type": "feature",
-  "status": "planned",
-  "created_at": "2026-02-14T00:00:00.000Z",
-  "updated_at": "2026-02-14T00:00:00.000Z",
-  "description": "Claude AI Report Generation — Claude API integration for prose sections, risk narratives, and GO/NO GO decisions"
+  "status": "archived",
+  "description": "Claude AI Report Generation — Claude API integration for prose sections, risk narratives, and GO/NO GO decisions",
+  "createdAt": "2026-02-14T00:00:00.000Z",
+  "updatedAt": "2026-02-14T00:00:00.000Z"
 }

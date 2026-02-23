@@ -3,9 +3,21 @@
 **Track ID:** `ui-redesign-and-web-fixes`
 **Type:** refactor
 **Created:** 2026-02-16
+**Updated:** 2026-02-22 (rebrand: "ZSR Underwriting" → "Underwriting Analyst")
 
 ## Overview
-Redesign the ZSR Underwriting web UI with a distinctive, production-grade aesthetic following frontend-design skill principles (Plus Jakarta Sans typography, refined color system, CSS animations), fix SSR form binding bugs on auth pages, and resolve any remaining runtime errors across the website.
+Redesign the Underwriting Analyst web UI with a distinctive, production-grade aesthetic following frontend-design skill principles (Plus Jakarta Sans typography, refined color system, CSS animations), fix SSR form binding bugs on auth pages, and resolve any remaining runtime errors across the website.
+
+**Note:** The product has been rebranded from "ZSR Underwriting" to "Underwriting Analyst". All user-facing branding now uses "Underwriting Analyst" with the logo letter "UA". The legal entity "ZSR Ventures, LLC" and C# namespaces (`ZSR.Underwriting.*`) are unchanged.
+
+## Current App Structure
+- **Layout:** AppLayout (sidebar) + IconSidebar + PublicLayout (auth/legal pages)
+- **Auth pages:** Login, Register, VerifyCode, Logout
+- **Legal pages:** AcceptTerms, About, Terms, Privacy
+- **Core pages:** Landing, Dashboard, AnalysisStart, DealChat, DealPipeline, DealComparison, DealReport, QuickAnalysisPage, QuickReport
+- **Utility pages:** Error, NotFound
+- **Components:** DealCard, ReportViewer, AnalysisStepRow
+- **Removed:** DealWizard (replaced by AnalysisStart + DealChat flow)
 
 ## Requirements
 1. **SSR Form Fix** - Login and Register pages use standard HTML `<input>` elements with proper `name` attributes for static SSR form binding (MudBlazor's MudTextField doesn't render names in SSR mode)
@@ -27,6 +39,8 @@ Redesign the ZSR Underwriting web UI with a distinctive, production-grade aesthe
 - [ ] KPI cards have colored left-border accents and hover transitions
 - [ ] Auth pages render custom-styled inputs (not MudBlazor MudTextField)
 - [ ] MudBlazor CSS loads for unauthenticated users
+- [ ] All page titles show "Underwriting Analyst" (not "ZSR Underwriting")
+- [ ] Sidebar logo shows "UA", landing nav shows "Underwriting Analyst"
 - [ ] `dotnet build` passes with zero errors
 - [ ] 494+ tests pass (excluding pre-existing WebApplicationFactory intermittent failures)
 - [ ] All pages visually reviewed and free of layout/rendering issues

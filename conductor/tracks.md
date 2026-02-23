@@ -71,3 +71,20 @@
 *Link: [./conductor/archive/terms_of_service_20260216/](./conductor/archive/terms_of_service_20260216/)*
 
 ---
+
+## [ ] Track: Document Upload Security Hardening
+*Link: [./conductor/tracks/document_upload_security_hardening_20260222/](./conductor/tracks/document_upload_security_hardening_20260222/)*
+
+---
+
+### [ ] Track: MVP: Project skeleton, Claude integration, meeting notes generator, and basic web UI
+
+_Link: [./tracks/mvp_20260214/](./tracks/mvp_20260214/)_
+
+---
+
+### [ ] Track: Track Set Up
+
+_Link: [./tracks/track_set_up_20260214/](./tracks/track_set_up_20260214/)_
+
+---

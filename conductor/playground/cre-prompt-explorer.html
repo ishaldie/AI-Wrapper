@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRE Underwriting Prompt Explorer</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #111114; --surface: #1a1a1f; --surface2: #222228; --border: #2a2a32;
+    --text: #e4e4e8; --text2: #9ca3af; --accent: #F97316;
+    --kw: #c084fc; --str: #86efac; --sec: #60a5fa; --dim: #6b7280;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg); color: var(--text); height: 100vh; overflow: hidden;
+  }
+  .layout { display: grid; grid-template-columns: 340px 1fr; height: 100vh; }
+
+  /* Controls */
+  .controls { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; padding: 16px; }
+  .controls h1 { font-size: 14px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+  .section { margin-bottom: 18px; }
+  .section-title {
+    font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 10px; padding-bottom: 4px; border-bottom: 1px solid var(--border);
+  }
+  .control-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .control-row label { font-size: 12px; color: var(--text2); flex-shrink: 0; }
+  select {
+    background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; max-width: 170px;
+  }
+  input[type="range"] { width: 110px; accent-color: var(--accent); height: 4px; margin: 0 8px; }
+  .value { font-size: 11px; color: var(--accent); font-family: 'SF Mono', monospace; min-width: 30px; text-align: right; }
+  textarea.custom-input {
+    width: 100%; background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px; font-size: 12px; font-family: inherit; resize: vertical;
+    min-height: 48px; margin-top: 6px;
+  }
+  textarea.custom-input::placeholder { color: var(--dim); }
+
+  /* Toggles */
+  .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .sl {
+    position: absolute; inset: 0; background: var(--surface2); border-radius: 10px;
+    border: 1px solid var(--border); transition: 0.2s;
+  }
+  .toggle .sl::before {
+    content: ''; position: absolute; width: 14px; height: 14px; left: 2px; top: 2px;
+    background: var(--text2); border-radius: 50%; transition: 0.2s;
+  }
+  .toggle input:checked + .sl { background: var(--accent); border-color: var(--accent); }
+  .toggle input:checked + .sl::before { transform: translateX(16px); background: #fff; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: 0.15s;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Presets */
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .preset-btn {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    border-radius: 6px; padding: 5px 10px; font-size: 11px; cursor: pointer; transition: 0.15s;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .preset-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* Right panel */
+  .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+  .preview-container { flex: 1; overflow-y: auto; padding: 20px; }
+  .preview-label {
+    font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase;
+    letter-spacing: 0.06em; margin-bottom: 8px;
+  }
+  .prompt-preview {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 13px; line-height: 1.65; white-space: pre-wrap; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px;
+  }
+  .prompt-preview .kw { color: var(--kw); font-weight: 600; }
+  .prompt-preview .sec { color: var(--sec); font-weight: 600; }
+  .prompt-preview .str { color: var(--str); }
+  .prompt-preview .dim { color: var(--dim); font-style: italic; }
+  .prompt-preview .accent { color: var(--accent); font-weight: 700; }
+
+  /* Prompt output */
+  .prompt-panel {
+    background: var(--surface); border-top: 1px solid var(--border);
+    padding: 12px 20px; flex-shrink: 0; max-height: 160px; overflow-y: auto;
+  }
+  .prompt-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .prompt-header span { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .copy-btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 4px;
+    padding: 4px 12px; font-size: 11px; font-weight: 600; cursor: pointer; transition: 0.15s;
+  }
+  .copy-btn:hover { opacity: 0.85; }
+  .prompt-text {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; line-height: 1.5;
+    color: var(--text); white-space: pre-wrap;
+  }
+
+  /* Copy system prompt button */
+  .copy-sys-btn {
+    background: transparent; color: var(--accent); border: 1px solid var(--accent);
+    border-radius: 4px; padding: 4px 12px; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: 0.15s; margin-left: 8px;
+  }
+  .copy-sys-btn:hover { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Controls -->
+  <div class="controls">
+    <h1>CRE Prompt Explorer</h1>
+
+    <!-- Presets -->
+    <div class="section">
+      <div class="section-title">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <!-- Property Type -->
+    <div class="section">
+      <div class="section-title">Property Type</div>
+      <div class="chips" id="property-type-chips"></div>
+    </div>
+
+    <!-- Analysis Sections -->
+    <div class="section">
+      <div class="section-title">Analysis Sections</div>
+      <div id="sections-toggles"></div>
+    </div>
+
+    <!-- Tone & Style -->
+    <div class="section">
+      <div class="section-title">Tone & Style</div>
+      <div class="control-row">
+        <label>Tone</label>
+        <select id="tone">
+          <option value="professional">Professional</option>
+          <option value="conversational">Conversational</option>
+          <option value="technical">Technical / Analyst</option>
+          <option value="brief">Brief / Executive</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <label>Detail Level</label>
+        <select id="detail">
+          <option value="ranges">High-level ranges</option>
+          <option value="estimates">Detailed estimates</option>
+          <option value="granular">Granular modeling</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <label>Recommendation</label>
+        <select id="recommendation">
+          <option value="go-nogo">GO / CAUTION / NO GO</option>
+          <option value="score">Numeric Score (1-10)</option>
+          <option value="pros-cons">Pros & Cons</option>
+          <option value="none">No recommendation</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Behavior -->
+    <div class="section">
+      <div class="section-title">Behavior</div>
+      <div class="control-row">
+        <label>Ask follow-ups</label>
+        <label class="toggle"><input type="checkbox" id="followups" checked /><span class="sl"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Use markdown</label>
+        <label class="toggle"><input type="checkbox" id="markdown" checked /><span class="sl"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Cite assumptions</label>
+        <label class="toggle"><input type="checkbox" id="assumptions" checked /><span class="sl"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Build on history</label>
+        <label class="toggle"><input type="checkbox" id="buildHistory" checked /><span class="sl"></span></label>
+      </div>
+    </div>
+
+    <!-- Financial Emphasis -->
+    <div class="section">
+      <div class="section-title">Financial Emphasis</div>
+      <div class="control-row">
+        <label>Cap Rate</label>
+        <input type="range" min="0" max="3" id="emphCapRate" value="2" />
+        <span class="value" id="emphCapRateVal"></span>
+      </div>
+      <div class="control-row">
+        <label>Debt / DSCR</label>
+        <input type="range" min="0" max="3" id="emphDebt" value="1" />
+        <span class="value" id="emphDebtVal"></span>
+      </div>
+      <div class="control-row">
+        <label>Returns (IRR/CoC)</label>
+        <input type="range" min="0" max="3" id="emphReturns" value="1" />
+        <span class="value" id="emphReturnsVal"></span>
+      </div>
+      <div class="control-row">
+        <label>Rent Comps</label>
+        <input type="range" min="0" max="3" id="emphRent" value="1" />
+        <span class="value" id="emphRentVal"></span>
+      </div>
+      <div class="control-row">
+        <label>OpEx / NOI</label>
+        <input type="range" min="0" max="3" id="emphOpex" value="1" />
+        <span class="value" id="emphOpexVal"></span>
+      </div>
+    </div>
+
+    <!-- Custom Instructions -->
+    <div class="section">
+      <div class="section-title">Custom Instructions</div>
+      <textarea class="custom-input" id="customInstructions" placeholder="e.g. Always compare to Class B multifamily in the same MSA. Focus on value-add potential."></textarea>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="right-panel">
+    <div class="preview-container">
+      <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <span class="preview-label" style="margin-bottom: 0;">Generated System Prompt</span>
+        <button class="copy-sys-btn" id="copy-sys-btn">Copy System Prompt</button>
+      </div>
+      <div class="prompt-preview" id="prompt-preview"></div>
+    </div>
+
+    <div class="prompt-panel">
+      <div class="prompt-header">
+        <span>Implementation Prompt</span>
+        <button class="copy-btn" id="copy-btn">Copy Prompt</button>
+      </div>
+      <div class="prompt-text" id="prompt-output"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Property types ----
+const PROPERTY_TYPES = [
+  'Multifamily', 'Office', 'Retail', 'Industrial', 'Mixed-Use', 'Hotel', 'Self-Storage', 'Medical Office'
+];
+
+// ---- Analysis sections ----
+const ALL_SECTIONS = [
+  { id: 'overview', label: 'Property Overview & Location', default: true },
+  { id: 'market', label: 'Market Conditions & Trends', default: true },
+  { id: 'financials', label: 'Financial Metrics', default: true },
+  { id: 'comps', label: 'Comparable Properties', default: true },
+  { id: 'risks', label: 'Risk Factors', default: true },
+  { id: 'opportunities', label: 'Opportunities / Value-Add', default: true },
+  { id: 'recommendation', label: 'Investment Recommendation', default: true },
+  { id: 'debt', label: 'Debt & Financing Analysis', default: false },
+  { id: 'rentroll', label: 'Rent Roll Analysis', default: false },
+  { id: 'opex', label: 'Operating Expenses / T12', default: false },
+  { id: 'sensitivity', label: 'Sensitivity Analysis', default: false },
+  { id: 'exitStrategy', label: 'Exit Strategy & Disposition', default: false },
+];
+
+// ---- State ----
+const state = {
+  propertyType: 'Multifamily',
+  sections: ALL_SECTIONS.filter(s => s.default).map(s => s.id),
+  tone: 'conversational',
+  detail: 'ranges',
+  recommendation: 'go-nogo',
+  followups: true,
+  markdown: true,
+  assumptions: true,
+  buildHistory: true,
+  emphCapRate: 2,
+  emphDebt: 1,
+  emphReturns: 1,
+  emphRent: 1,
+  emphOpex: 1,
+  customInstructions: '',
+};
+
+// ---- Presets ----
+const PRESETS = {
+  'Quick Screening': {
+    propertyType: 'Multifamily',
+    sections: ['overview', 'market', 'financials', 'recommendation'],
+    tone: 'brief', detail: 'ranges', recommendation: 'go-nogo',
+    followups: true, markdown: true, assumptions: false, buildHistory: true,
+    emphCapRate: 2, emphDebt: 0, emphReturns: 1, emphRent: 1, emphOpex: 0,
+    customInstructions: '',
+  },
+  'Full Underwrite': {
+    propertyType: 'Multifamily',
+    sections: ['overview', 'market', 'financials', 'comps', 'risks', 'opportunities', 'recommendation', 'debt', 'rentroll', 'opex'],
+    tone: 'professional', detail: 'estimates', recommendation: 'go-nogo',
+    followups: true, markdown: true, assumptions: true, buildHistory: true,
+    emphCapRate: 3, emphDebt: 3, emphReturns: 2, emphRent: 3, emphOpex: 2,
+    customInstructions: '',
+  },
+  'Investor Memo': {
+    propertyType: 'Multifamily',
+    sections: ['overview', 'market', 'financials', 'comps', 'risks', 'opportunities', 'recommendation', 'exitStrategy'],
+    tone: 'professional', detail: 'estimates', recommendation: 'pros-cons',
+    followups: false, markdown: true, assumptions: true, buildHistory: false,
+    emphCapRate: 2, emphDebt: 2, emphReturns: 3, emphRent: 1, emphOpex: 1,
+    customInstructions: 'Frame the analysis as an investment memo for LP review. Include a clear thesis statement.',
+  },
+  'Debt Sizing': {
+    propertyType: 'Multifamily',
+    sections: ['financials', 'debt', 'opex', 'sensitivity', 'risks'],
+    tone: 'technical', detail: 'granular', recommendation: 'none',
+    followups: true, markdown: true, assumptions: true, buildHistory: true,
+    emphCapRate: 1, emphDebt: 3, emphReturns: 2, emphRent: 0, emphOpex: 3,
+    customInstructions: 'Focus on DSCR coverage, debt yield, and stress testing across rate scenarios.',
+  },
+  'Value-Add Scout': {
+    propertyType: 'Multifamily',
+    sections: ['overview', 'market', 'financials', 'comps', 'opportunities', 'recommendation', 'rentroll', 'exitStrategy'],
+    tone: 'conversational', detail: 'estimates', recommendation: 'score',
+    followups: true, markdown: true, assumptions: true, buildHistory: true,
+    emphCapRate: 2, emphDebt: 1, emphReturns: 3, emphRent: 3, emphOpex: 1,
+    customInstructions: 'Emphasize rent-to-market gap, renovation ROI potential, and achievable rent bumps per unit.',
+  },
+};
+
+let activePreset = null;
+
+// ---- Emphasis labels ----
+const EMPH_LABELS = ['Skip', 'Mention', 'Detail', 'Deep dive'];
+
+// ---- Init ----
+function init() {
+  // Presets
+  const presetsEl = document.getElementById('presets');
+  Object.keys(PRESETS).forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn';
+    btn.textContent = name;
+    btn.onclick = () => applyPreset(name);
+    presetsEl.appendChild(btn);
+  });
+
+  // Property type chips
+  const ptEl = document.getElementById('property-type-chips');
+  PROPERTY_TYPES.forEach(pt => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (pt === state.propertyType ? ' active' : '');
+    chip.textContent = pt;
+    chip.onclick = () => {
+      state.propertyType = pt;
+      ptEl.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.textContent === pt));
+      updateAll();
+    };
+    ptEl.appendChild(chip);
+  });
+
+  // Section toggles
+  const secEl = document.getElementById('sections-toggles');
+  ALL_SECTIONS.forEach(sec => {
+    const row = document.createElement('div');
+    row.className = 'control-row';
+    row.innerHTML = `
+      <label style="flex:1; font-size:12px; color:var(--text2);">${sec.label}</label>
+      <label class="toggle"><input type="checkbox" data-section="${sec.id}" ${state.sections.includes(sec.id) ? 'checked' : ''} /><span class="sl"></span></label>
+    `;
+    row.querySelector('input').onchange = (e) => {
+      if (e.target.checked) { if (!state.sections.includes(sec.id)) state.sections.push(sec.id); }
+      else { state.sections = state.sections.filter(s => s !== sec.id); }
+      updateAll();
+    };
+    secEl.appendChild(row);
+  });
+
+  // Dropdowns
+  ['tone', 'detail', 'recommendation'].forEach(id => {
+    document.getElementById(id).onchange = (e) => { state[id] = e.target.value; updateAll(); };
+  });
+
+  // Toggles
+  ['followups', 'markdown', 'assumptions', 'buildHistory'].forEach(id => {
+    document.getElementById(id).onchange = (e) => { state[id] = e.target.checked; updateAll(); };
+  });
+
+  // Emphasis sliders
+  ['emphCapRate', 'emphDebt', 'emphReturns', 'emphRent', 'emphOpex'].forEach(id => {
+    const el = document.getElementById(id);
+    el.oninput = () => { state[id] = parseInt(el.value); updateAll(); };
+  });
+
+  // Custom instructions
+  document.getElementById('customInstructions').oninput = (e) => {
+    state.customInstructions = e.target.value;
+    updateAll();
+  };
+
+  // Copy buttons
+  document.getElementById('copy-sys-btn').onclick = () => {
+    navigator.clipboard.writeText(generateRawPrompt()).then(() => {
+      const btn = document.getElementById('copy-sys-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy System Prompt', 1500);
+    });
+  };
+  document.getElementById('copy-btn').onclick = () => {
+    navigator.clipboard.writeText(document.getElementById('prompt-output').textContent).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Prompt', 1500);
+    });
+  };
+
+  updateAll();
+}
+
+function applyPreset(name) {
+  activePreset = name;
+  Object.assign(state, PRESETS[name]);
+
+  // Sync controls
+  document.querySelectorAll('#property-type-chips .chip').forEach(c =>
+    c.classList.toggle('active', c.textContent === state.propertyType));
+
+  document.querySelectorAll('[data-section]').forEach(el => {
+    el.checked = state.sections.includes(el.dataset.section);
+  });
+
+  ['tone', 'detail', 'recommendation'].forEach(id => document.getElementById(id).value = state[id]);
+  ['followups', 'markdown', 'assumptions', 'buildHistory'].forEach(id => document.getElementById(id).checked = state[id]);
+  ['emphCapRate', 'emphDebt', 'emphReturns', 'emphRent', 'emphOpex'].forEach(id => document.getElementById(id).value = state[id]);
+  document.getElementById('customInstructions').value = state.customInstructions;
+
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.textContent === name));
+  updateAll();
+}
+
+// ---- Generate prompt ----
+function generateRawPrompt() {
+  const lines = [];
+
+  // Role
+  const toneMap = {
+    professional: 'You are a commercial real estate underwriting analyst.',
+    conversational: 'You are a commercial real estate underwriting analyst. You help investors analyze properties in a conversational, approachable manner while maintaining analytical rigor.',
+    technical: 'You are a senior CRE analyst producing institutional-grade underwriting analysis. Use precise financial terminology and quantitative frameworks.',
+    brief: 'You are a CRE analyst. Provide concise, executive-level analysis. Lead with key numbers and conclusions, minimize narrative.',
+  };
+  lines.push(toneMap[state.tone]);
+
+  // Property type context
+  if (state.propertyType !== 'Multifamily') {
+    lines.push('');
+    lines.push(`Specialize in ${state.propertyType.toLowerCase()} properties. Apply ${state.propertyType.toLowerCase()}-specific metrics, lease structures, and market dynamics.`);
+  } else {
+    lines.push('');
+    lines.push('Focus on multifamily and commercial properties for acquisition underwriting.');
+  }
+
+  // Sections
+  lines.push('');
+  lines.push('When given a property name or address, provide analysis covering:');
+
+  const sectionContent = {
+    overview: 'Property overview, location context, neighborhood characteristics, and surrounding economic drivers',
+    market: 'Local market conditions, vacancy rates, rent trends, supply/demand dynamics, and submarket positioning',
+    financials: buildFinancialsSection(),
+    comps: 'Comparable properties and recent transactions that inform valuation',
+    risks: 'Key risk factors: market risk, property-specific risk, regulatory considerations, environmental factors',
+    opportunities: 'Value-add opportunities, market tailwinds, strategic advantages, and upside potential',
+    recommendation: buildRecommendationSection(),
+    debt: 'Debt analysis: loan sizing, DSCR coverage, debt yield, rate sensitivity, and financing structure options',
+    rentroll: 'Rent roll analysis: current rents vs. market, loss-to-lease, occupancy trends, lease expiration schedule',
+    opex: 'Operating expense breakdown: T12 analysis, expense ratios, per-unit costs, and NOI margin',
+    sensitivity: 'Sensitivity analysis: stress-test key variables (vacancy, rent growth, cap rate, interest rate) across scenarios',
+    exitStrategy: 'Exit strategy: hold period assumptions, exit cap rate, disposition timing, and total return projections',
+  };
+
+  state.sections.forEach(secId => {
+    const content = sectionContent[secId];
+    if (content) lines.push(`- ${content}`);
+  });
+
+  // Financial emphasis
+  const emphParts = [];
+  if (state.emphCapRate >= 2) emphParts.push('cap rate ranges by property class');
+  if (state.emphDebt >= 2) emphParts.push('debt service coverage and leverage metrics');
+  if (state.emphReturns >= 2) emphParts.push('IRR, cash-on-cash return, and equity multiple');
+  if (state.emphRent >= 2) emphParts.push('rent comparables and market rent benchmarks');
+  if (state.emphOpex >= 2) emphParts.push('operating expense ratios and NOI margins');
+
+  if (emphParts.length > 0) {
+    lines.push('');
+    lines.push(`Pay particular attention to: ${emphParts.join(', ')}.`);
+  }
+
+  // Deep dives
+  const deepParts = [];
+  if (state.emphCapRate === 3) deepParts.push('cap rate analysis with trailing vs. forward rates');
+  if (state.emphDebt === 3) deepParts.push('multiple debt scenarios (agency, bridge, CMBS) with detailed sizing');
+  if (state.emphReturns === 3) deepParts.push('full return waterfall with sensitivity across hold periods');
+  if (state.emphRent === 3) deepParts.push('unit-level rent comp matrix with concession adjustments');
+  if (state.emphOpex === 3) deepParts.push('line-item expense analysis with per-unit and per-SF benchmarks');
+
+  if (deepParts.length > 0) {
+    lines.push(`Provide deep-dive analysis on: ${deepParts.join('; ')}.`);
+  }
+
+  // Detail level
+  lines.push('');
+  const detailMap = {
+    ranges: 'Use realistic ranges rather than single-point estimates. Qualify assumptions clearly.',
+    estimates: 'Provide specific estimated figures with stated assumptions. Include ranges where uncertainty is high.',
+    granular: 'Produce granular financial models with specific inputs, calculations, and outputs. Show your work on key metrics.',
+  };
+  lines.push(detailMap[state.detail]);
+
+  // Format
+  if (state.markdown) {
+    lines.push('Format responses in markdown with clear section headings for readability.');
+  } else {
+    lines.push('Use plain text without markdown formatting. Organize with clear labels and spacing.');
+  }
+
+  if (state.assumptions) {
+    lines.push('When making assumptions, state them explicitly so the user can adjust.');
+  }
+
+  // Follow-ups
+  if (state.followups) {
+    lines.push('');
+    lines.push('After your analysis, proactively suggest what you can help with next. For example:');
+    lines.push('- "Would you like me to dig deeper into the rent comps for this submarket?"');
+    lines.push('- "I can model different financing scenarios if you share the loan terms."');
+    lines.push('- "Want me to analyze the value-add potential in more detail?"');
+  }
+
+  // Conversation behavior
+  if (state.buildHistory) {
+    lines.push('');
+    lines.push('If the user provides additional details (financials, rent rolls, loan terms), incorporate them into your ongoing analysis. Build on previous messages rather than repeating information.');
+  }
+
+  // Custom instructions
+  if (state.customInstructions.trim()) {
+    lines.push('');
+    lines.push('Additional instructions:');
+    lines.push(state.customInstructions.trim());
+  }
+
+  return lines.join('\n');
+}
+
+function buildFinancialsSection() {
+  const metrics = [];
+  if (state.emphCapRate >= 1) metrics.push('cap rate range');
+  if (state.emphRent >= 1) metrics.push('market rent (per unit or per SF)');
+  metrics.push('price per unit/SF benchmarks');
+  if (state.emphOpex >= 1) metrics.push('operating expense ratios');
+  if (state.emphDebt >= 1) metrics.push('debt service metrics');
+  if (state.emphReturns >= 1) metrics.push('return projections');
+  return `Estimated financial metrics: ${metrics.join(', ')}`;
+}
+
+function buildRecommendationSection() {
+  const map = {
+    'go-nogo': 'Clear investment recommendation: GO, CAUTION, or NO GO with supporting rationale',
+    'score': 'Investment score from 1-10 with breakdown by category (location, financials, risk, upside)',
+    'pros-cons': 'Structured pros and cons analysis with a balanced investment thesis',
+    'none': '',
+  };
+  return map[state.recommendation] || '';
+}
+
+// ---- Render ----
+function renderPreview() {
+  const raw = generateRawPrompt();
+  const el = document.getElementById('prompt-preview');
+
+  // Syntax highlight the prompt
+  let html = escapeHtml(raw);
+
+  // Highlight key patterns
+  html = html.replace(/^(You are .*?)$/gm, '<span class="kw">$1</span>');
+  html = html.replace(/^(When given .*?:)$/gm, '<span class="sec">$1</span>');
+  html = html.replace(/^(Pay particular attention to:.*?)$/gm, '<span class="sec">$1</span>');
+  html = html.replace(/^(Provide deep-dive.*?)$/gm, '<span class="sec">$1</span>');
+  html = html.replace(/^(Additional instructions:)$/gm, '<span class="accent">$1</span>');
+  html = html.replace(/^(After your analysis.*?)$/gm, '<span class="sec">$1</span>');
+  html = html.replace(/^- "(.*?)"$/gm, '- <span class="str">"$1"</span>');
+  html = html.replace(/^- (.*?)$/gm, '- <span class="dim">$1</span>');
+  html = html.replace(/(GO|CAUTION|NO GO)/g, '<span class="accent">$1</span>');
+  html = html.replace(/\b(cap rate|DSCR|IRR|NOI|CoC|LTV|T12)\b/gi, '<span class="accent">$&</span>');
+
+  el.innerHTML = html;
+}
+
+function updateEmphLabels() {
+  ['emphCapRate', 'emphDebt', 'emphReturns', 'emphRent', 'emphOpex'].forEach(id => {
+    document.getElementById(id + 'Val').textContent = EMPH_LABELS[state[id]];
+  });
+}
+
+function updateImplementationPrompt() {
+  const el = document.getElementById('prompt-output');
+  const changes = [];
+
+  changes.push(`Update the BuildSystemPrompt() method in DealChat.razor with the following system prompt for ${state.propertyType.toLowerCase()} underwriting analysis.`);
+
+  if (state.tone !== 'conversational') changes.push(`Use a ${state.tone} tone.`);
+
+  const activeSections = state.sections.map(id => ALL_SECTIONS.find(s => s.id === id)?.label).filter(Boolean);
+  changes.push(`Include these sections: ${activeSections.join(', ')}.`);
+
+  if (state.detail !== 'ranges') changes.push(`Detail level: ${state.detail}.`);
+
+  const recMap = { 'go-nogo': 'GO/CAUTION/NO GO', 'score': 'numeric 1-10 score', 'pros-cons': 'pros & cons', 'none': 'no recommendation' };
+  if (state.recommendation !== 'go-nogo') changes.push(`Recommendation style: ${recMap[state.recommendation]}.`);
+
+  if (!state.followups) changes.push('Do not include follow-up suggestions.');
+  if (!state.markdown) changes.push('Use plain text instead of markdown.');
+  if (state.customInstructions.trim()) changes.push(`Custom: "${state.customInstructions.trim()}"`);
+
+  el.textContent = changes.join('\n');
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function updateAll() {
+  updateEmphLabels();
+  renderPreview();
+  updateImplementationPrompt();
+}
+
+init();
+</script>
+</body>
+</html>

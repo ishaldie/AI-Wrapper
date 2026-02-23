@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat UI Design Explorer - ZSR Underwriting</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #111114;
+    --surface: #1a1a1f;
+    --surface2: #222228;
+    --border: #2a2a32;
+    --text: #e4e4e8;
+    --text2: #9ca3af;
+    --accent: #F97316;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+  }
+
+  /* ---- Controls Panel ---- */
+  .controls {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .controls h1 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 16px;
+  }
+
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .control-row label {
+    font-size: 12px;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+
+  .control-row .value {
+    font-size: 11px;
+    color: var(--accent);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    min-width: 40px;
+    text-align: right;
+  }
+
+  input[type="range"] {
+    width: 120px;
+    accent-color: var(--accent);
+    height: 4px;
+    margin: 0 8px;
+  }
+
+  input[type="color"] {
+    width: 28px;
+    height: 22px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  select {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 3px 6px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .toggle {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    cursor: pointer;
+  }
+
+  .toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle .slider {
+    position: absolute;
+    inset: 0;
+    background: var(--surface2);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: 0.2s;
+  }
+
+  .toggle .slider::before {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    left: 2px;
+    top: 2px;
+    background: var(--text2);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+
+  .toggle input:checked + .slider {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .toggle input:checked + .slider::before {
+    transform: translateX(16px);
+    background: #fff;
+  }
+
+  /* Presets */
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .preset-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .preset-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  /* ---- Right Panel ---- */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Preview */
+  .preview-container {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .preview-frame {
+    width: 100%;
+    max-width: 900px;
+    height: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Chat header preview */
+  .preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .preview-header .back-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.5;
+  }
+
+  .preview-header .header-text h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .preview-header .header-text span {
+    font-size: 11px;
+    opacity: 0.5;
+  }
+
+  /* Messages preview */
+  .preview-messages {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .msg {
+    display: flex;
+    max-width: 100%;
+  }
+
+  .msg-assistant {
+    align-self: flex-start;
+  }
+
+  .msg-user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+  }
+
+  .msg-avatar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .msg-bubble {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  .msg-bubble h2 {
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+    padding-bottom: 0.15em;
+  }
+
+  .msg-bubble h2:first-child { margin-top: 0; }
+
+  .msg-bubble p {
+    margin-bottom: 0.4em;
+  }
+
+  .msg-bubble ul {
+    padding-left: 1.4em;
+    margin-bottom: 0.4em;
+  }
+
+  .msg-bubble li { margin-bottom: 0.15em; }
+
+  .msg-bubble strong { font-weight: 700; }
+
+  /* Typing indicator */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .typing-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.4;
+    animation: typingPulse 1.4s infinite;
+  }
+
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typingPulse {
+    0%, 60%, 100% { opacity: 0.2; transform: scale(0.8); }
+    30% { opacity: 0.8; transform: scale(1); }
+  }
+
+  /* Input bar preview */
+  .preview-input {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .preview-input input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    color: inherit;
+  }
+
+  .preview-input .send-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ---- Prompt Output ---- */
+  .prompt-panel {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 20px;
+    flex-shrink: 0;
+    max-height: 180px;
+    overflow-y: auto;
+  }
+
+  .prompt-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .prompt-header span {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  .copy-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+
+  .copy-btn:hover { opacity: 0.85; }
+
+  .prompt-text {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Controls -->
+  <div class="controls">
+    <h1>Chat UI Explorer</h1>
+
+    <!-- Presets -->
+    <div class="section">
+      <div class="section-title">Presets</div>
+      <div class="presets" id="presets"></div>
+    </div>
+
+    <!-- Bubbles -->
+    <div class="section">
+      <div class="section-title">Bubble Style</div>
+      <div class="control-row">
+        <label>Border Radius</label>
+        <input type="range" min="0" max="24" data-key="bubbleRadius" />
+        <span class="value" data-val="bubbleRadius"></span>
+      </div>
+      <div class="control-row">
+        <label>Padding H</label>
+        <input type="range" min="8" max="28" data-key="bubblePadH" />
+        <span class="value" data-val="bubblePadH"></span>
+      </div>
+      <div class="control-row">
+        <label>Padding V</label>
+        <input type="range" min="6" max="20" data-key="bubblePadV" />
+        <span class="value" data-val="bubblePadV"></span>
+      </div>
+      <div class="control-row">
+        <label>Max Width</label>
+        <input type="range" min="400" max="800" step="20" data-key="bubbleMaxW" />
+        <span class="value" data-val="bubbleMaxW"></span>
+      </div>
+      <div class="control-row">
+        <label>Message Gap</label>
+        <input type="range" min="4" max="24" data-key="msgGap" />
+        <span class="value" data-val="msgGap"></span>
+      </div>
+      <div class="control-row">
+        <label>Asst Border</label>
+        <label class="toggle"><input type="checkbox" data-key="asstBorder" /><span class="slider"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Bubble Tail</label>
+        <label class="toggle"><input type="checkbox" data-key="bubbleTail" /><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="section">
+      <div class="section-title">Colors</div>
+      <div class="control-row">
+        <label>Page Background</label>
+        <input type="color" data-key="pageBg" />
+      </div>
+      <div class="control-row">
+        <label>User Bubble</label>
+        <input type="color" data-key="userBubbleBg" />
+      </div>
+      <div class="control-row">
+        <label>User Text</label>
+        <input type="color" data-key="userTextColor" />
+      </div>
+      <div class="control-row">
+        <label>Asst Bubble</label>
+        <input type="color" data-key="asstBubbleBg" />
+      </div>
+      <div class="control-row">
+        <label>Asst Text</label>
+        <input type="color" data-key="asstTextColor" />
+      </div>
+      <div class="control-row">
+        <label>Avatar Bg</label>
+        <input type="color" data-key="avatarBg" />
+      </div>
+      <div class="control-row">
+        <label>Avatar Icon</label>
+        <input type="color" data-key="avatarIcon" />
+      </div>
+      <div class="control-row">
+        <label>Header Bg</label>
+        <input type="color" data-key="headerBg" />
+      </div>
+      <div class="control-row">
+        <label>Header Text</label>
+        <input type="color" data-key="headerText" />
+      </div>
+      <div class="control-row">
+        <label>Border Color</label>
+        <input type="color" data-key="borderColor" />
+      </div>
+      <div class="control-row">
+        <label>Accent / Send</label>
+        <input type="color" data-key="accentColor" />
+      </div>
+    </div>
+
+    <!-- Typography -->
+    <div class="section">
+      <div class="section-title">Typography</div>
+      <div class="control-row">
+        <label>Font Size</label>
+        <input type="range" min="12" max="18" data-key="fontSize" />
+        <span class="value" data-val="fontSize"></span>
+      </div>
+      <div class="control-row">
+        <label>Line Height</label>
+        <input type="range" min="1.2" max="2.0" step="0.05" data-key="lineHeight" />
+        <span class="value" data-val="lineHeight"></span>
+      </div>
+      <div class="control-row">
+        <label>Heading Size</label>
+        <input type="range" min="14" max="22" data-key="headingSize" />
+        <span class="value" data-val="headingSize"></span>
+      </div>
+      <div class="control-row">
+        <label>Font</label>
+        <select data-key="fontFamily">
+          <option value="system-ui, sans-serif">System UI</option>
+          <option value="'Inter', sans-serif">Inter</option>
+          <option value="'Georgia', serif">Georgia</option>
+          <option value="'SF Mono', monospace">Monospace</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Avatar -->
+    <div class="section">
+      <div class="section-title">Avatar</div>
+      <div class="control-row">
+        <label>Show Avatar</label>
+        <label class="toggle"><input type="checkbox" data-key="showAvatar" /><span class="slider"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Size</label>
+        <input type="range" min="24" max="48" data-key="avatarSize" />
+        <span class="value" data-val="avatarSize"></span>
+      </div>
+      <div class="control-row">
+        <label>Shape</label>
+        <select data-key="avatarShape">
+          <option value="circle">Circle</option>
+          <option value="rounded">Rounded Square</option>
+          <option value="square">Square</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Input Bar -->
+    <div class="section">
+      <div class="section-title">Input Bar</div>
+      <div class="control-row">
+        <label>Style</label>
+        <select data-key="inputStyle">
+          <option value="pill">Pill</option>
+          <option value="rounded">Rounded</option>
+          <option value="flat">Flat</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <label>Input Bg</label>
+        <input type="color" data-key="inputBg" />
+      </div>
+      <div class="control-row">
+        <label>Input Border</label>
+        <label class="toggle"><input type="checkbox" data-key="inputBorder" /><span class="slider"></span></label>
+      </div>
+      <div class="control-row">
+        <label>Input Height</label>
+        <input type="range" min="36" max="56" data-key="inputHeight" />
+        <span class="value" data-val="inputHeight"></span>
+      </div>
+    </div>
+
+    <!-- Layout -->
+    <div class="section">
+      <div class="section-title">Layout</div>
+      <div class="control-row">
+        <label>Container Width</label>
+        <input type="range" min="500" max="900" step="20" data-key="containerWidth" />
+        <span class="value" data-val="containerWidth"></span>
+      </div>
+      <div class="control-row">
+        <label>Msg Padding X</label>
+        <input type="range" min="8" max="32" data-key="msgPadX" />
+        <span class="value" data-val="msgPadX"></span>
+      </div>
+      <div class="control-row">
+        <label>Show Typing</label>
+        <label class="toggle"><input type="checkbox" data-key="showTyping" /><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right panel -->
+  <div class="right-panel">
+    <div class="preview-container" id="preview-container">
+      <div class="preview-frame" id="preview-frame"></div>
+    </div>
+
+    <div class="prompt-panel">
+      <div class="prompt-header">
+        <span>CSS Prompt</span>
+        <button class="copy-btn" id="copy-btn">Copy Prompt</button>
+      </div>
+      <div class="prompt-text" id="prompt-output"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- Defaults ----
+const DEFAULTS = {
+  // Bubbles
+  bubbleRadius: 12,
+  bubblePadH: 16,
+  bubblePadV: 12,
+  bubbleMaxW: 680,
+  msgGap: 12,
+  asstBorder: true,
+  bubbleTail: false,
+
+  // Colors
+  pageBg: '#FFFFFF',
+  userBubbleBg: '#F97316',
+  userTextColor: '#FFFFFF',
+  asstBubbleBg: '#F9FAFB',
+  asstTextColor: '#4B5563',
+  avatarBg: '#FFF7ED',
+  avatarIcon: '#F97316',
+  headerBg: '#FFFFFF',
+  headerText: '#1A1D23',
+  borderColor: '#E5E7EB',
+  accentColor: '#F97316',
+
+  // Typography
+  fontSize: 15,
+  lineHeight: 1.6,
+  headingSize: 18,
+  fontFamily: 'system-ui, sans-serif',
+
+  // Avatar
+  showAvatar: true,
+  avatarSize: 32,
+  avatarShape: 'circle',
+
+  // Input
+  inputStyle: 'pill',
+  inputBg: '#F3F4F6',
+  inputBorder: false,
+  inputHeight: 44,
+
+  // Layout
+  containerWidth: 860,
+  msgPadX: 16,
+  showTyping: true,
+};
+
+const PRESETS = {
+  'Current (ZSR)': { ...DEFAULTS },
+  'Minimal': {
+    bubbleRadius: 4, bubblePadH: 14, bubblePadV: 10, bubbleMaxW: 720, msgGap: 8,
+    asstBorder: false, bubbleTail: false,
+    pageBg: '#FFFFFF', userBubbleBg: '#1A1D23', userTextColor: '#FFFFFF',
+    asstBubbleBg: '#FFFFFF', asstTextColor: '#374151',
+    avatarBg: '#F3F4F6', avatarIcon: '#6B7280',
+    headerBg: '#FFFFFF', headerText: '#1A1D23', borderColor: '#E5E7EB', accentColor: '#1A1D23',
+    fontSize: 14, lineHeight: 1.5, headingSize: 16, fontFamily: 'system-ui, sans-serif',
+    showAvatar: false, avatarSize: 28, avatarShape: 'circle',
+    inputStyle: 'flat', inputBg: '#F9FAFB', inputBorder: true, inputHeight: 40,
+    containerWidth: 740, msgPadX: 12, showTyping: true,
+  },
+  'Soft & Warm': {
+    bubbleRadius: 20, bubblePadH: 20, bubblePadV: 14, bubbleMaxW: 640, msgGap: 14,
+    asstBorder: false, bubbleTail: true,
+    pageBg: '#FFFBF5', userBubbleBg: '#EA580C', userTextColor: '#FFFFFF',
+    asstBubbleBg: '#FFF7ED', asstTextColor: '#44403C',
+    avatarBg: '#FDBA74', avatarIcon: '#FFFFFF',
+    headerBg: '#FFFBF5', headerText: '#292524', borderColor: '#FED7AA', accentColor: '#EA580C',
+    fontSize: 15, lineHeight: 1.7, headingSize: 17, fontFamily: "'Inter', sans-serif",
+    showAvatar: true, avatarSize: 36, avatarShape: 'circle',
+    inputStyle: 'pill', inputBg: '#FFF7ED', inputBorder: false, inputHeight: 48,
+    containerWidth: 780, msgPadX: 20, showTyping: true,
+  },
+  'Dark Pro': {
+    bubbleRadius: 10, bubblePadH: 16, bubblePadV: 12, bubbleMaxW: 700, msgGap: 10,
+    asstBorder: true, bubbleTail: false,
+    pageBg: '#0F0F12', userBubbleBg: '#3B82F6', userTextColor: '#FFFFFF',
+    asstBubbleBg: '#1C1C24', asstTextColor: '#D1D5DB',
+    avatarBg: '#1E3A5F', avatarIcon: '#60A5FA',
+    headerBg: '#0F0F12', headerText: '#F3F4F6', borderColor: '#2A2A35', accentColor: '#3B82F6',
+    fontSize: 14, lineHeight: 1.55, headingSize: 16, fontFamily: 'system-ui, sans-serif',
+    showAvatar: true, avatarSize: 30, avatarShape: 'rounded',
+    inputStyle: 'rounded', inputBg: '#1C1C24', inputBorder: true, inputHeight: 42,
+    containerWidth: 800, msgPadX: 16, showTyping: true,
+  },
+  'Spacious': {
+    bubbleRadius: 16, bubblePadH: 24, bubblePadV: 18, bubbleMaxW: 760, msgGap: 20,
+    asstBorder: true, bubbleTail: false,
+    pageBg: '#F8FAFC', userBubbleBg: '#7C3AED', userTextColor: '#FFFFFF',
+    asstBubbleBg: '#FFFFFF', asstTextColor: '#334155',
+    avatarBg: '#EDE9FE', avatarIcon: '#7C3AED',
+    headerBg: '#FFFFFF', headerText: '#0F172A', borderColor: '#E2E8F0', accentColor: '#7C3AED',
+    fontSize: 16, lineHeight: 1.75, headingSize: 20, fontFamily: "'Georgia', serif",
+    showAvatar: true, avatarSize: 40, avatarShape: 'circle',
+    inputStyle: 'pill', inputBg: '#FFFFFF', inputBorder: true, inputHeight: 52,
+    containerWidth: 900, msgPadX: 24, showTyping: true,
+  },
+};
+
+// ---- State ----
+const state = { ...DEFAULTS };
+let activePreset = 'Current (ZSR)';
+
+// ---- Sample Messages ----
+const MESSAGES = [
+  { role: 'user', text: 'Parkview Apartments, 1200 Oak Street, Dallas TX' },
+  { role: 'assistant', html: `
+<h2>Property Overview & Location</h2>
+<p>Parkview Apartments is positioned in the <strong>Oak Lawn/Uptown submarket</strong> of Dallas, one of the metro's most sought-after multifamily corridors. The area benefits from proximity to downtown Dallas (2 miles), walkable retail along McKinney Avenue, and DART light rail access.</p>
+<p>Key demographic drivers include a young professional renter base (median age ~31) and strong employment anchors in financial services, healthcare, and tech.</p>
+
+<h2>Estimated Financial Metrics</h2>
+<ul>
+<li><strong>Cap rate range:</strong> 4.75% - 5.50% (Class B multifamily)</li>
+<li><strong>Market rent:</strong> $1,350 - $1,650/unit (depending on unit mix)</li>
+<li><strong>Price per unit:</strong> $145K - $185K</li>
+<li><strong>Operating expense ratio:</strong> 42% - 48%</li>
+</ul>
+
+<h2>Preliminary Recommendation</h2>
+<p><strong>CAUTION</strong> - Strong submarket fundamentals, but cap rate compression in Uptown means tight margins. Recommend detailed rent comp analysis before proceeding.</p>
+<p>Would you like me to dig deeper into <strong>rent comps</strong> for this submarket, or model different <strong>financing scenarios</strong>?</p>
+  ` },
+  { role: 'user', text: 'Yes, can you run through a few debt scenarios? Assume 65% LTV.' },
+  { role: 'assistant', html: `
+<h2>Debt Scenario Analysis (65% LTV)</h2>
+<p>Assuming a <strong>$22M acquisition</strong> at 150 units ($146K/unit), here are three financing structures at 65% LTV ($14.3M loan):</p>
+<ul>
+<li><strong>Agency Fixed (7yr):</strong> 5.85% rate, 30yr amort &rarr; DSCR 1.32x, CoC 7.1%</li>
+<li><strong>Bridge-to-Perm:</strong> 7.25% IO for 3yr &rarr; DSCR 1.08x during IO, higher exit refi risk</li>
+<li><strong>CMBS Fixed (10yr):</strong> 6.10% rate, 30yr amort &rarr; DSCR 1.26x, CoC 6.4%</li>
+</ul>
+<p>The <strong>agency fixed</strong> route offers the best risk-adjusted return. Want me to model the value-add scenario with rent bumps over the hold period?</p>
+  ` },
+];
+
+// ---- Init Controls ----
+function initControls() {
+  // Presets
+  const presetsEl = document.getElementById('presets');
+  Object.keys(PRESETS).forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (name === activePreset ? ' active' : '');
+    btn.textContent = name;
+    btn.onclick = () => applyPreset(name);
+    presetsEl.appendChild(btn);
+  });
+
+  // Bind controls
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    if (el.type === 'range') {
+      el.value = state[key];
+      el.oninput = () => { state[key] = parseFloat(el.value); updateAll(); };
+    } else if (el.type === 'checkbox') {
+      el.checked = state[key];
+      el.onchange = () => { state[key] = el.checked; updateAll(); };
+    } else if (el.type === 'color') {
+      el.value = state[key];
+      el.oninput = () => { state[key] = el.value; updateAll(); };
+    } else if (el.tagName === 'SELECT') {
+      el.value = state[key];
+      el.onchange = () => { state[key] = el.value; updateAll(); };
+    }
+  });
+
+  // Copy button
+  document.getElementById('copy-btn').onclick = () => {
+    const text = document.getElementById('prompt-output').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy Prompt', 1500);
+    });
+  };
+}
+
+function syncControlsToState() {
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    if (el.type === 'range') el.value = state[key];
+    else if (el.type === 'checkbox') el.checked = state[key];
+    else if (el.type === 'color') el.value = state[key];
+    else if (el.tagName === 'SELECT') el.value = state[key];
+  });
+}
+
+function applyPreset(name) {
+  activePreset = name;
+  Object.assign(state, PRESETS[name]);
+  syncControlsToState();
+  document.querySelectorAll('.preset-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === name);
+  });
+  updateAll();
+}
+
+// ---- Render ----
+function avatarRadius() {
+  if (state.avatarShape === 'circle') return '50%';
+  if (state.avatarShape === 'rounded') return '6px';
+  return '0';
+}
+
+function inputRadius() {
+  if (state.inputStyle === 'pill') return `${state.inputHeight / 2}px`;
+  if (state.inputStyle === 'rounded') return '10px';
+  return '0';
+}
+
+function renderPreview() {
+  const f = document.getElementById('preview-frame');
+  f.style.background = state.pageBg;
+  f.style.maxWidth = state.containerWidth + 'px';
+  f.style.fontFamily = state.fontFamily;
+  f.style.color = state.asstTextColor;
+
+  let html = '';
+
+  // Header
+  html += `<div class="preview-header" style="
+    background: ${state.headerBg};
+    padding: 12px ${state.msgPadX}px;
+    border-bottom: 1px solid ${state.borderColor};
+    color: ${state.headerText};
+  ">
+    <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M19 12H5M12 19l-7-7 7-7"/>
+    </svg>
+    <div class="header-text">
+      <h3 style="color:${state.headerText}">Parkview Apartments</h3>
+      <span style="color:${state.headerText}">AI-powered underwriting analysis</span>
+    </div>
+  </div>`;
+
+  // Messages
+  html += `<div class="preview-messages" style="padding: 12px 0; gap: ${state.msgGap}px;">`;
+
+  MESSAGES.forEach(msg => {
+    const isUser = msg.role === 'user';
+    const bubbleBg = isUser ? state.userBubbleBg : state.asstBubbleBg;
+    const textColor = isUser ? state.userTextColor : state.asstTextColor;
+    const border = (!isUser && state.asstBorder) ? `1px solid ${state.borderColor}` : 'none';
+    const tailCss = state.bubbleTail ? (isUser
+      ? `position:relative; &::after{}`
+      : '') : '';
+
+    let msgHtml = `<div class="msg msg-${msg.role}" style="padding: 0 ${state.msgPadX}px; gap: 10px;">`;
+
+    // Avatar
+    if (!isUser && state.showAvatar) {
+      msgHtml += `<div class="msg-avatar" style="
+        width: ${state.avatarSize}px;
+        height: ${state.avatarSize}px;
+        border-radius: ${avatarRadius()};
+        background: ${state.avatarBg};
+        margin-top: 2px;
+      ">
+        <svg width="${state.avatarSize * 0.5}" height="${state.avatarSize * 0.5}" viewBox="0 0 24 24" fill="${state.avatarIcon}">
+          <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/>
+        </svg>
+      </div>`;
+    }
+
+    // Bubble
+    const tailStyle = state.bubbleTail ? (isUser
+      ? `border-bottom-right-radius: 4px;`
+      : `border-bottom-left-radius: 4px;`) : '';
+
+    msgHtml += `<div class="msg-bubble" style="
+      background: ${bubbleBg};
+      color: ${textColor};
+      border: ${border};
+      border-radius: ${state.bubbleRadius}px;
+      padding: ${state.bubblePadV}px ${state.bubblePadH}px;
+      max-width: ${state.bubbleMaxW}px;
+      font-size: ${state.fontSize}px;
+      line-height: ${state.lineHeight};
+      ${tailStyle}
+    ">`;
+
+    if (isUser) {
+      msgHtml += msg.text;
+    } else {
+      // Style headings within assistant
+      let content = msg.html;
+      const headingStyle = `font-size:${state.headingSize}px; font-weight:700; color:${state.headerText}; border-bottom:1px solid ${state.borderColor};`;
+      content = content.replace(/<h2>/g, `<h2 style="${headingStyle}">`);
+      msgHtml += content;
+    }
+
+    msgHtml += '</div></div>';
+    html += msgHtml;
+  });
+
+  // Typing indicator
+  if (state.showTyping) {
+    html += `<div class="msg msg-assistant" style="padding: 0 ${state.msgPadX}px; gap: 10px;">`;
+    if (state.showAvatar) {
+      html += `<div class="msg-avatar" style="
+        width: ${state.avatarSize}px; height: ${state.avatarSize}px;
+        border-radius: ${avatarRadius()}; background: ${state.avatarBg}; margin-top: 2px;
+      ">
+        <svg width="${state.avatarSize * 0.5}" height="${state.avatarSize * 0.5}" viewBox="0 0 24 24" fill="${state.avatarIcon}">
+          <path d="M20 9V7c0-1.1-.9-2-2-2h-3c0-1.66-1.34-3-3-3S9 3.34 9 5H6c-1.1 0-2 .9-2 2v2c-1.66 0-3 1.34-3 3s1.34 3 3 3v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c1.66 0 3-1.34 3-3s-1.34-3-3-3zM7.5 11.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S9.83 13 9 13s-1.5-.67-1.5-1.5zM16 17H8v-2h8v2zm-1-4c-.83 0-1.5-.67-1.5-1.5S14.17 10 15 10s1.5.67 1.5 1.5S15.83 13 15 13z"/>
+        </svg>
+      </div>`;
+    }
+    html += `<div class="msg-bubble" style="
+      background: ${state.asstBubbleBg}; border: ${state.asstBorder ? `1px solid ${state.borderColor}` : 'none'};
+      border-radius: ${state.bubbleRadius}px; padding: ${state.bubblePadV}px ${state.bubblePadH}px;
+      color: ${state.asstTextColor};
+    ">
+      <div class="typing-indicator">
+        <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+        <span style="font-size:${state.fontSize - 2}px; opacity:0.5; margin-left:6px;">Analyzing...</span>
+      </div>
+    </div></div>`;
+  }
+
+  html += '</div>';
+
+  // Input bar
+  const inputBorderCss = state.inputBorder ? `1px solid ${state.borderColor}` : 'none';
+  html += `<div class="preview-input" style="
+    padding: 10px ${state.msgPadX}px;
+    border-top: 1px solid ${state.borderColor};
+    background: ${state.headerBg};
+  ">
+    <div style="
+      display: flex; align-items: center; flex: 1;
+      background: ${state.inputBg};
+      border: ${inputBorderCss};
+      border-radius: ${inputRadius()};
+      height: ${state.inputHeight}px;
+      padding: 0 12px;
+    ">
+      <input placeholder="Ask about this property..." style="
+        color: ${state.asstTextColor}; font-size: ${state.fontSize - 1}px;
+        font-family: ${state.fontFamily};
+      " />
+      <div class="send-btn" style="
+        background: ${state.accentColor}; color: #fff;
+        width: ${state.inputHeight - 12}px; height: ${state.inputHeight - 12}px;
+        border-radius: ${state.inputStyle === 'pill' ? '50%' : state.inputStyle === 'rounded' ? '8px' : '4px'};
+      ">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </div>
+    </div>
+  </div>`;
+
+  f.innerHTML = html;
+}
+
+function updatePrompt() {
+  const parts = [];
+  const D = DEFAULTS;
+
+  // Colors
+  const colorChanges = [];
+  if (state.userBubbleBg !== D.userBubbleBg) colorChanges.push(`user bubble color to ${state.userBubbleBg}`);
+  if (state.asstBubbleBg !== D.asstBubbleBg) colorChanges.push(`assistant bubble background to ${state.asstBubbleBg}`);
+  if (state.pageBg !== D.pageBg) colorChanges.push(`page background to ${state.pageBg}`);
+  if (state.accentColor !== D.accentColor) colorChanges.push(`accent/send button color to ${state.accentColor}`);
+  if (state.headerBg !== D.headerBg) colorChanges.push(`header background to ${state.headerBg}`);
+  if (state.avatarBg !== D.avatarBg) colorChanges.push(`avatar background to ${state.avatarBg}`);
+  if (state.avatarIcon !== D.avatarIcon) colorChanges.push(`avatar icon color to ${state.avatarIcon}`);
+  if (state.borderColor !== D.borderColor) colorChanges.push(`border color to ${state.borderColor}`);
+  if (state.userTextColor !== D.userTextColor) colorChanges.push(`user text color to ${state.userTextColor}`);
+  if (state.asstTextColor !== D.asstTextColor) colorChanges.push(`assistant text color to ${state.asstTextColor}`);
+  if (state.headerText !== D.headerText) colorChanges.push(`header text color to ${state.headerText}`);
+  if (colorChanges.length) parts.push('Change ' + colorChanges.join(', ') + '.');
+
+  // Bubble geometry
+  const bubbleChanges = [];
+  if (state.bubbleRadius !== D.bubbleRadius) bubbleChanges.push(`${state.bubbleRadius}px border-radius`);
+  if (state.bubblePadH !== D.bubblePadH) bubbleChanges.push(`${state.bubblePadH}px horizontal padding`);
+  if (state.bubblePadV !== D.bubblePadV) bubbleChanges.push(`${state.bubblePadV}px vertical padding`);
+  if (state.bubbleMaxW !== D.bubbleMaxW) bubbleChanges.push(`max-width of ${state.bubbleMaxW}px`);
+  if (bubbleChanges.length) parts.push('Set chat bubbles to ' + bubbleChanges.join(', ') + '.');
+
+  if (state.msgGap !== D.msgGap) parts.push(`Use ${state.msgGap}px gap between messages.`);
+  if (state.asstBorder !== D.asstBorder) parts.push(state.asstBorder ? 'Add a subtle border to assistant bubbles.' : 'Remove the border from assistant bubbles.');
+  if (state.bubbleTail !== D.bubbleTail) parts.push(state.bubbleTail ? 'Add a tail/notch to chat bubbles for a messenger-style look.' : 'Remove bubble tails.');
+
+  // Typography
+  const typoChanges = [];
+  if (state.fontSize !== D.fontSize) typoChanges.push(`${state.fontSize}px base font size`);
+  if (state.lineHeight !== D.lineHeight) typoChanges.push(`${state.lineHeight} line-height`);
+  if (state.headingSize !== D.headingSize) typoChanges.push(`${state.headingSize}px heading size`);
+  if (state.fontFamily !== D.fontFamily) typoChanges.push(`font-family: ${state.fontFamily}`);
+  if (typoChanges.length) parts.push('Set typography to ' + typoChanges.join(', ') + '.');
+
+  // Avatar
+  if (state.showAvatar !== D.showAvatar) parts.push(state.showAvatar ? 'Show the assistant avatar.' : 'Hide the assistant avatar.');
+  if (state.showAvatar) {
+    if (state.avatarSize !== D.avatarSize) parts.push(`Set avatar size to ${state.avatarSize}px.`);
+    if (state.avatarShape !== D.avatarShape) parts.push(`Use a ${state.avatarShape} avatar shape.`);
+  }
+
+  // Input bar
+  const inputChanges = [];
+  if (state.inputStyle !== D.inputStyle) inputChanges.push(`${state.inputStyle} style`);
+  if (state.inputHeight !== D.inputHeight) inputChanges.push(`${state.inputHeight}px height`);
+  if (state.inputBg !== D.inputBg) inputChanges.push(`background ${state.inputBg}`);
+  if (state.inputBorder !== D.inputBorder) inputChanges.push(state.inputBorder ? 'with border' : 'without border');
+  if (inputChanges.length) parts.push('Style the input bar with ' + inputChanges.join(', ') + '.');
+
+  // Layout
+  if (state.containerWidth !== D.containerWidth) parts.push(`Set the chat container max-width to ${state.containerWidth}px.`);
+  if (state.msgPadX !== D.msgPadX) parts.push(`Use ${state.msgPadX}px horizontal padding on messages.`);
+  if (state.showTyping !== D.showTyping) parts.push(state.showTyping ? 'Show the typing indicator.' : 'Hide the typing indicator.');
+
+  const prompt = parts.length > 0
+    ? `Update the DealChat.razor chat UI with these changes:\n\n${parts.join('\n')}`
+    : 'The chat UI is using the default ZSR design. No changes from current implementation.';
+
+  document.getElementById('prompt-output').textContent = prompt;
+}
+
+function updateValueDisplays() {
+  document.querySelectorAll('[data-val]').forEach(el => {
+    const key = el.dataset.val;
+    const v = state[key];
+    if (key === 'lineHeight') el.textContent = v.toFixed(2);
+    else if (typeof v === 'number') el.textContent = v + (key.includes('Width') || key.includes('Height') || key.includes('Size') || key.includes('Pad') || key.includes('Gap') || key.includes('Radius') || key.includes('fontSize') || key.includes('headingSize') ? 'px' : '');
+    else el.textContent = v;
+  });
+}
+
+function updateAll() {
+  updateValueDisplays();
+  renderPreview();
+  updatePrompt();
+}
+
+// ---- Boot ----
+initControls();
+updateAll();
+</script>
+</body>
+</html>
