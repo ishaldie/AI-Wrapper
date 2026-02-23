@@ -37,10 +37,10 @@
 
 ## Phase 4 — Audit Logging & Storage Hardening
 
-- [~] Add security event types to `ActivityEventType`: `DocumentAccessDenied`, `DocumentScanFailed`, `DocumentRateLimited`, `DocumentDeleted`
-- [~] Add `UploadedByUserId` property to `UploadedDocument` entity; add EF migration
-- [~] Capture client IP in upload flow via `IHttpContextAccessor` and log with ActivityTracker
-- [~] Add structured Serilog logging in `DocumentUploadService` for all security events (upload, delete, scan result, access denied)
-- [~] Ensure uploads directory is not served by static files middleware — verify no `UseStaticFiles` maps to uploads path
-- [~] Add integration test: direct HTTP request to `/uploads/...` returns 404
-- [~] Write tests: security events logged with correct userId, IP, and event type
+- [x] 14827dd Add security event types to `ActivityEventType`: `DocumentAccessDenied`, `DocumentScanFailed`, `DocumentRateLimited`, `DocumentDeleted`
+- [x] 14827dd Add `UploadedByUserId` property to `UploadedDocument` entity; add EF migration
+- [x] 14827dd Capture client IP in upload flow via `IHttpContextAccessor` and log with ActivityTracker
+- [x] 14827dd Add structured Serilog logging in `DocumentUploadService` for all security events (upload, delete, scan result, access denied)
+- [x] 14827dd Ensure uploads directory is not served by static files middleware — verify no `UseStaticFiles` maps to uploads path
+- [x] 14827dd Add integration test: direct HTTP request to `/uploads/...` returns 404
+- [x] 14827dd Write tests: security events logged with correct userId, IP, and event type
