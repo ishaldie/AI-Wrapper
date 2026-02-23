@@ -13,6 +13,7 @@ public class UploadedDocument
     public DateTime UploadedAt { get; private set; }
     public VirusScanStatus VirusScanStatus { get; set; }
     public string? FileHash { get; set; }
+    public string? UploadedByUserId { get; set; }
 
     public Deal Deal { get; set; } = null!;
 

@@ -25,22 +25,22 @@
 
 ## Phase 3 — Rate Limiting & Malware Scanning
 
-- [~] Add ASP.NET `RateLimiter` middleware in `Program.cs` — per-user fixed window policy (10 uploads per 5 minutes)
-- [~] Create `IVirusScanService` interface in Application layer with `ScanAsync(Stream)` returning scan result DTO
-- [~] Implement `WindowsDefenderScanService` in Infrastructure using AMSI or MpCmdRun.exe
-- [~] Add `VirusScanStatus` enum (Pending, Clean, Infected, ScanFailed) to Domain
-- [~] Add `VirusScanStatus` and `FileHash` (string, SHA-256) properties to `UploadedDocument` entity
-- [~] Add EF migration for new UploadedDocument columns
-- [~] Wire virus scan into `DocumentUploadService` — scan before persist, store result, reject infected
-- [~] Compute SHA-256 hash in `DocumentUploadService` before saving; store on entity
-- [~] Write tests: rate limit returns 429; infected file rejected; hash computed and stored correctly
+- [x] bf571da Add ASP.NET `RateLimiter` middleware in `Program.cs` — per-user fixed window policy (10 uploads per 5 minutes)
+- [x] bf571da Create `IVirusScanService` interface in Application layer with `ScanAsync(Stream)` returning scan result DTO
+- [x] bf571da Implement `WindowsDefenderScanService` in Infrastructure using AMSI or MpCmdRun.exe
+- [x] bf571da Add `VirusScanStatus` enum (Pending, Clean, Infected, ScanFailed) to Domain
+- [x] bf571da Add `VirusScanStatus` and `FileHash` (string, SHA-256) properties to `UploadedDocument` entity
+- [x] bf571da Add EF migration for new UploadedDocument columns
+- [x] bf571da Wire virus scan into `DocumentUploadService` — scan before persist, store result, reject infected
+- [x] bf571da Compute SHA-256 hash in `DocumentUploadService` before saving; store on entity
+- [x] bf571da Write tests: rate limit returns 429; infected file rejected; hash computed and stored correctly
 
 ## Phase 4 — Audit Logging & Storage Hardening
 
-- [ ] Add security event types to `ActivityEventType`: `DocumentAccessDenied`, `DocumentScanFailed`, `DocumentRateLimited`, `DocumentDeleted`
-- [ ] Add `UploadedByUserId` property to `UploadedDocument` entity; add EF migration
-- [ ] Capture client IP in upload flow via `IHttpContextAccessor` and log with ActivityTracker
-- [ ] Add structured Serilog logging in `DocumentUploadService` for all security events (upload, delete, scan result, access denied)
-- [ ] Ensure uploads directory is not served by static files middleware — verify no `UseStaticFiles` maps to uploads path
-- [ ] Add integration test: direct HTTP request to `/uploads/...` returns 404
-- [ ] Write tests: security events logged with correct userId, IP, and event type
+- [~] Add security event types to `ActivityEventType`: `DocumentAccessDenied`, `DocumentScanFailed`, `DocumentRateLimited`, `DocumentDeleted`
+- [~] Add `UploadedByUserId` property to `UploadedDocument` entity; add EF migration
+- [~] Capture client IP in upload flow via `IHttpContextAccessor` and log with ActivityTracker
+- [~] Add structured Serilog logging in `DocumentUploadService` for all security events (upload, delete, scan result, access denied)
+- [~] Ensure uploads directory is not served by static files middleware — verify no `UseStaticFiles` maps to uploads path
+- [~] Add integration test: direct HTTP request to `/uploads/...` returns 404
+- [~] Write tests: security events logged with correct userId, IP, and event type

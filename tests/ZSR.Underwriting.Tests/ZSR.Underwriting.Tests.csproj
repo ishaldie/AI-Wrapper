@@ -118,6 +118,7 @@
     <!-- Document Upload Security Hardening track -->
     <Compile Include="Services\FileContentValidatorTests.cs" />
     <Compile Include="Services\VirusScanServiceTests.cs" />
+    <Compile Include="Services\SecurityAuditTests.cs" />
     <Compile Include="Parsing\FormulaInjectionTests.cs" />
   </ItemGroup>
 

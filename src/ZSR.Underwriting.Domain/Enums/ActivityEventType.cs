@@ -13,5 +13,9 @@ public enum ActivityEventType
     PdfExported,
     DocumentUploaded,
     DealCreated,
-    DealDeleted
+    DealDeleted,
+    DocumentAccessDenied,
+    DocumentScanFailed,
+    DocumentRateLimited,
+    DocumentDeleted
 }
