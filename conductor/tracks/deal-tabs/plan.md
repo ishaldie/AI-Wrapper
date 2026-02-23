@@ -67,10 +67,10 @@
 - [x] Task 7.4: Keep `/deals/{id}/chat` route working (redirect to `/deals/{id}?tab=chat`)
 
 ## Phase 8: Tests & Polish
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 8.1: bUnit tests for DealTabs tab rendering
-- [ ] Task 8.2: Unit tests for ParseDealUpdate / StripDealUpdateBlocks
-- [ ] Task 8.3: Entity tests for new domain models
-- [ ] Task 8.4: Verify all existing tests pass
-- [ ] Task 8.5: CSS polish — tab styling consistent with app design system
+- [x] Task 8.1: bUnit tests for DealTabs tab rendering (36 tests across 5 test classes)
+- [x] Task 8.2: Unit tests for ParseDealUpdate / StripDealUpdateBlocks (11 tests)
+- [x] Task 8.3: Entity tests for new domain models (DealInvestor, CapitalStackItem, ChecklistTemplate, DealChecklistItem, Enums)
+- [x] Task 8.4: Verify all existing tests pass (670 non-flaky tests, 0 failures)
+- [x] Task 8.5: CSS polish — tab styling consistent with app design system (orange brand color, hover states)

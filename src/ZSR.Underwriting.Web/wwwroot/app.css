@@ -621,6 +621,33 @@ html, body {
     border-radius: 12px;
 }
 
+    /* Active tab indicator — brand orange */
+    .deal-tabs-container .mud-tab-active {
+        color: #F97316 !important;
+    }
+
+    .deal-tabs-container .mud-tabs-toolbar .mud-tab-slider {
+        background: #F97316 !important;
+    }
+
+    .deal-tabs-container .mud-tabs-toolbar {
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .deal-tabs-container .mud-tab {
+        text-transform: none;
+        font-weight: 500;
+        font-size: 0.875rem;
+        letter-spacing: 0;
+        min-width: 100px;
+        color: #6B7280;
+    }
+
+        .deal-tabs-container .mud-tab:hover:not(.mud-tab-active) {
+            color: #374151;
+            background: #F9FAFB;
+        }
+
 .deal-tab-panel {
     padding: 1.5rem;
 }
