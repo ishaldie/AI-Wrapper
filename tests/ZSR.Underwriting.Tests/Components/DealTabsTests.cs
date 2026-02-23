@@ -289,3 +289,114 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         Assert.Contains("10,000,000", cut.Markup);
     }
 }
+
+public class DealTabsChecklistTests : IAsyncLifetime
+{
+    private readonly BunitContext _ctx;
+    private readonly AppDbContext _db;
+    private readonly Guid _dealId;
+
+    public DealTabsChecklistTests()
+    {
+        _ctx = new BunitContext();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddMudServices();
+
+        var dbName = $"DealTabsCLTests_{Guid.NewGuid()}";
+        _ctx.Services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase(dbName));
+
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
+
+        var sp = _ctx.Services.BuildServiceProvider();
+        _db = sp.GetRequiredService<AppDbContext>();
+
+        // Seed checklist templates (a subset for testing)
+        var t1 = new ChecklistTemplate("Historical & Proforma Property Operations", 1, "Current Months Rent Roll", 1, ExecutionType.All, "All");
+        var t2 = new ChecklistTemplate("Historical & Proforma Property Operations", 1, "Trailing 12 Month Operating Statement", 2, ExecutionType.All, "All");
+        var t3 = new ChecklistTemplate("Property Title & Survey", 2, "Existing Survey", 3, ExecutionType.All, "All");
+        var t4 = new ChecklistTemplate("Property Title & Survey", 2, "Title Policy", 4, ExecutionType.All, "All");
+        var t5 = new ChecklistTemplate("Historical & Proforma Property Operations", 1, "Freddie Mac Form 1112", 5, ExecutionType.FreddieMac, "All");
+        _db.ChecklistTemplates.AddRange(t1, t2, t3, t4, t5);
+
+        // Seed deal with ExecutionType = All (should include t1-t4 but not t5)
+        var deal = new Deal("Test Property", "test-user-id");
+        deal.PropertyName = "Pine Ridge";
+        deal.Address = "789 Pine Rd";
+        deal.UnitCount = 50;
+        _db.Deals.Add(deal);
+        _db.SaveChanges();
+        _dealId = deal.Id;
+    }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        await _db.DisposeAsync();
+        await _ctx.DisposeAsync();
+    }
+
+    private RenderFragment RenderDealTabs(Guid dealId)
+    {
+        return builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealTabs>(1);
+            builder.AddAttribute(2, "DealId", dealId);
+            builder.CloseComponent();
+        };
+    }
+
+    [Fact]
+    public void ChecklistTab_ShowsSectionHeaders()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Historical &amp; Proforma Property Operations", cut.Markup);
+        Assert.Contains("Property Title &amp; Survey", cut.Markup);
+    }
+
+    [Fact]
+    public void ChecklistTab_ShowsItemNames()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Current Months Rent Roll", cut.Markup);
+        Assert.Contains("Existing Survey", cut.Markup);
+    }
+
+    [Fact]
+    public void ChecklistTab_AutoGeneratesItemsOnFirstVisit()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Should have created DealChecklistItems in DB
+        var items = _db.DealChecklistItems.Where(x => x.DealId == _dealId).ToList();
+        Assert.True(items.Count > 0);
+    }
+
+    [Fact]
+    public void ChecklistTab_ShowsStatusChips()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Default status is Outstanding
+        Assert.Contains("Outstanding", cut.Markup);
+    }
+
+    [Fact]
+    public void ChecklistTab_ShowsProgressSummary()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Should show progress text with "satisfied" label
+        Assert.Contains("satisfied", cut.Markup);
+    }
+}

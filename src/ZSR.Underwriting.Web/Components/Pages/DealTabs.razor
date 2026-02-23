@@ -256,7 +256,48 @@ else
 
         <MudTabPanel Text="Checklist" Icon="@Icons.Material.Filled.Checklist">
             <div class="deal-tab-content">
-                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Due diligence checklist will appear here.</MudText>
+                @* Progress summary *@
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                    <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Due Diligence Checklist</MudText>
+                    <MudText Typo="Typo.body2" Style="color: #6B7280; font-weight: 500;">
+                        @($"{_checklistItems.Count(i => i.Status == ChecklistStatus.Satisfied)} / {_checklistItems.Count} satisfied")
+                    </MudText>
+                </MudStack>
+
+                @foreach (var grp in _checklistItems
+                    .GroupBy(i => i.Template.Section)
+                    .OrderBy(g => g.First().Template.SectionOrder))
+                {
+                    <MudText Typo="Typo.subtitle1" Class="mt-4 mb-2" Style="font-weight: 600; color: #374151;">
+                        @grp.Key
+                    </MudText>
+
+                    @foreach (var item in grp.OrderBy(i => i.Template.SortOrder))
+                    {
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2 pa-2"
+                                  Style="border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF;">
+                            <MudChip T="string" Size="Size.Small" Color="@GetChecklistStatusColor(item.Status)"
+                                     Style="min-width: 120px; text-align: center;">
+                                @FormatChecklistStatus(item.Status)
+                            </MudChip>
+                            <MudText Style="flex: 1; color: #1A2332;">@item.Template.ItemName</MudText>
+                            <MudSelect T="ChecklistStatus" Value="item.Status"
+                                       ValueChanged="@(val => UpdateChecklistStatus(item, val))"
+                                       Variant="Variant.Outlined" Dense="true"
+                                       Style="max-width: 180px;">
+                                @foreach (var s in Enum.GetValues<ChecklistStatus>())
+                                {
+                                    <MudSelectItem Value="@s">@FormatChecklistStatus(s)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudStack>
+                    }
+                }
+
+                @if (!_checklistItems.Any())
+                {
+                    <MudAlert Severity="Severity.Info">No checklist items for this deal's execution type.</MudAlert>
+                }
             </div>
         </MudTabPanel>
 
@@ -275,6 +316,7 @@ else
     private Property _property = null!;
     private CalculationResult? _calc;
     private List<CapitalStackItem> _capitalStack = new();
+    private List<DealChecklistItem> _checklistItems = new();
     private bool _loading = true;
     private bool _saving;
     private int _activePanelIndex;
@@ -291,6 +333,7 @@ else
             .Include(d => d.Property)
             .Include(d => d.CalculationResult)
             .Include(d => d.CapitalStackItems)
+            .Include(d => d.DealChecklistItems).ThenInclude(i => i.Template)
             .FirstOrDefaultAsync(d => d.Id == DealId);
 
         if (_deal is not null)
@@ -298,9 +341,41 @@ else
             _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
             _calc = _deal.CalculationResult;
             _capitalStack = _deal.CapitalStackItems.OrderBy(c => c.SortOrder).ToList();
+
+            // Auto-generate checklist items on first visit
+            if (!_deal.DealChecklistItems.Any())
+            {
+                await GenerateChecklistItems();
+            }
+
+            _checklistItems = _deal.DealChecklistItems
+                .OrderBy(i => i.Template.SectionOrder)
+                .ThenBy(i => i.Template.SortOrder)
+                .ToList();
         }
 
         _loading = false;
+    }
+
+    private async Task GenerateChecklistItems()
+    {
+        if (_deal is null) return;
+
+        var templates = await Db.ChecklistTemplates
+            .Where(t => t.ExecutionType == ExecutionType.All || t.ExecutionType == _deal.ExecutionType)
+            .Where(t => t.TransactionType == "All" || t.TransactionType == _deal.TransactionType)
+            .OrderBy(t => t.SectionOrder).ThenBy(t => t.SortOrder)
+            .ToListAsync();
+
+        foreach (var template in templates)
+        {
+            var item = new DealChecklistItem(_deal.Id, template.Id);
+            item.Template = template;
+            Db.DealChecklistItems.Add(item);
+            _deal.DealChecklistItems.Add(item);
+        }
+
+        await Db.SaveChangesAsync();
     }
 
     private void OnTabChanged(int index)
@@ -364,6 +439,36 @@ else
         _capitalStack.Remove(item);
         Snackbar.Add("Capital stack item removed", Severity.Success);
     }
+
+    private async Task UpdateChecklistStatus(DealChecklistItem item, ChecklistStatus newStatus)
+    {
+        item.UpdateStatus(newStatus);
+        await Db.SaveChangesAsync();
+    }
+
+    private static string FormatChecklistStatus(ChecklistStatus status) => status switch
+    {
+        ChecklistStatus.Outstanding => "Outstanding",
+        ChecklistStatus.UnderReview => "Under Review",
+        ChecklistStatus.NeedAdditionalInfo => "Need Info",
+        ChecklistStatus.WaiverRequested => "Waiver Req.",
+        ChecklistStatus.WaiverApproved => "Waiver OK",
+        ChecklistStatus.Satisfied => "Satisfied",
+        ChecklistStatus.NotApplicable => "N/A",
+        _ => status.ToString()
+    };
+
+    private static Color GetChecklistStatusColor(ChecklistStatus status) => status switch
+    {
+        ChecklistStatus.Outstanding => Color.Default,
+        ChecklistStatus.UnderReview => Color.Warning,
+        ChecklistStatus.NeedAdditionalInfo => Color.Info,
+        ChecklistStatus.WaiverRequested => Color.Secondary,
+        ChecklistStatus.WaiverApproved => Color.Tertiary,
+        ChecklistStatus.Satisfied => Color.Success,
+        ChecklistStatus.NotApplicable => Color.Dark,
+        _ => Color.Default
+    };
 
     private static string FormatCurrency(decimal? value)
         => value.HasValue ? $"${value.Value:N0}" : "\u2014";

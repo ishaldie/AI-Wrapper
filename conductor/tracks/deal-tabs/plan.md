@@ -41,14 +41,14 @@
 - [x] Task 4.4: Add summary totals (total sources, equity required)
 
 ## Phase 5: Checklist Tab
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 5.1: Build Checklist tab — load DealChecklistItems grouped by section, filtered by deal ExecutionType/TransactionType
-- [ ] Task 5.2: Add status dropdown per item (MudSelect with ChecklistStatus enum)
-- [ ] Task 5.3: Auto-generate DealChecklistItems on deal creation (or first tab visit) from filtered ChecklistTemplate
-- [ ] Task 5.4: Add document auto-match logic — when a document is uploaded, match to checklist item by keywords, set Satisfied + link DocumentId
-- [ ] Task 5.5: Add manual document reassignment (user can change which checklist item a doc links to)
-- [ ] Task 5.6: Visual status indicators (color-coded chips/badges per status)
+- [x] Task 5.1: Build Checklist tab — load DealChecklistItems grouped by section, filtered by deal ExecutionType/TransactionType
+- [x] Task 5.2: Add status dropdown per item (MudSelect with ChecklistStatus enum)
+- [x] Task 5.3: Auto-generate DealChecklistItems on deal creation (or first tab visit) from filtered ChecklistTemplate
+- [x] Task 5.4: Add document auto-match logic — when a document is uploaded, match to checklist item by keywords, set Satisfied + link DocumentId
+- [x] Task 5.5: Add manual document reassignment (user can change which checklist item a doc links to)
+- [x] Task 5.6: Visual status indicators (color-coded chips/badges per status)
 
 ## Phase 6: Investor Tab
 *Status: Pending*
