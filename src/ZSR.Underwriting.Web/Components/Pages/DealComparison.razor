@@ -1,7 +1,10 @@
 @page "/deals/compare"
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject IDealService DealService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -105,13 +108,16 @@ else
             return;
         }
 
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
         var idList = Ids.Split(',', StringSplitOptions.RemoveEmptyEntries)
             .Select(s => Guid.TryParse(s.Trim(), out var g) ? g : (Guid?)null)
             .Where(g => g.HasValue)
             .Select(g => g!.Value)
             .ToHashSet();
 
-        var allDeals = await DealService.GetAllDealsAsync();
+        var allDeals = await DealService.GetAllDealsAsync(userId);
         _selectedDeals = allDeals.Where(d => idList.Contains(d.Id)).ToList();
         _loading = false;
     }

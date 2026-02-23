@@ -22,6 +22,8 @@ public class DealComparisonTests : IAsyncLifetime
         _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
         _ctx.Services.AddMudServices();
         _ctx.Services.AddSingleton<IDealService>(new ComparisonStubDealService());
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
     }
 
     public Task InitializeAsync() => Task.CompletedTask;
@@ -104,12 +106,12 @@ public class DealComparisonTests : IAsyncLifetime
 
     private class ComparisonStubDealService : IDealService
     {
-        public Task<Guid> CreateDealAsync(DealInputDto input) => Task.FromResult(Guid.NewGuid());
-        public Task UpdateDealAsync(Guid id, DealInputDto input) => Task.CompletedTask;
-        public Task<DealInputDto?> GetDealAsync(Guid id) => Task.FromResult<DealInputDto?>(null);
-        public Task SetStatusAsync(Guid id, string status) => Task.CompletedTask;
-        public Task DeleteDealAsync(Guid id) => Task.CompletedTask;
-        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
+        public Task<Guid> CreateDealAsync(DealInputDto input, string userId) => Task.FromResult(Guid.NewGuid());
+        public Task UpdateDealAsync(Guid id, DealInputDto input, string userId) => Task.CompletedTask;
+        public Task<DealInputDto?> GetDealAsync(Guid id, string userId) => Task.FromResult<DealInputDto?>(null);
+        public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
+        public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
+        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId)
         {
             var deals = new List<DealSummaryDto>
             {

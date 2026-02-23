@@ -122,28 +122,28 @@ public class DashboardTests : IAsyncLifetime
 
     private class StubQuickAnalysisService : IQuickAnalysisService
     {
-        public Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, CancellationToken ct = default)
+        public Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, string userId, CancellationToken ct = default)
             => Task.FromResult(new QuickAnalysisProgress { DealId = Guid.NewGuid(), SearchQuery = searchQuery });
     }
 
     private class StubDealService : IDealService
     {
-        public Task<Guid> CreateDealAsync(DealInputDto input) => Task.FromResult(Guid.NewGuid());
-        public Task UpdateDealAsync(Guid id, DealInputDto input) => Task.CompletedTask;
-        public Task<DealInputDto?> GetDealAsync(Guid id) => Task.FromResult<DealInputDto?>(null);
-        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
+        public Task<Guid> CreateDealAsync(DealInputDto input, string userId) => Task.FromResult(Guid.NewGuid());
+        public Task UpdateDealAsync(Guid id, DealInputDto input, string userId) => Task.CompletedTask;
+        public Task<DealInputDto?> GetDealAsync(Guid id, string userId) => Task.FromResult<DealInputDto?>(null);
+        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId)
             => Task.FromResult<IReadOnlyList<DealSummaryDto>>(new List<DealSummaryDto>());
-        public Task SetStatusAsync(Guid id, string status) => Task.CompletedTask;
-        public Task DeleteDealAsync(Guid id) => Task.CompletedTask;
+        public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
+        public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
     }
 
     private class StubDealServiceWithData : IDealService
     {
-        public Task<Guid> CreateDealAsync(DealInputDto input) => Task.FromResult(Guid.NewGuid());
-        public Task UpdateDealAsync(Guid id, DealInputDto input) => Task.CompletedTask;
-        public Task<DealInputDto?> GetDealAsync(Guid id) => Task.FromResult<DealInputDto?>(null);
-        public Task DeleteDealAsync(Guid id) => Task.CompletedTask;
-        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
+        public Task<Guid> CreateDealAsync(DealInputDto input, string userId) => Task.FromResult(Guid.NewGuid());
+        public Task UpdateDealAsync(Guid id, DealInputDto input, string userId) => Task.CompletedTask;
+        public Task<DealInputDto?> GetDealAsync(Guid id, string userId) => Task.FromResult<DealInputDto?>(null);
+        public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
+        public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId)
         {
             var deals = new List<DealSummaryDto>
             {
@@ -154,6 +154,6 @@ public class DashboardTests : IAsyncLifetime
             };
             return Task.FromResult<IReadOnlyList<DealSummaryDto>>(deals);
         }
-        public Task SetStatusAsync(Guid id, string status) => Task.CompletedTask;
+        public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
     }
 }

@@ -1,0 +1,141 @@
+@page "/deals/{DealId:guid}/quick-report"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Services
+@using ZSR.Underwriting.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext Db
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Quick Analysis Report - Underwriting Analyst</PageTitle>
+
+<div class="animate-in" style="max-width: 860px; margin: 2rem auto;">
+    @if (_loading)
+    {
+        <div style="text-align: center; padding: 4rem 0;">
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" Size="Size.Large" />
+            <MudText Typo="Typo.body1" Class="mt-4" Style="color: #6B7280;">
+                Loading report...
+            </MudText>
+        </div>
+    }
+    else if (_content == null)
+    {
+        <MudPaper Elevation="0" Class="card-elevated pa-8" Style="text-align: center;">
+            <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large"
+                     Style="color: #D1D5DB;" />
+            <MudText Typo="Typo.h6" Class="mt-2" Style="color: #6B7280;">
+                Report not found
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1" Style="color: #9CA3AF;">
+                This analysis may not have completed yet or the link is invalid.
+            </MudText>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Href="/search" Class="mt-4"
+                       Style="text-transform: none; border-radius: 12px;">
+                Back to Dashboard
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        @* Header *@
+        <MudText Typo="Typo.h4" Style="color: #1A1D23; font-weight: 800; margin-bottom: 0.25rem;">
+            Quick Analysis Report
+        </MudText>
+        <MudText Typo="Typo.body1" Style="color: #6B7280; margin-bottom: 1.5rem;">
+            @_dealName
+        </MudText>
+
+        @* Report content *@
+        <MudPaper Elevation="0" Class="card-elevated pa-6" Style="line-height: 1.7;">
+            <div class="quick-report-content">
+                @((MarkupString)Markdig.Markdown.ToHtml(_content))
+            </div>
+        </MudPaper>
+
+        @* Action buttons *@
+        <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.Center">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       Href="/search"
+                       Style="text-transform: none; border-radius: 12px; font-weight: 600;">
+                Back to Dashboard
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       Href="@($"/deals/{DealId}/chat")"
+                       Style="text-transform: none; border-radius: 12px;">
+                Continue in Chat
+            </MudButton>
+        </MudStack>
+    }
+</div>
+
+<style>
+    .quick-report-content h2 {
+        color: #1A1D23;
+        font-weight: 700;
+        font-size: 1.25rem;
+        margin-top: 1.5rem;
+        margin-bottom: 0.5rem;
+        border-bottom: 1px solid #E5E7EB;
+        padding-bottom: 0.25rem;
+    }
+
+    .quick-report-content h3 {
+        color: #374151;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .quick-report-content p {
+        color: #4B5563;
+        margin-bottom: 0.75rem;
+    }
+
+    .quick-report-content ul, .quick-report-content ol {
+        color: #4B5563;
+        padding-left: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .quick-report-content li {
+        margin-bottom: 0.25rem;
+    }
+
+    .quick-report-content strong {
+        color: #1A1D23;
+    }
+</style>
+
+@code {
+    [Parameter] public Guid DealId { get; set; }
+
+    private string? _content;
+    private string _dealName = string.Empty;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Try in-memory tracker first (freshest data)
+        var progress = QuickAnalysisTracker.GetProgress(DealId);
+        if (progress?.AnalysisContent != null)
+        {
+            _content = progress.AnalysisContent;
+            _dealName = progress.SearchQuery;
+            _loading = false;
+            return;
+        }
+
+        // Fall back to database
+        var deal = await Db.Deals.AsNoTracking().FirstOrDefaultAsync(d => d.Id == DealId);
+        if (deal?.QuickAnalysisContent != null)
+        {
+            _content = deal.QuickAnalysisContent;
+            _dealName = deal.PropertyName;
+        }
+
+        _loading = false;
+    }
+}

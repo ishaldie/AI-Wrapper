@@ -9,6 +9,5 @@ public class ProseGenerationContext
 {
     public required Deal Deal { get; init; }
     public CalculationResult? Calculations { get; init; }
-    public RealAiData? RealAiData { get; init; }
     public MarketContextDto? MarketContext { get; init; }
 }

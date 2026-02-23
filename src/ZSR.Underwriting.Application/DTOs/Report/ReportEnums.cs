@@ -18,7 +18,6 @@ public enum DataSource
 {
     UserInput,
     ProtocolDefault,
-    RealAi,
     Calculated,
     AiGenerated,
     MarketData

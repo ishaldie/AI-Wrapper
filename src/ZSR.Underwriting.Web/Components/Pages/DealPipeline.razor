@@ -2,7 +2,10 @@
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
 @using ZSR.Underwriting.Domain.Enums
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject IDealService DealService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IActivityTracker ActivityTracker
 @inject NavigationManager Navigation
 @inject IDialogService DialogService
@@ -18,7 +21,7 @@
         </MudText>
     </MudStack>
     <MudButton Variant="Variant.Filled" Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Add" Href="deals/new"
+               StartIcon="@Icons.Material.Filled.Add" Href="/search"
                Style="text-transform: none; font-weight: 500;">
         New Deal
     </MudButton>
@@ -121,6 +124,7 @@ else
     private string _searchText = string.Empty;
     private IReadOnlyCollection<string> _selectedStatuses = Array.Empty<string>();
     private HashSet<DealSummaryDto> _selectedItems = new();
+    private string _userId = string.Empty;
 
     private IEnumerable<DealSummaryDto> FilteredDeals => _deals
         .Where(d => _selectedStatuses.Count == 0 || _selectedStatuses.Contains(d.Status))
@@ -130,7 +134,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var deals = await DealService.GetAllDealsAsync();
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var deals = await DealService.GetAllDealsAsync(_userId);
         _deals = deals.ToList();
         _loading = false;
     }
@@ -143,7 +149,7 @@ else
 
     private async Task ArchiveDeal(DealSummaryDto deal)
     {
-        await DealService.SetStatusAsync(deal.Id, "Archived");
+        await DealService.SetStatusAsync(deal.Id, "Archived", _userId);
         deal.Status = "Archived";
         StateHasChanged();
     }
@@ -158,7 +164,7 @@ else
 
         if (result == true)
         {
-            await DealService.DeleteDealAsync(deal.Id);
+            await DealService.DeleteDealAsync(deal.Id, _userId);
             await ActivityTracker.TrackEventAsync(ActivityEventType.DealDeleted, dealId: deal.Id);
             _deals.Remove(deal);
             _selectedItems.Remove(deal);

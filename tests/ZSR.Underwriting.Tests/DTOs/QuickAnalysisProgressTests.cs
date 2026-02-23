@@ -5,10 +5,10 @@ namespace ZSR.Underwriting.Tests.DTOs;
 public class QuickAnalysisProgressTests
 {
     [Fact]
-    public void TotalSteps_Returns_Nine()
+    public void TotalSteps_Returns_Three()
     {
         var progress = new QuickAnalysisProgress();
-        Assert.Equal(9, progress.TotalSteps);
+        Assert.Equal(3, progress.TotalSteps);
     }
 
     [Fact]
@@ -24,33 +24,25 @@ public class QuickAnalysisProgressTests
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.Complete,
-            TenantMetrics = StepStatus.Failed,
-            MarketData = StepStatus.InProgress,
-            SalesComps = StepStatus.Pending
+            AiResearch = StepStatus.Failed,
+            ReportReady = StepStatus.InProgress
         };
 
-        Assert.Equal(2, progress.CompletedSteps);
+        Assert.Equal(1, progress.CompletedSteps);
     }
 
     [Fact]
-    public void IsComplete_TrueWhenAllNineComplete()
+    public void IsComplete_TrueWhenAllThreeComplete()
     {
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.Complete,
-            TenantMetrics = StepStatus.Complete,
-            MarketData = StepStatus.Complete,
-            SalesComps = StepStatus.Complete,
-            TimeSeries = StepStatus.Complete,
-            MarketContext = StepStatus.Complete,
-            ReportAssembly = StepStatus.Complete,
-            AiProse = StepStatus.Complete
+            AiResearch = StepStatus.Complete,
+            ReportReady = StepStatus.Complete
         };
 
         Assert.True(progress.IsComplete);
-        Assert.Equal(9, progress.CompletedSteps);
+        Assert.Equal(3, progress.CompletedSteps);
     }
 
     [Fact]
@@ -59,14 +51,8 @@ public class QuickAnalysisProgressTests
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.Complete,
-            TenantMetrics = StepStatus.Complete,
-            MarketData = StepStatus.Complete,
-            SalesComps = StepStatus.Complete,
-            TimeSeries = StepStatus.Complete,
-            MarketContext = StepStatus.Complete,
-            ReportAssembly = StepStatus.Complete,
-            AiProse = StepStatus.Failed
+            AiResearch = StepStatus.Complete,
+            ReportReady = StepStatus.Failed
         };
 
         Assert.False(progress.IsComplete);
@@ -77,7 +63,7 @@ public class QuickAnalysisProgressTests
     {
         var progress = new QuickAnalysisProgress
         {
-            PropertyData = StepStatus.Failed
+            AiResearch = StepStatus.Failed
         };
 
         Assert.True(progress.HasErrors);
@@ -89,26 +75,20 @@ public class QuickAnalysisProgressTests
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.InProgress
+            AiResearch = StepStatus.InProgress
         };
 
         Assert.False(progress.HasErrors);
     }
 
     [Fact]
-    public void IsFinished_TrueWhenCompleteEvenWithNoErrors()
+    public void IsFinished_TrueWhenAllComplete()
     {
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.Complete,
-            TenantMetrics = StepStatus.Complete,
-            MarketData = StepStatus.Complete,
-            SalesComps = StepStatus.Complete,
-            TimeSeries = StepStatus.Complete,
-            MarketContext = StepStatus.Complete,
-            ReportAssembly = StepStatus.Complete,
-            AiProse = StepStatus.Complete
+            AiResearch = StepStatus.Complete,
+            ReportReady = StepStatus.Complete
         };
 
         Assert.True(progress.IsFinished);
@@ -120,14 +100,8 @@ public class QuickAnalysisProgressTests
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.Failed,
-            TenantMetrics = StepStatus.Complete,
-            MarketData = StepStatus.Complete,
-            SalesComps = StepStatus.Complete,
-            TimeSeries = StepStatus.Complete,
-            MarketContext = StepStatus.Complete,
-            ReportAssembly = StepStatus.Complete,
-            AiProse = StepStatus.Complete
+            AiResearch = StepStatus.Failed,
+            ReportReady = StepStatus.Complete
         };
 
         Assert.True(progress.IsFinished);
@@ -139,8 +113,8 @@ public class QuickAnalysisProgressTests
         var progress = new QuickAnalysisProgress
         {
             DealCreation = StepStatus.Complete,
-            PropertyData = StepStatus.Failed,
-            TenantMetrics = StepStatus.InProgress
+            AiResearch = StepStatus.Failed,
+            ReportReady = StepStatus.InProgress
         };
 
         Assert.False(progress.IsFinished);
@@ -151,27 +125,27 @@ public class QuickAnalysisProgressTests
     {
         var progress = new QuickAnalysisProgress
         {
-            MarketData = StepStatus.InProgress
+            AiResearch = StepStatus.InProgress
         };
 
-        Assert.Equal(StepStatus.InProgress, progress.GetStepStatus(AnalysisStep.MarketData));
-        Assert.Equal(StepStatus.Pending, progress.GetStepStatus(AnalysisStep.AiProse));
+        Assert.Equal(StepStatus.InProgress, progress.GetStepStatus(AnalysisStep.AiResearch));
+        Assert.Equal(StepStatus.Pending, progress.GetStepStatus(AnalysisStep.ReportReady));
     }
 
     [Fact]
     public void SetStepStatus_UpdatesCorrectStep()
     {
         var progress = new QuickAnalysisProgress();
-        progress.SetStepStatus(AnalysisStep.ReportAssembly, StepStatus.Complete);
+        progress.SetStepStatus(AnalysisStep.ReportReady, StepStatus.Complete);
 
-        Assert.Equal(StepStatus.Complete, progress.ReportAssembly);
+        Assert.Equal(StepStatus.Complete, progress.ReportReady);
         Assert.Equal(StepStatus.Pending, progress.DealCreation);
     }
 
     [Theory]
     [InlineData(AnalysisStep.DealCreation, "Creating deal record")]
-    [InlineData(AnalysisStep.PropertyData, "Fetching property data")]
-    [InlineData(AnalysisStep.AiProse, "Generating AI analysis")]
+    [InlineData(AnalysisStep.AiResearch, "Running AI research & analysis")]
+    [InlineData(AnalysisStep.ReportReady, "Finalizing report")]
     public void GetStepLabel_ReturnsExpectedLabel(AnalysisStep step, string expected)
     {
         Assert.Equal(expected, QuickAnalysisProgress.GetStepLabel(step));

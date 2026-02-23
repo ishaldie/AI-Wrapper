@@ -6,7 +6,7 @@
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>Analyzing - ZSR Underwriting</PageTitle>
+<PageTitle>Analyzing - Underwriting Analyst</PageTitle>
 
 <div class="animate-in" style="max-width: 640px; margin: 2rem auto;">
     @if (_progress == null)
@@ -63,18 +63,33 @@
         }
 
         @* Action buttons *@
-        @if (_progress.IsFinished)
+        @if (_progress.IsComplete)
         {
             <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.Center">
                 <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                           Href="@($"/deals/{DealId}/report")"
+                           Href="@($"/deals/{DealId}/quick-report")"
                            Style="text-transform: none; border-radius: 12px; font-weight: 600;">
                     View Report
                 </MudButton>
                 <MudButton Variant="Variant.Outlined" Color="Color.Default"
-                           Href="/deals/new"
+                           Href="@($"/deals/{DealId}/chat")"
                            Style="text-transform: none; border-radius: 12px;">
-                    Add More Details
+                    Continue in Chat
+                </MudButton>
+            </MudStack>
+        }
+        else if (_progress.IsFinished && _progress.HasErrors)
+        {
+            <MudStack Row="true" Spacing="2" Class="mt-4" Justify="Justify.Center">
+                <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                           Href="/search"
+                           Style="text-transform: none; border-radius: 12px; font-weight: 600;">
+                    Try Again
+                </MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                           Href="/search"
+                           Style="text-transform: none; border-radius: 12px;">
+                    Back to Dashboard
                 </MudButton>
             </MudStack>
         }

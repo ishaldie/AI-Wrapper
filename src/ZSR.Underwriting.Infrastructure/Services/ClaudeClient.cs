@@ -36,6 +36,11 @@ public class ClaudeClient : IClaudeClient
 
     public async Task<ClaudeResponse> SendMessageAsync(ClaudeRequest request, CancellationToken ct = default)
     {
+        var apiKey = _options.ResolvedApiKey;
+        if (string.IsNullOrWhiteSpace(apiKey))
+            throw new InvalidOperationException(
+                "Claude API key is not configured. Set Claude:ApiKey in appsettings, user secrets, or the ANTHROPIC_API_KEY environment variable.");
+
         var maxTokens = request.MaxTokens ?? _options.MaxTokens;
 
         var payload = new ApiRequest
@@ -56,7 +61,7 @@ public class ClaudeClient : IClaudeClient
         {
             Content = content
         };
-        httpRequest.Headers.Add("x-api-key", _options.ApiKey);
+        httpRequest.Headers.Add("x-api-key", apiKey);
         httpRequest.Headers.Add("anthropic-version", ApiVersion);
 
         _logger.LogInformation("Claude API call: POST v1/messages (model={Model}, max_tokens={MaxTokens})",

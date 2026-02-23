@@ -11,14 +11,8 @@ public enum StepStatus
 public enum AnalysisStep
 {
     DealCreation,
-    PropertyData,
-    TenantMetrics,
-    MarketData,
-    SalesComps,
-    TimeSeries,
-    MarketContext,
-    ReportAssembly,
-    AiProse
+    AiResearch,
+    ReportReady
 }
 
 public class QuickAnalysisProgress
@@ -29,16 +23,15 @@ public class QuickAnalysisProgress
     public string? ErrorMessage { get; set; }
 
     public StepStatus DealCreation { get; set; }
-    public StepStatus PropertyData { get; set; }
-    public StepStatus TenantMetrics { get; set; }
-    public StepStatus MarketData { get; set; }
-    public StepStatus SalesComps { get; set; }
-    public StepStatus TimeSeries { get; set; }
-    public StepStatus MarketContext { get; set; }
-    public StepStatus ReportAssembly { get; set; }
-    public StepStatus AiProse { get; set; }
+    public StepStatus AiResearch { get; set; }
+    public StepStatus ReportReady { get; set; }
 
-    public int TotalSteps => 9;
+    /// <summary>
+    /// Claude's markdown analysis content, held in-memory alongside progress.
+    /// </summary>
+    public string? AnalysisContent { get; set; }
+
+    public int TotalSteps => 3;
 
     public int CompletedSteps
     {
@@ -46,14 +39,8 @@ public class QuickAnalysisProgress
         {
             var count = 0;
             if (DealCreation == StepStatus.Complete) count++;
-            if (PropertyData == StepStatus.Complete) count++;
-            if (TenantMetrics == StepStatus.Complete) count++;
-            if (MarketData == StepStatus.Complete) count++;
-            if (SalesComps == StepStatus.Complete) count++;
-            if (TimeSeries == StepStatus.Complete) count++;
-            if (MarketContext == StepStatus.Complete) count++;
-            if (ReportAssembly == StepStatus.Complete) count++;
-            if (AiProse == StepStatus.Complete) count++;
+            if (AiResearch == StepStatus.Complete) count++;
+            if (ReportReady == StepStatus.Complete) count++;
             return count;
         }
     }
@@ -62,39 +49,21 @@ public class QuickAnalysisProgress
 
     public bool HasErrors =>
         DealCreation == StepStatus.Failed ||
-        PropertyData == StepStatus.Failed ||
-        TenantMetrics == StepStatus.Failed ||
-        MarketData == StepStatus.Failed ||
-        SalesComps == StepStatus.Failed ||
-        TimeSeries == StepStatus.Failed ||
-        MarketContext == StepStatus.Failed ||
-        ReportAssembly == StepStatus.Failed ||
-        AiProse == StepStatus.Failed;
+        AiResearch == StepStatus.Failed ||
+        ReportReady == StepStatus.Failed;
 
     public bool IsFinished => IsComplete || (HasErrors && !HasInProgressSteps);
 
     private bool HasInProgressSteps =>
         DealCreation == StepStatus.InProgress ||
-        PropertyData == StepStatus.InProgress ||
-        TenantMetrics == StepStatus.InProgress ||
-        MarketData == StepStatus.InProgress ||
-        SalesComps == StepStatus.InProgress ||
-        TimeSeries == StepStatus.InProgress ||
-        MarketContext == StepStatus.InProgress ||
-        ReportAssembly == StepStatus.InProgress ||
-        AiProse == StepStatus.InProgress;
+        AiResearch == StepStatus.InProgress ||
+        ReportReady == StepStatus.InProgress;
 
     public StepStatus GetStepStatus(AnalysisStep step) => step switch
     {
         AnalysisStep.DealCreation => DealCreation,
-        AnalysisStep.PropertyData => PropertyData,
-        AnalysisStep.TenantMetrics => TenantMetrics,
-        AnalysisStep.MarketData => MarketData,
-        AnalysisStep.SalesComps => SalesComps,
-        AnalysisStep.TimeSeries => TimeSeries,
-        AnalysisStep.MarketContext => MarketContext,
-        AnalysisStep.ReportAssembly => ReportAssembly,
-        AnalysisStep.AiProse => AiProse,
+        AnalysisStep.AiResearch => AiResearch,
+        AnalysisStep.ReportReady => ReportReady,
         _ => StepStatus.Pending
     };
 
@@ -103,28 +72,16 @@ public class QuickAnalysisProgress
         switch (step)
         {
             case AnalysisStep.DealCreation: DealCreation = status; break;
-            case AnalysisStep.PropertyData: PropertyData = status; break;
-            case AnalysisStep.TenantMetrics: TenantMetrics = status; break;
-            case AnalysisStep.MarketData: MarketData = status; break;
-            case AnalysisStep.SalesComps: SalesComps = status; break;
-            case AnalysisStep.TimeSeries: TimeSeries = status; break;
-            case AnalysisStep.MarketContext: MarketContext = status; break;
-            case AnalysisStep.ReportAssembly: ReportAssembly = status; break;
-            case AnalysisStep.AiProse: AiProse = status; break;
+            case AnalysisStep.AiResearch: AiResearch = status; break;
+            case AnalysisStep.ReportReady: ReportReady = status; break;
         }
     }
 
     public static string GetStepLabel(AnalysisStep step) => step switch
     {
         AnalysisStep.DealCreation => "Creating deal record",
-        AnalysisStep.PropertyData => "Fetching property data",
-        AnalysisStep.TenantMetrics => "Analyzing tenant metrics",
-        AnalysisStep.MarketData => "Pulling market data",
-        AnalysisStep.SalesComps => "Finding sales comparables",
-        AnalysisStep.TimeSeries => "Loading time series trends",
-        AnalysisStep.MarketContext => "Researching market context",
-        AnalysisStep.ReportAssembly => "Assembling underwriting report",
-        AnalysisStep.AiProse => "Generating AI analysis",
+        AnalysisStep.AiResearch => "Running AI research & analysis",
+        AnalysisStep.ReportReady => "Finalizing report",
         _ => "Processing"
     };
 }

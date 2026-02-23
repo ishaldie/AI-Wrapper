@@ -16,9 +16,9 @@ public class DealService : IDealService
         _db = db;
     }
 
-    public async Task<Guid> CreateDealAsync(DealInputDto input)
+    public async Task<Guid> CreateDealAsync(DealInputDto input, string userId)
     {
-        var deal = new Deal(input.PropertyName);
+        var deal = new Deal(input.PropertyName, userId);
 
         MapFromDto(deal, input);
 
@@ -28,9 +28,9 @@ public class DealService : IDealService
         return deal.Id;
     }
 
-    public async Task UpdateDealAsync(Guid id, DealInputDto input)
+    public async Task UpdateDealAsync(Guid id, DealInputDto input, string userId)
     {
-        var deal = await _db.Deals.FindAsync(id)
+        var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException($"Deal {id} not found.");
 
         MapFromDto(deal, input);
@@ -38,17 +38,18 @@ public class DealService : IDealService
         await _db.SaveChangesAsync();
     }
 
-    public async Task<DealInputDto?> GetDealAsync(Guid id)
+    public async Task<DealInputDto?> GetDealAsync(Guid id, string userId)
     {
-        var deal = await _db.Deals.FindAsync(id);
+        var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId);
         if (deal is null) return null;
 
         return MapToDto(deal);
     }
 
-    public async Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync()
+    public async Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId)
     {
         return await _db.Deals
+            .Where(d => d.UserId == userId)
             .Include(d => d.CalculationResult)
             .OrderByDescending(d => d.UpdatedAt)
             .Select(d => new DealSummaryDto
@@ -67,9 +68,9 @@ public class DealService : IDealService
             .ToListAsync();
     }
 
-    public async Task SetStatusAsync(Guid id, string status)
+    public async Task SetStatusAsync(Guid id, string status, string userId)
     {
-        var deal = await _db.Deals.FindAsync(id)
+        var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException($"Deal {id} not found.");
 
         deal.UpdateStatus(Enum.Parse<DealStatus>(status));
@@ -77,9 +78,9 @@ public class DealService : IDealService
         await _db.SaveChangesAsync();
     }
 
-    public async Task DeleteDealAsync(Guid id)
+    public async Task DeleteDealAsync(Guid id, string userId)
     {
-        var deal = await _db.Deals.FindAsync(id)
+        var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException($"Deal {id} not found.");
 
         _db.Deals.Remove(deal);

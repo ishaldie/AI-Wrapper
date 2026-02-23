@@ -63,6 +63,6 @@ public class ReportDtoTests
     public void DataSource_HasExpectedValues()
     {
         var values = Enum.GetValues<DataSource>();
-        Assert.Equal(6, values.Length);
+        Assert.Equal(5, values.Length);
     }
 }

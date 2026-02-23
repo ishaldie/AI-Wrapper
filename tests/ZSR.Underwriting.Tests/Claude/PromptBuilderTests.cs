@@ -43,23 +43,6 @@ public class PromptBuilderTests
             TotalProfit = 4_200_000m
         };
 
-        var realAi = new RealAiData(deal.Id)
-        {
-            InPlaceRent = 1_150m,
-            Occupancy = 92m,
-            YearBuilt = 1998,
-            BuildingType = "Garden",
-            SquareFootage = 96_000,
-            MarketCapRate = 6.5m,
-            RentGrowth = 3.5m,
-            JobGrowth = 2.5m,
-            NetMigration = 15_000,
-            Permits = 8_500,
-            AverageFico = 720,
-            RentToIncomeRatio = 28m,
-            MedianHhi = 55_000m
-        };
-
         var marketContext = new MarketContextDto
         {
             MajorEmployers =
@@ -77,7 +60,6 @@ public class PromptBuilderTests
         {
             Deal = deal,
             Calculations = calc,
-            RealAiData = realAi,
             MarketContext = marketContext
         };
     }
@@ -152,17 +134,6 @@ public class PromptBuilderTests
     // === Market Context ===
 
     [Fact]
-    public void BuildMarketContextPrompt_IncludesMarketData()
-    {
-        var ctx = CreateFullContext();
-        var result = _builder.BuildMarketContextPrompt(ctx);
-
-        Assert.Contains("3.5", result.UserMessage); // Rent growth
-        Assert.Contains("2.5", result.UserMessage); // Job growth
-        Assert.Contains("15,000", result.UserMessage); // Net migration
-    }
-
-    [Fact]
     public void BuildMarketContextPrompt_IncludesEmployers()
     {
         var ctx = CreateFullContext();
@@ -203,16 +174,6 @@ public class PromptBuilderTests
         Assert.Contains("500,000", result.UserMessage);
     }
 
-    [Fact]
-    public void BuildValueCreationPrompt_IncludesRentUpside()
-    {
-        var ctx = CreateFullContext();
-        var result = _builder.BuildValueCreationPrompt(ctx);
-
-        // Should reference current vs market rents
-        Assert.Contains("1,150", result.UserMessage); // In-place rent from RealAI
-    }
-
     // === Risk Assessment ===
 
     [Fact]
@@ -223,15 +184,6 @@ public class PromptBuilderTests
 
         Assert.Contains("1.58", result.UserMessage); // DSCR
         Assert.Contains("18.5", result.UserMessage); // IRR
-    }
-
-    [Fact]
-    public void BuildRiskAssessmentPrompt_IncludesMarketRisk()
-    {
-        var ctx = CreateFullContext();
-        var result = _builder.BuildRiskAssessmentPrompt(ctx);
-
-        Assert.Contains("8,500", result.UserMessage); // Permits (supply risk)
     }
 
     [Fact]
@@ -287,8 +239,6 @@ public class PromptBuilderTests
         Assert.Contains("Sunrise Apartments", result.UserMessage);
         Assert.Contains("123 Main St", result.UserMessage);
         Assert.Contains("120", result.UserMessage); // Units
-        Assert.Contains("1998", result.UserMessage); // Year built
-        Assert.Contains("Garden", result.UserMessage); // Building type
     }
 
     [Fact]

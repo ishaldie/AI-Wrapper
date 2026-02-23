@@ -65,8 +65,7 @@
     <Compile Include="Components\ExternalAuthTests.cs" />
     <Compile Include="Components\AdminAccessTests.cs" />
     <Compile Include="Services\UserManagementServiceTests.cs" />
-    <!-- Deal Entry UI track -->
-    <Compile Include="Components\DealWizardTests.cs" />
+    <!-- Deal Entry UI track (wizard removed) -->
     <!-- Report Assembly & Display track -->
     <Compile Include="Components\ReportViewerTests.cs" />
     <Compile Include="Formatting\ProtocolFormatterTests.cs" />

@@ -87,31 +87,22 @@ try
             .RequireAuthenticatedUser()
             .Build());
 
-    // Add RealAI client with Polly retry policy
-    builder.Services.Configure<RealAiOptions>(
-        builder.Configuration.GetSection(RealAiOptions.SectionName));
-
-    builder.Services.AddHttpClient<IRealAiClient, RealAiClient>((sp, client) =>
-    {
-        var options = builder.Configuration
-            .GetSection(RealAiOptions.SectionName)
-            .Get<RealAiOptions>() ?? new RealAiOptions();
-        client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
-        client.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
-        client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-    })
-    .AddPolicyHandler(HttpPolicyExtensions
-        .HandleTransientHttpError()
-        .WaitAndRetryAsync(
-            retryCount: 3,
-            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
-
     // Add Claude client — supports "cli" mode (your subscription) or "api" mode (API key)
     builder.Services.Configure<ClaudeOptions>(
         builder.Configuration.GetSection(ClaudeOptions.SectionName));
 
-    var claudeMode = builder.Configuration
-        .GetSection(ClaudeOptions.SectionName)["Mode"] ?? "api";
+    var claudeSection = builder.Configuration.GetSection(ClaudeOptions.SectionName);
+    var claudeMode = claudeSection["Mode"];
+
+    // Smart default: if no Mode is explicitly set, use "cli" when no API key is available
+    if (string.IsNullOrWhiteSpace(claudeMode))
+    {
+        var configApiKey = claudeSection["ApiKey"];
+        var envApiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+        claudeMode = !string.IsNullOrWhiteSpace(configApiKey) || !string.IsNullOrWhiteSpace(envApiKey)
+            ? "api"
+            : "cli";
+    }
 
     if (claudeMode.Equals("cli", StringComparison.OrdinalIgnoreCase))
     {
@@ -136,9 +127,7 @@ try
                 sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
     }
 
-    // Add RealAI cache service (24-hour TTL per deal)
     builder.Services.AddMemoryCache();
-    builder.Services.AddSingleton<RealAiCacheService>();
 
     // SMTP configuration for email delivery
     builder.Services.Configure<SmtpOptions>(

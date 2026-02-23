@@ -3,13 +3,17 @@
 @using ZSR.Underwriting.Application.Interfaces
 @using ZSR.Underwriting.Domain.Enums
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject IDealService DealService
+@inject AuthenticationStateProvider AuthStateProvider
 @inject IQuickAnalysisService QuickAnalysisService
 @inject IActivityTracker ActivityTracker
 @inject NavigationManager Navigation
+@inject ILogger<Dashboard> Logger
+@inject ISnackbar Snackbar
 @rendermode InteractiveServer
 
-<PageTitle>Dashboard - ZSR Underwriting</PageTitle>
+<PageTitle>Dashboard - Underwriting Analyst</PageTitle>
 
 <div class="animate-in" style="max-width: 960px;">
     <AuthorizeView>
@@ -27,8 +31,8 @@
     @* Search bar *@
     <div style="margin-bottom: 2.5rem;">
         <div class="search-bar">
-            <input type="text" placeholder="Enter a property address for instant analysis..."
-                   @bind="_searchQuery" @onkeydown="HandleSearchKeyDown"
+            <input type="text" placeholder="Enter a property name or address for instant analysis..."
+                   @bind="_searchQuery" @bind:event="oninput" @onkeydown="HandleSearchKeyDown"
                    disabled="@_analyzing" />
             <button class="search-bar-btn" type="button" @onclick="HandleSearch"
                     disabled="@_analyzing">
@@ -45,9 +49,7 @@
         </div>
         <MudText Typo="Typo.caption" Style="color: #9CA3AF; margin-top: 0.5rem;">
             The more info you provide, the better the analysis.
-            <MudLink Href="/deals/new" Style="color: #F97316; font-weight: 600;">
-                Want to provide full details?
-            </MudLink>
+            You can also attach rent rolls, T12s, and other documents in the chat.
         </MudText>
     </div>
 
@@ -58,7 +60,7 @@
 
     <MudGrid Spacing="3" Class="mb-6">
         <MudItem xs="12" sm="4">
-            <div class="rec-card animate-in delay-1">
+            <div class="rec-card animate-in delay-1" style="cursor: pointer;" @onclick="NavigateToNewAnalysis">
                 <MudStack Spacing="2">
                     <MudChip T="string" Size="Size.Small" Style="background: #EFF6FF; color: #2563EB; font-weight: 600;">
                         New
@@ -73,7 +75,7 @@
             </div>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <div class="rec-card animate-in delay-2">
+            <div class="rec-card animate-in delay-2" style="cursor: pointer;" @onclick="NavigateToNewAnalysis">
                 <MudStack Spacing="2">
                     <MudChip T="string" Size="Size.Small" Style="background: #FEF3C7; color: #D97706; font-weight: 600;">
                         Trending
@@ -88,7 +90,7 @@
             </div>
         </MudItem>
         <MudItem xs="12" sm="4">
-            <div class="rec-card animate-in delay-3">
+            <div class="rec-card animate-in delay-3" style="cursor: pointer;" @onclick="NavigateToDeals">
                 <MudStack Spacing="2">
                     <MudChip T="string" Size="Size.Small" Style="background: #F0FDF4; color: #16A34A; font-weight: 600;">
                         For you
@@ -135,6 +137,8 @@
     else
     {
         <MudDataGrid Items="@_deals" Dense="true" Hover="true" Bordered="false"
+                     RowClick="@((DataGridRowClickEventArgs<DealSummaryDto> args) => Navigation.NavigateTo($"/deals/{args.Item.Id}/chat"))"
+                     RowStyle="cursor: pointer;"
                      Style="background: #FFFFFF; border-radius: 12px; border: 1px solid #E5E7EB;">
             <Columns>
                 <PropertyColumn Property="x => x.PropertyName" Title="NAME" />
@@ -167,10 +171,13 @@
     private List<DealSummaryDto> _deals = new();
     private string _searchQuery = "";
     private bool _autoSearchTriggered;
+    private string _userId = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        var deals = await DealService.GetAllDealsAsync();
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        var deals = await DealService.GetAllDealsAsync(_userId);
         _deals = deals.ToList();
         _loading = false;
     }
@@ -197,7 +204,6 @@
     {
         if (string.IsNullOrWhiteSpace(_searchQuery))
         {
-            Navigation.NavigateTo("/deals/new");
             return;
         }
 
@@ -205,14 +211,14 @@
         try
         {
             await ActivityTracker.TrackEventAsync(ActivityEventType.SearchPerformed, metadata: _searchQuery);
-            var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery);
+            var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery, _userId);
             await ActivityTracker.TrackEventAsync(ActivityEventType.QuickAnalysisStarted, dealId: progress.DealId);
-            Navigation.NavigateTo($"/deals/analyze/{progress.DealId}");
+            Navigation.NavigateTo($"/deals/{progress.DealId}/chat");
         }
-        catch
+        catch (Exception ex)
         {
-            // Fallback to wizard on failure
-            Navigation.NavigateTo($"/deals/new?address={Uri.EscapeDataString(_searchQuery)}");
+            Logger.LogWarning(ex, "QuickAnalysis failed for query '{Query}', falling back to wizard", _searchQuery);
+            Snackbar.Add("Analysis failed. Please try again.", Severity.Error);
         }
         finally
         {
@@ -224,6 +230,16 @@
     {
         if (e.Key == "Enter")
             await HandleSearch();
+    }
+
+    private void NavigateToNewAnalysis()
+    {
+        Navigation.NavigateTo("/analysis/start");
+    }
+
+    private void NavigateToDeals()
+    {
+        Navigation.NavigateTo("/deals");
     }
 
     private static Color GetStatusColor(string status) => status switch

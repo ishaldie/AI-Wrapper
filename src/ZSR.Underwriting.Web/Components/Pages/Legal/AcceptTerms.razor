@@ -8,7 +8,7 @@
 @inject IConfiguration Configuration
 @inject NavigationManager Navigation
 
-<PageTitle>Accept Terms of Service - ZSR Underwriting</PageTitle>
+<PageTitle>Accept Terms of Service - Underwriting Analyst</PageTitle>
 
 <div style="display: flex; justify-content: center; padding-top: 4vh;">
     <div style="width: 100%; max-width: 520px;">
@@ -19,7 +19,7 @@
                     <MudIcon Icon="@Icons.Material.Filled.Assessment" Size="Size.Small" Style="color: #FFFFFF;" />
                 </div>
                 <span style="font-size: 1.25rem; font-weight: 700; color: #1A1D23; letter-spacing: -0.02em;">
-                    ZSR Underwriting
+                    Underwriting Analyst
                 </span>
             </div>
         </div>
@@ -40,7 +40,7 @@
             }
 
             <div style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #374151; line-height: 1.6;">
-                <p style="margin: 0 0 0.75rem 0;">By using ZSR Underwriting, you agree to:</p>
+                <p style="margin: 0 0 0.75rem 0;">By using Underwriting Analyst, you agree to:</p>
                 <ul style="margin: 0; padding-left: 1.25rem;">
                     <li>Our <a href="/terms" target="_blank" style="color: #F97316; font-weight: 600;">Terms of Service</a> including AI output accuracy disclaimers and limitation of liability.</li>
                     <li>Our <a href="/privacy" target="_blank" style="color: #F97316; font-weight: 600;">Privacy Policy</a> covering how we collect, use, and share your data.</li>
@@ -66,7 +66,7 @@
                            Variant="Variant.Filled"
                            FullWidth="true"
                            Style="text-transform: none; font-weight: 600; height: 46px; font-size: 0.9375rem; border-radius: 10px; letter-spacing: 0.01em; background: #F97316; color: #FFFFFF;">
-                    Continue to ZSR Underwriting
+                    Continue to Underwriting Analyst
                 </MudButton>
             </EditForm>
         </div>
@@ -76,6 +76,9 @@
 @code {
     [SupplyParameterFromForm]
     private AcceptTermsInput? Input { get; set; }
+
+    [SupplyParameterFromQuery(Name = "returnUrl")]
+    private string? ReturnUrl { get; set; }
 
     [CascadingParameter]
     private HttpContext? HttpContext { get; set; }
@@ -111,7 +114,8 @@
         appUser.TosVersion = tosVersion;
         await UserManager.UpdateAsync(appUser);
 
-        Navigation.NavigateTo("/search", forceLoad: true);
+        var redirect = !string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/search";
+        Navigation.NavigateTo(redirect, forceLoad: true);
     }
 
     public class AcceptTermsInput

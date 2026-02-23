@@ -4,7 +4,7 @@ namespace ZSR.Underwriting.Application.Interfaces;
 
 /// <summary>
 /// Assembles all 10 sections of the underwriting report from deal data,
-/// calculated metrics, RealAI enrichment, and AI-generated prose.
+/// calculated metrics, and AI-generated prose.
 /// </summary>
 public interface IReportAssembler
 {

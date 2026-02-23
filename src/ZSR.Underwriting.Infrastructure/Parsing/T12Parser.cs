@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using CsvHelper;
 using CsvHelper.Configuration;
 using DocumentFormat.OpenXml.Packaging;
@@ -12,6 +13,20 @@ namespace ZSR.Underwriting.Infrastructure.Parsing;
 public class T12Parser : IDocumentParser
 {
     private static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase) { ".xlsx", ".csv" };
+
+    // Flexible header aliases for category column
+    private static readonly string[] CategoryAliases =
+        ["category", "description", "lineitem", "item", "account", "accountname", "name", "glcode", "glname"];
+
+    // Flexible header aliases for amount column
+    private static readonly string[] AmountAliases =
+        ["annualamount", "annual", "total", "totalamount", "amount", "annualtotal", "ytd", "t12", "trailing12", "12month", "12mo"];
+
+    // Section header detection
+    private static readonly string[] RevenueSectionHeaders =
+        ["revenue", "revenues", "income", "grossincome", "grossrevenue", "rentalincome", "totalrevenue"];
+    private static readonly string[] ExpenseSectionHeaders =
+        ["expenses", "expense", "operatingexpenses", "opex", "totalexpenses"];
 
     public DocumentType SupportedType => DocumentType.T12PAndL;
 
@@ -41,7 +56,7 @@ public class T12Parser : IDocumentParser
             result.GrossRevenue = revenue.Sum(r => r.AnnualAmount);
             result.TotalExpenses = expenses.Sum(e => e.AnnualAmount);
             result.NetOperatingIncome = result.GrossRevenue - result.TotalExpenses;
-            result.EffectiveGrossIncome = result.GrossRevenue; // Simplified: no vacancy deduction
+            result.EffectiveGrossIncome = result.GrossRevenue;
             result.Success = true;
         }
         catch (Exception ex)
@@ -69,23 +84,34 @@ public class T12Parser : IDocumentParser
         csv.Read();
         csv.ReadHeader();
 
+        // Find the actual header names using flexible matching
+        var headers = csv.HeaderRecord ?? Array.Empty<string>();
+        var categoryHeader = FindHeader(headers, CategoryAliases);
+        var amountHeader = FindHeader(headers, AmountAliases);
+
         while (csv.Read())
         {
-            var category = csv.GetField("Category")?.Trim() ?? "";
-            var amountStr = csv.GetField("Annual Amount")?.Trim() ?? csv.GetField("AnnualAmount")?.Trim() ?? "";
+            var category = (categoryHeader != null ? csv.GetField(categoryHeader) : csv.GetField(0))?.Trim() ?? "";
+            var amountStr = (amountHeader != null ? csv.GetField(amountHeader) : csv.GetField(1))?.Trim() ?? "";
 
-            if (category.Equals("REVENUE", StringComparison.OrdinalIgnoreCase))
+            var normalized = NormalizeHeader(category);
+
+            if (RevenueSectionHeaders.Contains(normalized))
             {
                 currentSection = "revenue";
                 continue;
             }
-            if (category.Equals("EXPENSES", StringComparison.OrdinalIgnoreCase))
+            if (ExpenseSectionHeaders.Contains(normalized))
             {
                 currentSection = "expenses";
                 continue;
             }
 
-            if (decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var amount))
+            // Skip total/subtotal rows
+            if (normalized.Contains("total") || normalized.Contains("subtotal") || normalized.Contains("noi") || normalized.Contains("netoperating"))
+                continue;
+
+            if (ParseAmount(amountStr, out var amount))
             {
                 var item = new T12LineItem
                 {
@@ -117,25 +143,44 @@ public class T12Parser : IDocumentParser
 
         if (rows.Count < 2) return (revenue, expenses);
 
-        // Skip header row
+        // Read header row using cell references (not indices)
+        var headerCells = GetCellsByColumn(rows[0], wbPart);
+        var headerValues = headerCells.Values.ToArray();
+
+        // Find which column holds category and which holds amount
+        int categoryCol = FindHeaderColumn(headerCells, CategoryAliases);
+        int amountCol = FindHeaderColumn(headerCells, AmountAliases);
+
+        // Fallback: if no matching headers found, use first two columns
+        if (categoryCol < 0) categoryCol = headerCells.Keys.OrderBy(k => k).FirstOrDefault();
+        if (amountCol < 0) amountCol = headerCells.Keys.OrderBy(k => k).Skip(1).FirstOrDefault();
+
         for (int i = 1; i < rows.Count; i++)
         {
-            var cells = rows[i].Elements<Cell>().ToList();
-            var category = cells.Count > 0 ? GetCellValue(cells[0], wbPart).Trim() : "";
-            var amountStr = cells.Count > 1 ? GetCellValue(cells[1], wbPart).Trim() : "";
+            var cellsByCol = GetCellsByColumn(rows[i], wbPart);
 
-            if (category.Equals("REVENUE", StringComparison.OrdinalIgnoreCase))
+            var category = cellsByCol.TryGetValue(categoryCol, out var catVal) ? catVal.Trim() : "";
+            var amountStr = cellsByCol.TryGetValue(amountCol, out var amtVal) ? amtVal.Trim() : "";
+
+            var normalized = NormalizeHeader(category);
+
+            if (RevenueSectionHeaders.Contains(normalized))
             {
                 currentSection = "revenue";
                 continue;
             }
-            if (category.Equals("EXPENSES", StringComparison.OrdinalIgnoreCase))
+            if (ExpenseSectionHeaders.Contains(normalized))
             {
                 currentSection = "expenses";
                 continue;
             }
 
-            if (decimal.TryParse(amountStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var amount))
+            // Skip empty rows, total/subtotal rows
+            if (string.IsNullOrWhiteSpace(category)) continue;
+            if (normalized.Contains("total") || normalized.Contains("subtotal") || normalized.Contains("noi") || normalized.Contains("netoperating"))
+                continue;
+
+            if (ParseAmount(amountStr, out var amount))
             {
                 var item = new T12LineItem
                 {
@@ -154,6 +199,66 @@ public class T12Parser : IDocumentParser
         return (revenue, expenses);
     }
 
+    /// <summary>
+    /// Finds a matching header name from the CSV headers array.
+    /// </summary>
+    private static string? FindHeader(string[] headers, string[] aliases)
+    {
+        foreach (var header in headers)
+        {
+            var normalized = NormalizeHeader(header);
+            if (aliases.Any(a => a.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+                return header;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Finds which column index matches the given aliases.
+    /// </summary>
+    private static int FindHeaderColumn(Dictionary<int, string> headerCells, string[] aliases)
+    {
+        foreach (var (colIdx, headerValue) in headerCells)
+        {
+            var normalized = NormalizeHeader(headerValue);
+            if (aliases.Any(a => a.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
+                return colIdx;
+        }
+        return -1;
+    }
+
+    /// <summary>
+    /// Extracts cells from a row keyed by 0-based column index (derived from cell reference).
+    /// Handles sparse rows where OpenXML omits empty cells.
+    /// </summary>
+    private static Dictionary<int, string> GetCellsByColumn(Row row, WorkbookPart wbPart)
+    {
+        var result = new Dictionary<int, string>();
+        foreach (var cell in row.Elements<Cell>())
+        {
+            var colIndex = GetColumnIndex(cell.CellReference?.Value);
+            if (colIndex >= 0)
+                result[colIndex] = GetCellValue(cell, wbPart);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Converts a cell reference like "B3" to a 0-based column index (1).
+    /// </summary>
+    private static int GetColumnIndex(string? cellReference)
+    {
+        if (string.IsNullOrEmpty(cellReference)) return -1;
+        var match = Regex.Match(cellReference, @"^([A-Z]+)");
+        if (!match.Success) return -1;
+
+        var letters = match.Value;
+        int index = 0;
+        foreach (var ch in letters)
+            index = index * 26 + (ch - 'A' + 1);
+        return index - 1;
+    }
+
     private static string GetCellValue(Cell cell, WorkbookPart wbPart)
     {
         var value = cell.CellValue?.Text ?? "";
@@ -164,5 +269,24 @@ public class T12Parser : IDocumentParser
                 value = sst.ElementAt(idx).InnerText;
         }
         return value;
+    }
+
+    private static string NormalizeHeader(string header) =>
+        Regex.Replace(header.Trim(), @"[\s\-_./\\#]+", "").ToLowerInvariant();
+
+    private static bool ParseAmount(string value, out decimal amount)
+    {
+        amount = 0;
+        if (string.IsNullOrWhiteSpace(value)) return false;
+        // Strip currency symbols, commas, whitespace, parentheses (negative)
+        var cleaned = value.Trim();
+        bool negative = cleaned.StartsWith('(') && cleaned.EndsWith(')');
+        cleaned = Regex.Replace(cleaned, @"[$,\s()]+", "");
+        if (decimal.TryParse(cleaned, NumberStyles.Any, CultureInfo.InvariantCulture, out amount))
+        {
+            if (negative) amount = -amount;
+            return true;
+        }
+        return false;
     }
 }

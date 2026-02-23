@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
-using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Models;
 
 namespace ZSR.Underwriting.Application.Services;
@@ -22,7 +21,6 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFinancialMetrics(sb, context);
-        AppendMarketSnapshot(sb, context);
         sb.AppendLine();
         sb.AppendLine("The executive summary should include:");
         sb.AppendLine("1. A one-line investment thesis");
@@ -45,25 +43,10 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
 
-        sb.AppendLine("## Market Data");
-        if (context.RealAiData is { } realAi)
-        {
-            AppendIfPresent(sb, "Rent Growth", realAi.RentGrowth, "%");
-            AppendIfPresent(sb, "Job Growth", realAi.JobGrowth, "%");
-            AppendIfPresent(sb, "Net Migration", realAi.NetMigration, formatInt: true);
-            AppendIfPresent(sb, "Building Permits", realAi.Permits, formatInt: true);
-            AppendIfPresent(sb, "Market Cap Rate", realAi.MarketCapRate, "%");
-        }
-        else
-        {
-            sb.AppendLine("- No RealAI market data available");
-        }
-
         if (context.MarketContext is { } mc)
         {
             if (mc.MajorEmployers.Count > 0)
             {
-                sb.AppendLine();
                 sb.AppendLine("## Major Employers");
                 foreach (var emp in mc.MajorEmployers)
                     sb.AppendLine($"- {emp.Name}: {emp.Description}");
@@ -111,14 +94,6 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         if (context.Deal.CapexBudget.HasValue)
             sb.AppendLine($"- Capital Budget: {FormatCurrency(context.Deal.CapexBudget.Value)}");
 
-        if (context.RealAiData is { } realAi)
-        {
-            if (realAi.InPlaceRent.HasValue)
-                sb.AppendLine($"- Current In-Place Rent: {FormatCurrency(realAi.InPlaceRent.Value)}/unit");
-            if (realAi.Occupancy.HasValue)
-                sb.AppendLine($"- Current Occupancy: {realAi.Occupancy.Value:N1}%");
-        }
-
         if (context.Calculations is { } calc)
         {
             if (calc.GoingInCapRate.HasValue)
@@ -145,16 +120,6 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFinancialMetrics(sb, context);
-
-        if (context.RealAiData is { } realAi)
-        {
-            sb.AppendLine("## Market Risk Indicators");
-            AppendIfPresent(sb, "Building Permits (new supply)", realAi.Permits, formatInt: true);
-            AppendIfPresent(sb, "Net Migration", realAi.NetMigration, formatInt: true);
-            AppendIfPresent(sb, "Rent Growth", realAi.RentGrowth, "%");
-            AppendIfPresent(sb, "Average FICO", realAi.AverageFico, formatInt: true);
-            AppendIfPresent(sb, "Rent-to-Income Ratio", realAi.RentToIncomeRatio, "%");
-        }
 
         sb.AppendLine();
         sb.AppendLine("Identify and analyze the key risks. For each risk provide:");
@@ -214,21 +179,6 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
 
-        if (context.RealAiData is { } realAi)
-        {
-            sb.AppendLine("## Property Details");
-            if (realAi.YearBuilt.HasValue)
-                sb.AppendLine($"- Year Built: {realAi.YearBuilt.Value}");
-            if (!string.IsNullOrWhiteSpace(realAi.BuildingType))
-                sb.AppendLine($"- Building Type: {realAi.BuildingType}");
-            if (realAi.SquareFootage.HasValue)
-                sb.AppendLine($"- Square Footage: {realAi.SquareFootage.Value:N0}");
-            if (realAi.Acreage.HasValue)
-                sb.AppendLine($"- Acreage: {realAi.Acreage.Value:N2}");
-            if (!string.IsNullOrWhiteSpace(realAi.Amenities))
-                sb.AppendLine($"- Amenities: {realAi.Amenities}");
-        }
-
         sb.AppendLine();
         sb.AppendLine("Write a concise property overview paragraph (3-5 sentences) describing the physical asset, location, and market positioning.");
 
@@ -270,17 +220,6 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         AppendIfPresent(sb, "Total Profit", calc.TotalProfit, currency: true);
         AppendIfPresent(sb, "Loan Amount", calc.LoanAmount, currency: true);
         AppendIfPresent(sb, "Annual Debt Service", calc.AnnualDebtService, currency: true);
-        sb.AppendLine();
-    }
-
-    private static void AppendMarketSnapshot(StringBuilder sb, ProseGenerationContext context)
-    {
-        if (context.RealAiData is not { } realAi) return;
-
-        sb.AppendLine("## Market Snapshot");
-        AppendIfPresent(sb, "Market Cap Rate", realAi.MarketCapRate, "%");
-        AppendIfPresent(sb, "Rent Growth", realAi.RentGrowth, "%");
-        AppendIfPresent(sb, "Job Growth", realAi.JobGrowth, "%");
         sb.AppendLine();
     }
 

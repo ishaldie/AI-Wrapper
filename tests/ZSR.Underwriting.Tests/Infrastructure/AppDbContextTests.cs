@@ -41,12 +41,6 @@ public class AppDbContextTests : IDisposable
     }
 
     [Fact]
-    public void Has_RealAiData_DbSet()
-    {
-        Assert.NotNull(_ctx.RealAiDataSets);
-    }
-
-    [Fact]
     public void Has_CalculationResults_DbSet()
     {
         Assert.NotNull(_ctx.CalculationResults);
@@ -158,6 +152,36 @@ public class AppDbContextTests : IDisposable
             .FirstAsync(d => d.Id == deal.Id);
 
         Assert.Single(loaded.UploadedDocuments);
+    }
+
+    // --- Multi-tenant: Deal.UserId ---
+
+    [Fact]
+    public async Task Deal_Persists_UserId()
+    {
+        var deal = new Deal("Tenant Test", "user-abc");
+        _ctx.Deals.Add(deal);
+        await _ctx.SaveChangesAsync();
+
+        var loaded = await _ctx.Deals.FindAsync(deal.Id);
+        Assert.NotNull(loaded);
+        Assert.Equal("user-abc", loaded.UserId);
+    }
+
+    [Fact]
+    public async Task Can_Query_Deals_By_UserId()
+    {
+        var dealA = new Deal("User A Deal", "user-a");
+        var dealB = new Deal("User B Deal", "user-b");
+        _ctx.Deals.AddRange(dealA, dealB);
+        await _ctx.SaveChangesAsync();
+
+        var userADeals = await _ctx.Deals
+            .Where(d => d.UserId == "user-a")
+            .ToListAsync();
+
+        Assert.Single(userADeals);
+        Assert.Equal("User A Deal", userADeals[0].Name);
     }
 
     // --- Cascade delete ---
@@ -279,23 +303,6 @@ public class AppDbContextTests : IDisposable
     }
 
     [Fact]
-    public async Task Can_Create_And_Read_RealAiData()
-    {
-        var deal = new Deal("RealAi CRUD");
-        _ctx.Deals.Add(deal);
-        await _ctx.SaveChangesAsync();
-
-        var data = new RealAiData(deal.Id) { InPlaceRent = 1_200m, Occupancy = 94.5m };
-        _ctx.RealAiDataSets.Add(data);
-        await _ctx.SaveChangesAsync();
-
-        var loaded = await _ctx.RealAiDataSets.FindAsync(data.Id);
-        Assert.NotNull(loaded);
-        Assert.Equal(1_200m, loaded.InPlaceRent);
-        Assert.Equal(94.5m, loaded.Occupancy);
-    }
-
-    [Fact]
     public async Task Can_Update_CalculationResult_Metrics()
     {
         var deal = new Deal("Calc Update");
@@ -330,8 +337,6 @@ public class AppDbContextTests : IDisposable
         _ctx.CalculationResults.Add(calc);
         var report = new UnderwritingReport(deal.Id) { ExecutiveSummary = "Strong deal." };
         _ctx.UnderwritingReports.Add(report);
-        var realAi = new RealAiData(deal.Id) { MarketCapRate = 5.5m };
-        _ctx.RealAiDataSets.Add(realAi);
         var doc = new UploadedDocument(deal.Id, "rent-roll.pdf", "/uploads/rent-roll.pdf", DocumentType.RentRoll, 2048);
         _ctx.UploadedDocuments.Add(doc);
         await _ctx.SaveChangesAsync();
@@ -341,7 +346,6 @@ public class AppDbContextTests : IDisposable
             .Include(d => d.UnderwritingInput)
             .Include(d => d.CalculationResult)
             .Include(d => d.Report)
-            .Include(d => d.RealAiData)
             .Include(d => d.UploadedDocuments)
             .FirstAsync(d => d.Id == deal.Id);
 
@@ -349,9 +353,7 @@ public class AppDbContextTests : IDisposable
         Assert.NotNull(loaded.UnderwritingInput);
         Assert.NotNull(loaded.CalculationResult);
         Assert.NotNull(loaded.Report);
-        Assert.NotNull(loaded.RealAiData);
         Assert.Single(loaded.UploadedDocuments);
         Assert.Equal(10_000_000m, loaded.UnderwritingInput.PurchasePrice);
-        Assert.Equal(5.5m, loaded.RealAiData.MarketCapRate);
     }
 }

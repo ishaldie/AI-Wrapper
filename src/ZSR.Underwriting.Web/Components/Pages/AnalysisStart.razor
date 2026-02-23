@@ -1,11 +1,15 @@
 @page "/analysis/start"
 @using ZSR.Underwriting.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IQuickAnalysisService QuickAnalysisService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<AnalysisStart> Logger
 @rendermode InteractiveServer
 
-<PageTitle>New Analysis - ZSR Underwriting</PageTitle>
+<PageTitle>New Analysis - Underwriting Analyst</PageTitle>
 
 <div class="animate-in" style="max-width: 960px;">
     <MudText Typo="Typo.h3" Style="color: #1A1D23; margin-bottom: 0.5rem; font-weight: 800;">
@@ -18,8 +22,8 @@
     @* Search bar *@
     <div style="margin-bottom: 2.5rem;">
         <div class="search-bar">
-            <input type="text" placeholder="Enter a property address for instant analysis..."
-                   @bind="_searchQuery" @onkeydown="HandleSearchKeyDown"
+            <input type="text" placeholder="Enter a property name or address for instant analysis..."
+                   @bind="_searchQuery" @bind:event="oninput" @onkeydown="HandleSearchKeyDown"
                    disabled="@_analyzing" />
             <button class="search-bar-btn" type="button" @onclick="HandleSearch"
                     disabled="@_analyzing">
@@ -72,7 +76,7 @@
             <MudText Typo="Typo.h6" Style="color: #1A1D23; margin-bottom: 0.75rem;">
                 Investors
             </MudText>
-            <a href="/deals/new" class="category-card" style="border-color: #F97316;">
+            <div class="category-card" style="border-color: #F97316; cursor: pointer;" @onclick="NavigateToWizard">
                 <div class="category-icon" style="background: #FFF7ED; color: #F97316;">
                     <MudIcon Icon="@Icons.Material.Filled.Assessment" />
                 </div>
@@ -80,9 +84,9 @@
                     Underwrite a deal
                 </MudText>
                 <MudText Typo="Typo.body2" Style="color: #6B7280;">
-                    Full acquisition underwriting with 10-section AI report.
+                    Full acquisition underwriting — enter details manually.
                 </MudText>
-            </a>
+            </div>
             <div class="category-card" style="margin-top: 0.75rem;" @onclick="() => ShowComingSoon()">
                 <div class="category-icon" style="background: #FEF3C7; color: #D97706;">
                     <MudIcon Icon="@Icons.Material.Filled.Compare" />
@@ -130,24 +134,31 @@
 @code {
     private string _searchQuery = "";
     private bool _analyzing;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    }
 
     private async Task HandleSearch()
     {
         if (string.IsNullOrWhiteSpace(_searchQuery))
         {
-            Navigation.NavigateTo("/deals/new");
             return;
         }
 
         _analyzing = true;
         try
         {
-            var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery);
-            Navigation.NavigateTo($"/deals/analyze/{progress.DealId}");
+            var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery, _userId);
+            Navigation.NavigateTo($"/deals/{progress.DealId}/chat");
         }
-        catch
+        catch (Exception ex)
         {
-            Navigation.NavigateTo($"/deals/new?address={Uri.EscapeDataString(_searchQuery)}");
+            Logger.LogWarning(ex, "QuickAnalysis failed for query '{Query}', falling back to wizard", _searchQuery);
+            Snackbar.Add("Analysis failed. Please try again.", Severity.Error);
         }
         finally
         {
@@ -159,6 +170,11 @@
     {
         if (e.Key == "Enter")
             await HandleSearch();
+    }
+
+    private void NavigateToWizard()
+    {
+        Navigation.NavigateTo("/search");
     }
 
     private void ShowComingSoon()
