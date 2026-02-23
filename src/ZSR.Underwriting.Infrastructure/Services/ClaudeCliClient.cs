@@ -34,12 +34,16 @@ public class ClaudeCliClient : IClaudeClient
     private static string ResolveClaudePath()
     {
         // 1. Check if "claude" is directly on the PATH
+        //    On Windows, prefer .exe > .cmd > bare (bare npm script is not directly executable)
         var pathDirs = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? [];
         foreach (var dir in pathDirs)
         {
             var candidate = Path.Combine(dir, "claude.exe");
             if (File.Exists(candidate)) return candidate;
-            candidate = Path.Combine(dir, "claude");
+        }
+        foreach (var dir in pathDirs)
+        {
+            var candidate = Path.Combine(dir, "claude.cmd");
             if (File.Exists(candidate)) return candidate;
         }
 
@@ -100,11 +104,10 @@ public class ClaudeCliClient : IClaudeClient
         psi.ArgumentList.Add("--model");
         psi.ArgumentList.Add(_options.Model);
         psi.ArgumentList.Add("--max-turns");
-        psi.ArgumentList.Add("1");
-        // Disable all tools so the model generates text directly
-        // (without this, it tries WebSearch which gets denied, burns the turn, and returns no text)
-        psi.ArgumentList.Add("--tools");
-        psi.ArgumentList.Add("");
+        psi.ArgumentList.Add("5");
+        // Allow web search/fetch so the model can research properties and markets
+        psi.ArgumentList.Add("--allowedTools");
+        psi.ArgumentList.Add("WebSearch,WebFetch");
 
         if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
         {

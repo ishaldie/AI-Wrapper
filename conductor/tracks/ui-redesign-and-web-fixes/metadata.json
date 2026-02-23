@@ -4,6 +4,7 @@
   "status": "completed",
   "description": "UI redesign with frontend-design skill principles, SSR form fixes, and site-wide error resolution",
   "createdAt": "2026-02-22T01:31:38.342Z",
-  "updatedAt": "2026-02-23T00:00:00Z",
-  "completedAt": "2026-02-22T00:00:00Z"
+  "updatedAt": "2026-02-23T17:12:52.289Z",
+  "completedAt": "2026-02-22T00:00:00Z",
+  "isArchived": true
 }

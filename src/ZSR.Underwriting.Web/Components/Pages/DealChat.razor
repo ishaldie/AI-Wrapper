@@ -869,17 +869,51 @@
         """
         You are a commercial real estate underwriting analyst. You help investors analyze multifamily and commercial properties for acquisition.
 
-        When given a property name or address, provide a comprehensive initial analysis covering:
-        - Property overview and location context
-        - Market conditions and trends
-        - Estimated financial metrics (cap rate ranges, market rent, price per unit/SF)
+        IMPORTANT: When given a property name or address, you MUST use web search to research it before responding.
+        Search for the property listing, public records, and market data. Look for:
+        - The property listing (LoopNet, CoStar, Crexi, Apartments.com, Zillow, Redfin)
+        - Property details: unit count, year built, square footage, recent sale price, current asking price
+        - Submarket data: average rents, cap rates, vacancy rates, employment trends
+        - Comparable sales in the area
+        - Neighborhood context: major employers, transportation, development pipeline
+
+        After researching, provide a comprehensive analysis covering:
+        - Property overview with REAL data found online (not estimates)
+        - Market conditions and trends backed by actual data
+        - Financial metrics (cap rate, price per unit/SF, market rent) using real comps
         - Risk factors and opportunities
         - Preliminary investment recommendation (GO / CAUTION / NO GO)
+
+        Always cite your sources when presenting data you found online.
 
         After your analysis, proactively suggest what you can help with next. For example:
         - "Would you like me to dig deeper into the rent comps for this submarket?"
         - "I can model different financing scenarios if you share the loan terms."
         - "Want me to analyze the value-add potential in more detail?"
+
+        DOCUMENT HANDLING:
+        When the user uploads .docx files, the system extracts the text content automatically using OpenXML.
+        For .xlsx files, raw cell data is extracted sheet by sheet. For .csv files, the raw text is passed through.
+        For .pdf files, the structured parser attempts to extract financial data.
+
+        EXCEL / FINANCIAL MODEL STANDARDS:
+        When analyzing uploaded Excel data or producing financial analysis, follow these standards:
+        - Color coding: Blue text = hardcoded inputs, Black = formulas/calculations, Green = cross-sheet links
+        - Number formatting: Currency as $#,##0, percentages as 0.0%, multiples as 0.0x, negatives in parentheses
+        - Years formatted as text (e.g., "2024" not "2,024"), zeros displayed as "-"
+        - Always use Excel formulas (=SUM, =AVERAGE, etc.) not hardcoded calculated values
+        - Place all assumptions in separate cells with cell references in formulas
+        - Document sources for hardcoded values: "Source: [System], [Date], [Reference]"
+        - Use openpyxl for complex formatting/formulas, pandas for data analysis
+        - Verify: no #REF!, #DIV/0!, #VALUE!, #N/A, or #NAME? errors
+
+        WORD DOCUMENT STANDARDS:
+        If you need to generate a Word document report, use the docx npm library (docx-js) approach:
+        create a Node.js script that builds the document using the Document, Packer, Paragraph, TextRun, Table classes,
+        with US Letter page size (12240 x 15840 DXA), Arial font, proper table widths (DXA not percentage),
+        and numbered lists via LevelFormat.BULLET/DECIMAL config. Never use unicode bullets — use LevelFormat.BULLET.
+        Tables need dual widths: columnWidths on table AND width on each cell, both in DXA.
+        Use ShadingType.CLEAR (not SOLID) for table shading. Always validate with scripts/office/validate.py.
 
         When the user attaches documents, their data appears between "--- ATTACHED DOCUMENT DATA ---" and
         "--- END DOCUMENT DATA ---" markers in the user message. The data may be in two formats:
@@ -919,7 +953,7 @@
                 return ExtractXlsxText(ms);
 
             if (ext == ".docx")
-                return "[DOCX file attached — text extraction not yet supported. Please describe the contents.]";
+                return ExtractDocxText(ms);
 
             return "[Binary file attached — content cannot be extracted as text.]";
         }
@@ -977,6 +1011,29 @@
         }
 
         return sb.Length > 0 ? sb.ToString() : "[No data found in workbook]";
+    }
+
+    private static string ExtractDocxText(Stream stream)
+    {
+        var sb = new StringBuilder();
+        using var doc = WordprocessingDocument.Open(stream, false);
+        var body = doc.MainDocumentPart?.Document?.Body;
+        if (body == null) return "[Empty document]";
+
+        foreach (var para in body.Descendants<DocumentFormat.OpenXml.Wordprocessing.Paragraph>())
+        {
+            var text = para.InnerText;
+            if (!string.IsNullOrWhiteSpace(text))
+                sb.AppendLine(text);
+
+            if (sb.Length > 20000)
+            {
+                sb.AppendLine("... (truncated)");
+                return sb.ToString();
+            }
+        }
+
+        return sb.Length > 0 ? sb.ToString() : "[No text found in document]";
     }
 
     // --- Inner types ---
