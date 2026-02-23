@@ -117,6 +117,7 @@
     <Compile Include="Components\LegalPageTests.cs" />
     <!-- Document Upload Security Hardening track -->
     <Compile Include="Services\FileContentValidatorTests.cs" />
+    <Compile Include="Services\VirusScanServiceTests.cs" />
     <Compile Include="Parsing\FormulaInjectionTests.cs" />
   </ItemGroup>
 

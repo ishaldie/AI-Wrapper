@@ -14,6 +14,7 @@ public class DocumentUploadServiceTests : IDisposable
     private readonly string _tempDir;
     private readonly DocumentUploadService _sut;
     private readonly DocumentUploadService _sutWithValidator;
+    private readonly DocumentUploadService _sutWithScanner;
 
     public DocumentUploadServiceTests()
     {
@@ -28,6 +29,7 @@ public class DocumentUploadServiceTests : IDisposable
         var storage = new LocalFileStorageService(_tempDir);
         _sut = new DocumentUploadService(_db, storage);
         _sutWithValidator = new DocumentUploadService(_db, storage, new FileContentValidator());
+        _sutWithScanner = new DocumentUploadService(_db, storage, virusScanner: new StubCleanScanService());
     }
 
     public void Dispose()
@@ -225,11 +227,89 @@ public class DocumentUploadServiceTests : IDisposable
                 dealId, stream, "malware.exe", DocumentType.RentRoll, "test-user"));
     }
 
+    // --- SHA-256 hash ---
+
+    [Fact]
+    public async Task UploadDocumentAsync_ComputesAndStoresFileHash()
+    {
+        var dealId = await SeedDealAsync();
+        var content = new byte[] { 0x25, 0x50, 0x44, 0x46, 0x2D, 0x31 }; // %PDF-1
+        using var stream = new MemoryStream(content);
+
+        await _sut.UploadDocumentAsync(dealId, stream, "test.pdf", DocumentType.RentRoll, "test-user");
+
+        var doc = await _db.UploadedDocuments.FirstAsync();
+        Assert.NotNull(doc.FileHash);
+        Assert.Equal(64, doc.FileHash.Length); // SHA-256 hex = 64 chars
+        Assert.Matches("^[0-9a-f]{64}$", doc.FileHash);
+    }
+
+    // --- Virus scanning ---
+
+    [Fact]
+    public async Task UploadDocumentAsync_WithScanner_SetsCleanStatus()
+    {
+        var dealId = await SeedDealAsync();
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        await _sutWithScanner.UploadDocumentAsync(dealId, stream, "test.csv", DocumentType.RentRoll, "test-user");
+
+        var doc = await _db.UploadedDocuments.FirstAsync();
+        Assert.Equal(VirusScanStatus.Clean, doc.VirusScanStatus);
+    }
+
+    [Fact]
+    public async Task UploadDocumentAsync_WithInfectedScanner_Rejects()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        using var db = new AppDbContext(options);
+        var storage = new LocalFileStorageService(_tempDir);
+        var infectedScanner = new StubInfectedScanService();
+        var sut = new DocumentUploadService(db, storage, virusScanner: infectedScanner);
+
+        var deal = new Deal("Test Property", "test-user");
+        db.Deals.Add(deal);
+        await db.SaveChangesAsync();
+
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.UploadDocumentAsync(deal.Id, stream, "test.csv", DocumentType.RentRoll, "test-user"));
+        Assert.Contains("malware", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task UploadDocumentAsync_WithoutScanner_StatusIsPending()
+    {
+        var dealId = await SeedDealAsync();
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        await _sut.UploadDocumentAsync(dealId, stream, "test.csv", DocumentType.RentRoll, "test-user");
+
+        var doc = await _db.UploadedDocuments.FirstAsync();
+        Assert.Equal(VirusScanStatus.Pending, doc.VirusScanStatus);
+    }
+
     private async Task<Guid> SeedDealAsync(string userId = "test-user")
     {
         var deal = new Deal("Test Property", userId);
         _db.Deals.Add(deal);
         await _db.SaveChangesAsync();
         return deal.Id;
+    }
+
+    // Stub virus scan services for testing
+    private class StubCleanScanService : IVirusScanService
+    {
+        public Task<VirusScanResult> ScanAsync(Stream fileStream, CancellationToken ct = default)
+            => Task.FromResult(new VirusScanResult(VirusScanStatus.Clean));
+    }
+
+    private class StubInfectedScanService : IVirusScanService
+    {
+        public Task<VirusScanResult> ScanAsync(Stream fileStream, CancellationToken ct = default)
+            => Task.FromResult(new VirusScanResult(VirusScanStatus.Infected, "TestMalware.A"));
     }
 }

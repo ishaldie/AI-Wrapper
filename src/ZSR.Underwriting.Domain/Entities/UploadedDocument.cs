@@ -11,6 +11,8 @@ public class UploadedDocument
     public DocumentType DocumentType { get; private set; }
     public long FileSize { get; private set; }
     public DateTime UploadedAt { get; private set; }
+    public VirusScanStatus VirusScanStatus { get; set; }
+    public string? FileHash { get; set; }
 
     public Deal Deal { get; set; } = null!;
 
@@ -37,5 +39,6 @@ public class UploadedDocument
         DocumentType = documentType;
         FileSize = fileSize;
         UploadedAt = DateTime.UtcNow;
+        VirusScanStatus = VirusScanStatus.Pending;
     }
 }

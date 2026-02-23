@@ -13,27 +13,27 @@
 
 ## Phase 2 — File Validation & Sanitization
 
-- [x] Add magic byte signatures to `FileUploadConstants` for PDF, XLSX, CSV, DOCX
-- [~] Create `IFileContentValidator` interface in Application layer with `ValidateAsync(Stream, string extension)` method
-- [~] Implement `FileContentValidator` in Infrastructure — read first N bytes and compare against magic byte map
-- [~] Add MIME type allowlist to `FileUploadConstants`; validate Content-Type in `FileUpload.razor`
-- [~] Sanitize filename with `Path.GetFileName()` in `DocumentUploadService.UploadDocumentAsync` before any use
-- [~] Add formula injection sanitization in `RentRollParser` — strip leading `=`, `+`, `-`, `@` from cell values
-- [~] Add formula injection sanitization in `T12Parser` — same pattern
-- [~] Wire `IFileContentValidator` into `DocumentUploadService` — reject mismatched files before storage
-- [~] Write tests: mismatched content/extension rejected; path traversal filenames sanitized; formula-prefixed cells stripped
+- [x] c379260 Add magic byte signatures to `FileUploadConstants` for PDF, XLSX, CSV, DOCX
+- [x] c379260 Create `IFileContentValidator` interface in Application layer with `ValidateAsync(Stream, string extension)` method
+- [x] c379260 Implement `FileContentValidator` in Infrastructure — read first N bytes and compare against magic byte map
+- [x] c379260 Add MIME type allowlist to `FileUploadConstants`; validate Content-Type in `DocumentUploadService`
+- [x] c379260 Sanitize filename with `Path.GetFileName()` in `DocumentUploadService.UploadDocumentAsync` before any use
+- [x] c379260 Add formula injection sanitization in `RentRollParser` — strip leading `=`, `+`, `-`, `@` from cell values
+- [x] c379260 Add formula injection sanitization in `T12Parser` — same pattern
+- [x] c379260 Wire `IFileContentValidator` into `DocumentUploadService` — reject mismatched files before storage
+- [x] c379260 Write tests: mismatched content/extension rejected; path traversal filenames sanitized; formula-prefixed cells stripped
 
 ## Phase 3 — Rate Limiting & Malware Scanning
 
-- [ ] Add ASP.NET `RateLimiter` middleware in `Program.cs` — per-user fixed window policy (10 uploads per 5 minutes)
-- [ ] Create `IVirusScanService` interface in Application layer with `ScanAsync(Stream)` returning scan result DTO
-- [ ] Implement `WindowsDefenderScanService` in Infrastructure using AMSI or MpCmdRun.exe
-- [ ] Add `VirusScanStatus` enum (Pending, Clean, Infected, ScanFailed) to Domain
-- [ ] Add `VirusScanStatus` and `FileHash` (string, SHA-256) properties to `UploadedDocument` entity
-- [ ] Add EF migration for new UploadedDocument columns
-- [ ] Wire virus scan into `DocumentUploadService` — scan before persist, store result, reject infected
-- [ ] Compute SHA-256 hash in `DocumentUploadService` before saving; store on entity
-- [ ] Write tests: rate limit returns 429; infected file rejected; hash computed and stored correctly
+- [~] Add ASP.NET `RateLimiter` middleware in `Program.cs` — per-user fixed window policy (10 uploads per 5 minutes)
+- [~] Create `IVirusScanService` interface in Application layer with `ScanAsync(Stream)` returning scan result DTO
+- [~] Implement `WindowsDefenderScanService` in Infrastructure using AMSI or MpCmdRun.exe
+- [~] Add `VirusScanStatus` enum (Pending, Clean, Infected, ScanFailed) to Domain
+- [~] Add `VirusScanStatus` and `FileHash` (string, SHA-256) properties to `UploadedDocument` entity
+- [~] Add EF migration for new UploadedDocument columns
+- [~] Wire virus scan into `DocumentUploadService` — scan before persist, store result, reject infected
+- [~] Compute SHA-256 hash in `DocumentUploadService` before saving; store on entity
+- [~] Write tests: rate limit returns 429; infected file rejected; hash computed and stored correctly
 
 ## Phase 4 — Audit Logging & Storage Hardening
 

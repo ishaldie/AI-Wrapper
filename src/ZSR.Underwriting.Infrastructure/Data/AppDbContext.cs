@@ -162,6 +162,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(256);
             entity.Property(e => e.StoredPath).IsRequired().HasMaxLength(500);
             entity.Property(e => e.DocumentType).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.VirusScanStatus).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.FileHash).HasMaxLength(64);
             entity.HasIndex(e => e.DealId);
         });
 

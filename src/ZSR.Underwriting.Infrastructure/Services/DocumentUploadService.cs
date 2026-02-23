@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using ZSR.Underwriting.Application.Constants;
 using ZSR.Underwriting.Application.DTOs;
@@ -14,12 +15,18 @@ public class DocumentUploadService : IDocumentUploadService
     private readonly AppDbContext _db;
     private readonly IFileStorageService _storage;
     private readonly IFileContentValidator? _contentValidator;
+    private readonly IVirusScanService? _virusScanner;
 
-    public DocumentUploadService(AppDbContext db, IFileStorageService storage, IFileContentValidator? contentValidator = null)
+    public DocumentUploadService(
+        AppDbContext db,
+        IFileStorageService storage,
+        IFileContentValidator? contentValidator = null,
+        IVirusScanService? virusScanner = null)
     {
         _db = db;
         _storage = storage;
         _contentValidator = contentValidator;
+        _virusScanner = virusScanner;
     }
 
     public async Task<FileUploadResultDto> UploadDocumentAsync(
@@ -44,9 +51,26 @@ public class DocumentUploadService : IDocumentUploadService
                 throw new InvalidOperationException($"File content validation failed: {validation.ErrorMessage}");
         }
 
+        // Compute SHA-256 hash before saving
+        var fileHash = await ComputeSha256Async(fileStream, ct);
+
+        // Virus scan before persisting
+        var scanStatus = VirusScanStatus.Pending;
+        if (_virusScanner != null)
+        {
+            var scanResult = await _virusScanner.ScanAsync(fileStream, ct);
+            scanStatus = scanResult.Status;
+
+            if (scanResult.Status == VirusScanStatus.Infected)
+                throw new InvalidOperationException($"File rejected: malware detected ({scanResult.ThreatName}).");
+        }
+
         var storedPath = await _storage.SaveFileAsync(fileStream, fileName, $"deals/{dealId}", ct);
 
         var doc = new UploadedDocument(dealId, fileName, storedPath, documentType, fileStream.Length);
+        doc.FileHash = fileHash;
+        doc.VirusScanStatus = scanStatus;
+
         _db.UploadedDocuments.Add(doc);
         await _db.SaveChangesAsync(ct);
 
@@ -98,5 +122,14 @@ public class DocumentUploadService : IDocumentUploadService
 
         if (deal is null || deal.UserId != userId)
             throw new UnauthorizedAccessException($"User does not have access to deal {dealId}.");
+    }
+
+    private static async Task<string> ComputeSha256Async(Stream stream, CancellationToken ct)
+    {
+        var originalPosition = stream.Position;
+        stream.Position = 0;
+        var hashBytes = await SHA256.HashDataAsync(stream, ct);
+        stream.Position = originalPosition;
+        return Convert.ToHexStringLower(hashBytes);
     }
 }

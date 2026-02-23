@@ -1,4 +1,7 @@
+using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Http;
 using MudBlazor.Services;
@@ -158,7 +161,23 @@ try
     builder.Services.AddScoped<ZSR.Underwriting.Domain.Interfaces.IFileStorageService>(sp =>
         new LocalFileStorageService(Path.Combine(builder.Environment.ContentRootPath, "uploads")));
     builder.Services.AddScoped<IFileContentValidator, FileContentValidator>();
+    builder.Services.AddScoped<IVirusScanService, WindowsDefenderScanService>();
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
+
+    // Rate limiting — per-user upload throttle
+    builder.Services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+        options.AddPolicy("upload", httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
+                factory: _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 10,
+                    Window = TimeSpan.FromMinutes(5),
+                    QueueLimit = 0
+                }));
+    });
 
     // Add document parsers
     builder.Services.AddScoped<IDocumentParser, RentRollParser>();
@@ -198,6 +217,7 @@ try
 
     app.UseAuthentication();
     app.UseAuthorization();
+    app.UseRateLimiter();
     app.UseMiddleware<ZSR.Underwriting.Web.Middleware.TosEnforcementMiddleware>();
 
     app.UseAntiforgery();
