@@ -38,7 +38,7 @@
 - [x] Task 4.3: Verify 498+ tests pass (excluding 4 pre-existing WebApplicationFactory intermittent failures)
 
 ## Phase 5: Site Walkthrough & Bug Fixes
-*Status: In Progress*
+*Status: Complete* [checkpoint: 9d26c7f]
 
 ### 5A: Public pages (PublicLayout, unauthenticated)
 - [x] Task 5.1: Review Landing page - "UA" logo, "Underwriting Analyst" brand text, nav links, hero section
@@ -71,4 +71,4 @@
 ### 5E: Wrap-up
 - [x] Task 5.21: Fix visual/functional issues - Removed RealAI reference from Privacy.razor, removed stale comment in IReportAssembler.cs
 - [x] Task 5.22: Final build + test verification - Build: 0 errors, 0 warnings. Tests: 592 passed, 0 failed
-- [~] Task 5.23: Commit all changes
+- [x] Task 5.23: Commit all changes — 9d26c7f
