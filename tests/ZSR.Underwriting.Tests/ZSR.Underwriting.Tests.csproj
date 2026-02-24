@@ -132,6 +132,7 @@
     <Compile Include="Services\DocumentMatchingServiceTests.cs" />
     <Compile Include="Services\DocumentDownloadTests.cs" />
     <Compile Include="Services\AuthorizedSenderServiceTests.cs" />
+    <Compile Include="Components\AuthorizedSendersPageTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

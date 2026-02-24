@@ -178,6 +178,9 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
 
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
 
@@ -317,6 +320,9 @@ public class DealTabsChecklistTests : IAsyncLifetime
 
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
+
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -554,6 +560,9 @@ public class DealTabsInvestorTests : IAsyncLifetime
 
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
+
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();

@@ -165,6 +165,7 @@ try
     builder.Services.AddScoped<IVirusScanService, WindowsDefenderScanService>();
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
     builder.Services.AddSingleton<IDocumentMatchingService, DocumentMatchingService>();
+    builder.Services.AddScoped<IAuthorizedSenderService, ZSR.Underwriting.Infrastructure.Services.AuthorizedSenderService>();
 
     // Rate limiting — per-user upload throttle
     builder.Services.AddRateLimiter(options =>

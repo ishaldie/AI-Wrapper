@@ -1,0 +1,131 @@
+@page "/settings/authorized-senders"
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Entities
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IAuthorizedSenderService SenderService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+
+<PageTitle>Authorized Senders - Underwriting Analyst</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-6">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">Authorized Senders</MudText>
+        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+            Manage email addresses authorized to send documents to your deals.
+        </MudText>
+    </MudStack>
+</MudStack>
+
+@if (_loading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
+}
+else
+{
+    <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+        <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600; color: #374151;">Add New Sender</MudText>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudTextField @bind-Value="_newEmail" Label="Email Address" Variant="Variant.Outlined"
+                          Placeholder="broker@example.com" Style="max-width: 320px;"
+                          Immediate="true" />
+            <MudTextField @bind-Value="_newLabel" Label="Label (optional)" Variant="Variant.Outlined"
+                          Placeholder="My Broker" Style="max-width: 240px;"
+                          Immediate="true" />
+            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                       OnClick="AddSenderAsync" Disabled="@(string.IsNullOrWhiteSpace(_newEmail))"
+                       Style="text-transform: none; height: 40px;">
+                Add Sender
+            </MudButton>
+        </MudStack>
+    </MudPaper>
+
+    @if (_senders.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Variant="Variant.Outlined">
+            No authorized senders yet. Add email addresses above to allow them to send documents to your deals.
+        </MudAlert>
+    }
+    else
+    {
+        <MudTable Items="_senders" Hover="true" Striped="true" Elevation="0"
+                  Style="border: 1px solid #E5E7EB;">
+            <HeaderContent>
+                <MudTh>Email</MudTh>
+                <MudTh>Label</MudTh>
+                <MudTh>Added</MudTh>
+                <MudTh Style="width: 100px;">Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Email">@context.Email</MudTd>
+                <MudTd DataLabel="Label">@(context.Label ?? "—")</MudTd>
+                <MudTd DataLabel="Added">@context.CreatedAt.ToString("MMM d, yyyy")</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => RemoveSenderAsync(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+}
+
+@code {
+    private bool _loading = true;
+    private List<AuthorizedSender> _senders = new();
+    private string _newEmail = "";
+    private string? _newLabel;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        await LoadSendersAsync();
+        _loading = false;
+    }
+
+    private async Task LoadSendersAsync()
+    {
+        var list = await SenderService.ListAsync(_userId);
+        _senders = list.ToList();
+    }
+
+    private async Task AddSenderAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newEmail)) return;
+
+        var result = await SenderService.AddAsync(_userId, _newEmail, _newLabel);
+        if (result is not null)
+        {
+            Snackbar.Add($"Added: {result.Email}", Severity.Success);
+            _newEmail = "";
+            _newLabel = null;
+            await LoadSendersAsync();
+        }
+        else
+        {
+            Snackbar.Add("This email is already authorized.", Severity.Warning);
+        }
+    }
+
+    private async Task RemoveSenderAsync(AuthorizedSender sender)
+    {
+        var removed = await SenderService.RemoveAsync(_userId, sender.Id);
+        if (removed)
+        {
+            Snackbar.Add($"Removed: {sender.Email}", Severity.Success);
+            await LoadSendersAsync();
+        }
+        else
+        {
+            Snackbar.Add("Failed to remove sender.", Severity.Error);
+        }
+    }
+}
