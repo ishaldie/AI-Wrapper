@@ -45,4 +45,13 @@ public class DealChecklistItem
         DocumentId = documentId;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    public void UnlinkDocument()
+    {
+        DocumentId = null;
+        Document = null;
+        if (Status == ChecklistStatus.Satisfied)
+            Status = ChecklistStatus.Outstanding;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

@@ -69,4 +69,29 @@ public class DealChecklistItemTests
         Assert.Equal(ChecklistStatus.Satisfied, item.Status);
         Assert.Equal(docId, item.DocumentId);
     }
+
+    [Fact]
+    public void UnlinkDocument_clears_documentId_and_reverts_status()
+    {
+        var item = new DealChecklistItem(Guid.NewGuid(), Guid.NewGuid());
+        item.MarkSatisfied(Guid.NewGuid());
+
+        item.UnlinkDocument();
+
+        Assert.Null(item.DocumentId);
+        Assert.Equal(ChecklistStatus.Outstanding, item.Status);
+    }
+
+    [Fact]
+    public void UnlinkDocument_keeps_nonSatisfied_status()
+    {
+        var item = new DealChecklistItem(Guid.NewGuid(), Guid.NewGuid());
+        item.MarkSatisfied(Guid.NewGuid());
+        item.UpdateStatus(ChecklistStatus.WaiverApproved);
+
+        item.UnlinkDocument();
+
+        Assert.Null(item.DocumentId);
+        Assert.Equal(ChecklistStatus.WaiverApproved, item.Status);
+    }
 }

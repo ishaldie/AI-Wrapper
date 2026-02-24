@@ -416,6 +416,20 @@ else
                                                    Href="@($"/api/documents/{item.DocumentId}/download")"
                                                    Target="_blank" />
                                 </MudTooltip>
+                                <MudTooltip Text="Reassign document to a different checklist item">
+                                    <MudMenu Icon="@Icons.Material.Filled.SwapHoriz" Size="Size.Small"
+                                             Color="Color.Default" Dense="true">
+                                        @foreach (var target in _checklistItems.Where(ci => ci.Id != item.Id && ci.DocumentId == null))
+                                        {
+                                            <MudMenuItem OnClick="@(() => ReassignDocumentAsync(item, target))">
+                                                @target.Template.ItemName
+                                            </MudMenuItem>
+                                        }
+                                        <MudMenuItem OnClick="@(() => UnlinkDocumentAsync(item))">
+                                            <MudText Typo="Typo.body2" Color="Color.Error">Unlink document</MudText>
+                                        </MudMenuItem>
+                                    </MudMenu>
+                                </MudTooltip>
                             }
                             @if (_uploadingItemId == item.Id)
                             {
@@ -517,6 +531,36 @@ else
                         </RowTemplate>
                     </MudTable>
                 }
+
+                @* Email ingestion log *@
+                @if (_ingestionLogs.Any())
+                {
+                    <MudText Typo="Typo.h6" Class="mt-6 mb-3" Style="font-weight: 600; color: #1A2332;">
+                        Recent Email Activity
+                    </MudText>
+                    <MudTable Items="_ingestionLogs" Dense="true" Hover="true" Elevation="0"
+                              Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <HeaderContent>
+                            <MudTh>Status</MudTh>
+                            <MudTh>Sender</MudTh>
+                            <MudTh>Reason</MudTh>
+                            <MudTh>Attachments</MudTh>
+                            <MudTh>When</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudChip T="string" Size="Size.Small"
+                                         Color="@(context.Status == EmailIngestionStatus.Accepted ? Color.Success : Color.Error)">
+                                    @context.Status
+                                </MudChip>
+                            </MudTd>
+                            <MudTd>@context.SenderEmail</MudTd>
+                            <MudTd>@context.Reason</MudTd>
+                            <MudTd>@context.AttachmentCount</MudTd>
+                            <MudTd>@context.CreatedAt.ToString("MMM dd, h:mm tt")</MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
             </div>
         </MudTabPanel>
 
@@ -549,6 +593,7 @@ else
     private List<DealChecklistItem> _checklistItems = new();
     private List<UploadedDocument> _documents = new();
     private List<DealInvestor> _investors = new();
+    private List<EmailIngestionLog> _ingestionLogs = new();
     private bool _loading = true;
     private bool _saving;
     private int _activePanelIndex;
@@ -616,6 +661,11 @@ else
 
             _documents = _deal.UploadedDocuments.OrderByDescending(d => d.UploadedAt).ToList();
             _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
+            _ingestionLogs = await Db.EmailIngestionLogs
+                .Where(l => l.DealId == DealId)
+                .OrderByDescending(l => l.CreatedAt)
+                .Take(20)
+                .ToListAsync();
         }
 
         // Handle tab query parameter
@@ -666,6 +716,11 @@ else
             .ToList();
         _documents = _deal.UploadedDocuments.OrderByDescending(d => d.UploadedAt).ToList();
         _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
+        _ingestionLogs = await Db.EmailIngestionLogs
+            .Where(l => l.DealId == _deal.Id)
+            .OrderByDescending(l => l.CreatedAt)
+            .Take(20)
+            .ToListAsync();
 
         await InvokeAsync(StateHasChanged);
     }
@@ -925,6 +980,28 @@ else
             _uploadingItemId = null;
             StateHasChanged();
         }
+    }
+
+    private async Task ReassignDocumentAsync(DealChecklistItem source, DealChecklistItem target)
+    {
+        if (source.DocumentId is null) return;
+
+        var docId = source.DocumentId.Value;
+        source.UnlinkDocument();
+        target.MarkSatisfied(docId);
+        await Db.SaveChangesAsync();
+
+        Snackbar.Add($"Document reassigned to: {target.Template.ItemName}", Severity.Success);
+        await RefreshDealData();
+    }
+
+    private async Task UnlinkDocumentAsync(DealChecklistItem item)
+    {
+        item.UnlinkDocument();
+        await Db.SaveChangesAsync();
+
+        Snackbar.Add("Document unlinked from checklist item.", Severity.Info);
+        await RefreshDealData();
     }
 
     private static DocumentType DetectDocumentType(string fileName)

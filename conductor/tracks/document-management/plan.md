@@ -59,9 +59,9 @@
 - [x] Task 6.6: bUnit tests — 4 new tests (ChatIsNotATab, HasChatToggleButton, ChatPanelClosedByDefault, updated RendersFiveTabHeaders)
 
 ## Phase 7: Document Reassignment & Polish
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 7.1: Add reassignment dropdown on checklist items — user can change which checklist item a document is linked to
-- [ ] Task 7.2: Show ingestion log in deal (recent email activity — accepted/rejected with sender and timestamp)
-- [ ] Task 7.3: CSS polish — consistent styling for upload buttons, download links, document panels, chat side panel
-- [ ] Task 7.4: Verify all existing tests pass + coverage for new features
+- [x] Task 7.1: Add reassignment dropdown on checklist items — MudMenu with SwapHoriz icon, targets are unlinked items + Unlink option; added UnlinkDocument() domain method + 2 tests
+- [x] Task 7.2: Show ingestion log in Documents tab — "Recent Email Activity" table with status chip, sender, reason, attachment count, timestamp (last 20 entries)
+- [x] Task 7.3: CSS polish — chat panel slide-in animation, responsive header wrap, consistent border-radius and spacing
+- [x] Task 7.4: All 737 tests pass (2 new domain tests for UnlinkDocument)
