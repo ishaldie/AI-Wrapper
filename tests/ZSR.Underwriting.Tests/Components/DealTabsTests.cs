@@ -36,6 +36,10 @@ public class DealTabsTests : IAsyncLifetime
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
 
+        // Register stub services required by DealTabs
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -581,10 +585,11 @@ public class DealTabsChatTests : IAsyncLifetime
         var authCtx = _ctx.AddAuthorization();
         authCtx.SetAuthorized("Test User");
 
-        // Register stub services required by DealChatTab
+        // Register stub services required by DealChatTab and DealTabs
         _ctx.Services.AddSingleton<IClaudeClient>(new StubClaudeClient());
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentParsingService>(new StubDocumentParsingService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddLogging();
 
         var sp = _ctx.Services.BuildServiceProvider();
@@ -708,4 +713,12 @@ internal class StubDocumentParsingService : IDocumentParsingService
 {
     public Task<ParsedDocumentResult> ParseDocumentAsync(Guid documentId, CancellationToken ct = default)
         => Task.FromResult(new ParsedDocumentResult { Success = false, ErrorMessage = "Stub" });
+}
+
+internal class StubDocumentMatchingService : IDocumentMatchingService
+{
+    public DocumentMatchResult? FindBestMatch(string fileName, DocumentType documentType, IReadOnlyList<ChecklistMatchCandidate> candidates)
+        => candidates.Count > 0
+            ? new DocumentMatchResult(candidates[0].ChecklistItemId, candidates[0].ItemName, 1.0)
+            : null;
 }

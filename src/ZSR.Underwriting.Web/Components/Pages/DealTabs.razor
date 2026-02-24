@@ -2,10 +2,18 @@
 @using ZSR.Underwriting.Domain.Entities
 @using ZSR.Underwriting.Domain.Enums
 @using ZSR.Underwriting.Infrastructure.Data
+@using ZSR.Underwriting.Application.Constants
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
 @inject AppDbContext Db
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
+@inject IDocumentUploadService UploadService
+@inject IDocumentMatchingService MatchingService
+@inject AuthenticationStateProvider AuthStateProvider
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -400,6 +408,22 @@ else
                                                    Target="_blank" />
                                 </MudTooltip>
                             }
+                            @if (_uploadingItemId == item.Id)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Color="Color.Primary" />
+                            }
+                            else
+                            {
+                                <MudTooltip Text="Upload document">
+                                    <label style="cursor: pointer; display: inline-flex;">
+                                        <InputFile OnChange="@(e => OnChecklistFileSelected(item, e.File))"
+                                                   accept="@string.Join(",", FileUploadConstants.AllowedExtensions)"
+                                                   style="display: none;" />
+                                        <MudIcon Icon="@Icons.Material.Filled.UploadFile"
+                                                 Size="Size.Small" Color="Color.Default" />
+                                    </label>
+                                </MudTooltip>
+                            }
                             <MudSelect T="ChecklistStatus" Value="item.Status"
                                        ValueChanged="@(val => UpdateChecklistStatus(item, val))"
                                        Variant="Variant.Outlined" Dense="true"
@@ -494,6 +518,8 @@ else
     private bool _loading = true;
     private bool _saving;
     private int _activePanelIndex;
+    private string _userId = string.Empty;
+    private Guid? _uploadingItemId;
 
     // New capital stack item form
     private CapitalSource _newCapSource = CapitalSource.SeniorDebt;
@@ -519,6 +545,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
         _deal = await Db.Deals
             .Include(d => d.Property)
             .Include(d => d.CalculationResult)
@@ -798,6 +827,69 @@ else
     {
         item.UpdateStatus(newStatus);
         await Db.SaveChangesAsync();
+    }
+
+    private async Task OnChecklistFileSelected(DealChecklistItem item, IBrowserFile? file)
+    {
+        if (file is null || _deal is null) return;
+
+        if (!FileUploadConstants.IsValidExtension(file.Name))
+        {
+            Snackbar.Add($"File type not allowed: {Path.GetExtension(file.Name)}", Severity.Error);
+            return;
+        }
+
+        if (!FileUploadConstants.IsValidFileSize(file.Size))
+        {
+            Snackbar.Add("File exceeds 25 MB limit.", Severity.Error);
+            return;
+        }
+
+        _uploadingItemId = item.Id;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: FileUploadConstants.MaxFileSizeBytes);
+            using var buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+            buffer.Position = 0;
+
+            var docType = DetectDocumentType(file.Name);
+            var result = await UploadService.UploadDocumentAsync(
+                DealId, buffer, file.Name, docType, _userId);
+
+            // Link this document directly to the checklist item
+            item.MarkSatisfied(result.DocumentId);
+            await Db.SaveChangesAsync();
+
+            Snackbar.Add($"Uploaded and linked: {file.Name}", Severity.Success);
+
+            // Refresh to show the download icon and updated status
+            await RefreshDealData();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Upload failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploadingItemId = null;
+            StateHasChanged();
+        }
+    }
+
+    private static DocumentType DetectDocumentType(string fileName)
+    {
+        var name = Path.GetFileNameWithoutExtension(fileName).ToLowerInvariant();
+        if (name.Contains("rent") && name.Contains("roll")) return DocumentType.RentRoll;
+        if (name.Contains("t12") || name.Contains("operating") || name.Contains("p&l"))
+            return DocumentType.T12PAndL;
+        if (name.Contains("loan") || name.Contains("term")) return DocumentType.LoanTermSheet;
+        if (name.Contains("offering") || name.Contains("om")) return DocumentType.OfferingMemorandum;
+        if (name.Contains("appraisal")) return DocumentType.Appraisal;
+        if (name.Contains("phase") || name.Contains("pca")) return DocumentType.PhaseIPCA;
+        return DocumentType.OfferingMemorandum;
     }
 
     private static string FormatChecklistStatus(ChecklistStatus status) => status switch
