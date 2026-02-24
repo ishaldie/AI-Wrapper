@@ -82,7 +82,38 @@ public class DealTabsTests : IAsyncLifetime
         Assert.Contains("Underwriting", cut.Markup);
         Assert.Contains("Investors", cut.Markup);
         Assert.Contains("Checklist", cut.Markup);
-        Assert.Contains("Chat", cut.Markup);
+        Assert.Contains("Documents", cut.Markup);
+    }
+
+    [Fact]
+    public void DealTabs_ChatIsNotATab()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Chat should NOT be in the tab headers (it's a side panel now)
+        var tabHeaders = cut.FindAll(".mud-tab");
+        Assert.DoesNotContain(tabHeaders, th => th.TextContent.Contains("Chat"));
+    }
+
+    [Fact]
+    public void DealTabs_HasChatToggleButton()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Chat toggle button should exist in the header
+        Assert.Contains("chat-toggle-btn", cut.Markup);
+    }
+
+    [Fact]
+    public void DealTabs_ChatPanelClosedByDefault()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        // Side panel should not be rendered when closed
+        Assert.DoesNotContain("deal-chat-panel", cut.Markup);
     }
 
     [Fact]
@@ -807,7 +838,7 @@ public class DealTabsChatTests : IAsyncLifetime
     }
 
     [Fact]
-    public void DealTabs_ChatTabHeader_Exists()
+    public void DealTabs_ChatToggleButton_Exists()
     {
         var cut = _ctx.Render(builder =>
         {
@@ -820,8 +851,8 @@ public class DealTabsChatTests : IAsyncLifetime
 
         cut.WaitForState(() => cut.Markup.Contains("General"), TimeSpan.FromSeconds(3));
 
-        // Chat tab header should be rendered
-        Assert.Contains("Chat", cut.Markup);
+        // Chat toggle button should be rendered in the header
+        Assert.Contains("chat-toggle-btn", cut.Markup);
     }
 }
 

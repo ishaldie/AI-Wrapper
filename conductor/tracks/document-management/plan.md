@@ -49,14 +49,14 @@
 - [x] Task 5.9: Integration tests for webhook endpoint (4 tests — multi-email logging, revoked sender, malformed To address, empty attachments)
 
 ## Phase 6: Chat Side Panel
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 6.1: Refactor DealTabs layout — remove Chat from MudTabs (5 tabs → 4), add collapsible side panel for DealChatTab on the right side of the page
-- [ ] Task 6.2: Add toggle button (MudIconButton or FAB) to open/close the chat panel — persist open/close state during session
-- [ ] Task 6.3: Responsive layout — chat panel takes ~40% width when open, tabs expand to full width when closed; stack vertically on mobile
-- [ ] Task 6.4: Ensure OnDealUpdated callback still refreshes tab data when chat is in side panel
-- [ ] Task 6.5: Update `/deals/{id}?tab=chat` route handling — open chat panel instead of switching to a tab
-- [ ] Task 6.6: bUnit tests for side panel rendering, toggle behavior, and tab count
+- [x] Task 6.1: Refactor DealTabs layout — remove Chat from MudTabs (6 tabs → 5), add collapsible side panel for DealChatTab on the right side of the page
+- [x] Task 6.2: Add toggle button (MudIconButton) in header to open/close the chat panel — state persists during session
+- [x] Task 6.3: Responsive layout — chat panel 400px width when open, tabs expand to full width when closed; stacks vertically on mobile (<960px)
+- [x] Task 6.4: OnDealUpdated callback still wired to DealChatTab in side panel — refreshes tab data on chat actions
+- [x] Task 6.5: `/deals/{id}?tab=chat` opens chat panel instead of switching to a tab
+- [x] Task 6.6: bUnit tests — 4 new tests (ChatIsNotATab, HasChatToggleButton, ChatPanelClosedByDefault, updated RendersFiveTabHeaders)
 
 ## Phase 7: Document Reassignment & Polish
 *Status: Pending*

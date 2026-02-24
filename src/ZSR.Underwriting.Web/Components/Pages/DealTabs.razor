@@ -55,7 +55,15 @@ else
         <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_deal.Status.ToString())">
             @_deal.Status
         </MudChip>
+        <MudTooltip Text="@(_chatOpen ? "Close Chat" : "Open Chat")">
+            <MudIconButton Icon="@Icons.Material.Filled.Chat"
+                           Color="@(_chatOpen ? Color.Primary : Color.Default)"
+                           OnClick="ToggleChat"
+                           Class="chat-toggle-btn" />
+        </MudTooltip>
     </div>
+
+    <div class="deal-layout @(_chatOpen ? "chat-open" : "")">
 
     <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" Class="deal-tabs-container"
              PanelClass="deal-tab-panel" KeepPanelsAlive="true"
@@ -512,13 +520,21 @@ else
             </div>
         </MudTabPanel>
 
-        <MudTabPanel Text="Chat" Icon="@Icons.Material.Filled.Chat">
-            @if (_activePanelIndex == 5)
-            {
-                <DealChatTab DealId="DealId" OnDealUpdated="RefreshDealData" />
-            }
-        </MudTabPanel>
     </MudTabs>
+
+    @if (_chatOpen)
+    {
+        <div class="deal-chat-panel">
+            <div class="deal-chat-panel-header">
+                <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #1A2332;">Chat</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Size="Size.Small" Color="Color.Default"
+                               OnClick="ToggleChat" />
+            </div>
+            <DealChatTab DealId="DealId" OnDealUpdated="RefreshDealData" />
+        </div>
+    }
+    </div>
 }
 
 @code {
@@ -536,6 +552,7 @@ else
     private bool _loading = true;
     private bool _saving;
     private int _activePanelIndex;
+    private bool _chatOpen;
     private string _userId = string.Empty;
     private Guid? _uploadingItemId;
 
@@ -604,16 +621,22 @@ else
         // Handle tab query parameter
         if (!string.IsNullOrEmpty(Tab))
         {
-            _activePanelIndex = Tab.ToLowerInvariant() switch
+            if (Tab.Equals("chat", StringComparison.OrdinalIgnoreCase))
             {
-                "general" => 0,
-                "underwriting" => 1,
-                "investors" => 2,
-                "checklist" => 3,
-                "documents" => 4,
-                "chat" => 5,
-                _ => 0
-            };
+                _chatOpen = true;
+            }
+            else
+            {
+                _activePanelIndex = Tab.ToLowerInvariant() switch
+                {
+                    "general" => 0,
+                    "underwriting" => 1,
+                    "investors" => 2,
+                    "checklist" => 3,
+                    "documents" => 4,
+                    _ => 0
+                };
+            }
         }
 
         _loading = false;
@@ -677,6 +700,11 @@ else
     private void OnTabChanged(int index)
     {
         _activePanelIndex = index;
+    }
+
+    private void ToggleChat()
+    {
+        _chatOpen = !_chatOpen;
     }
 
     private async Task SaveGeneralAsync()

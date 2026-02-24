@@ -655,3 +655,52 @@ html, body {
 .deal-tab-content {
     max-width: 1200px;
 }
+
+/* Chat side panel layout */
+.deal-layout {
+    display: flex;
+    gap: 1rem;
+}
+
+    .deal-layout > .deal-tabs-container {
+        flex: 1;
+        min-width: 0;
+    }
+
+.deal-chat-panel {
+    width: 400px;
+    min-width: 340px;
+    flex-shrink: 0;
+    border: 1px solid #E5E7EB;
+    border-radius: 12px;
+    background: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 200px);
+    overflow: hidden;
+}
+
+.deal-chat-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.chat-toggle-btn {
+    transition: color 0.2s ease;
+}
+
+/* Responsive: stack vertically on smaller screens */
+@media (max-width: 960px) {
+    .deal-layout {
+        flex-direction: column;
+    }
+
+    .deal-chat-panel {
+        width: 100%;
+        min-width: unset;
+        max-height: 50vh;
+    }
+}
