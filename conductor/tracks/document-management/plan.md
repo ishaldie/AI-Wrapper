@@ -25,15 +25,15 @@
 - [x] Task 3.4: bUnit tests for checklist upload UI interaction (4 tests)
 
 ## Phase 4: Authorized Senders
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 4.1: Create `AuthorizedSender` entity in Domain/Entities — UserId, Email, Label, CreatedAt
-- [ ] Task 4.2: Add DbSet + EF configuration in AppDbContext (unique index on UserId + Email)
-- [ ] Task 4.3: Create EF migration for AuthorizedSender
-- [ ] Task 4.4: Create `AuthorizedSenderService` in Application/Services — Add, Remove, List, IsAuthorized(userId, senderEmail)
-- [ ] Task 4.5: Create Authorized Senders settings page (`/settings/authorized-senders`) — MudTable with add/remove, email + label fields
-- [ ] Task 4.6: Unit tests for AuthorizedSenderService
-- [ ] Task 4.7: bUnit tests for settings page
+- [x] Task 4.1: Create `AuthorizedSender` entity in Domain/Entities — UserId, Email, Label, CreatedAt
+- [x] Task 4.2: Add DbSet + EF configuration in AppDbContext (unique index on UserId + Email)
+- [x] Task 4.3: Create EF migration for AuthorizedSender
+- [x] Task 4.4: Create `AuthorizedSenderService` in Infrastructure/Services — Add, Remove, List, IsAuthorized (13 tests)
+- [x] Task 4.5: Create Authorized Senders settings page (`/settings/authorized-senders`) — MudTable with add/remove, email + label fields
+- [x] Task 4.6: Unit tests for AuthorizedSenderService (13 tests)
+- [x] Task 4.7: bUnit tests for settings page (5 tests)
 
 ## Phase 5: Inbound Email Ingestion
 *Status: Pending*
