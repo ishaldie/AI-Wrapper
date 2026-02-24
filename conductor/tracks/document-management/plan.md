@@ -1,7 +1,7 @@
 # Plan: Document Management
 
 ## Phase 1: Auto-Match Engine
-*Status: In Progress*
+*Status: Complete*
 
 - [x] Task 1.1: Create `DocumentMatchingService` in Application/Services — keyword-based matching of filename + DocumentType against ChecklistTemplate.ItemName
 - [x] Task 1.2: Wire auto-match into `DealChatTab` upload flow — after `UploadDocumentAsync`, call matching service, then `MarkSatisfied(documentId)` on best match
@@ -9,7 +9,7 @@
 - [x] Task 1.4: Unit tests for DocumentMatchingService (exact match, partial match, no match, ambiguous) — completed in Task 1.1 (14 tests)
 
 ## Phase 2: Document Download
-*Status: In Progress*
+*Status: Complete*
 
 - [x] Task 2.1: Create download API endpoint `/api/documents/{id}/download` — stream file from IFileStorageService with deal ownership verification
 - [x] Task 2.2: Add download icon/link on checklist items with linked DocumentId (MudIconButton with download icon)
@@ -17,12 +17,12 @@
 - [x] Task 2.4: Integration tests for download endpoint (auth, ownership, file not found, happy path)
 
 ## Phase 3: Checklist File Upload
-*Status: Pending*
+*Status: Complete*
 
-- [ ] Task 3.1: Add upload button per checklist item (MudFileUpload or MudIconButton that opens file picker)
-- [ ] Task 3.2: Wire upload to existing DocumentUploadService pipeline + auto-match to the specific checklist item
-- [ ] Task 3.3: Show upload progress and success/error feedback per item
-- [ ] Task 3.4: bUnit tests for checklist upload UI interaction
+- [x] Task 3.1: Add upload button per checklist item (InputFile + MudIcon per row)
+- [x] Task 3.2: Wire upload to existing DocumentUploadService pipeline + MarkSatisfied on the specific checklist item
+- [x] Task 3.3: Show upload progress (MudProgressCircular) and success/error feedback (Snackbar)
+- [x] Task 3.4: bUnit tests for checklist upload UI interaction (4 tests)
 
 ## Phase 4: Authorized Senders
 *Status: Pending*
