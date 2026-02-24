@@ -131,6 +131,7 @@
     <!-- Document Management track -->
     <Compile Include="Services\DocumentMatchingServiceTests.cs" />
     <Compile Include="Services\DocumentDownloadTests.cs" />
+    <Compile Include="Services\AuthorizedSenderServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
