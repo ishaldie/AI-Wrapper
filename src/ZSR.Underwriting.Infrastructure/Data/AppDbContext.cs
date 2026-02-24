@@ -23,6 +23,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CapitalStackItem> CapitalStackItems => Set<CapitalStackItem>();
     public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
     public DbSet<DealChecklistItem> DealChecklistItems => Set<DealChecklistItem>();
+    public DbSet<AuthorizedSender> AuthorizedSenders => Set<AuthorizedSender>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -301,6 +302,17 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(e => e.DocumentId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<AuthorizedSender>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.Email).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.Label).HasMaxLength(200);
+
+            entity.HasIndex(e => new { e.UserId, e.Email }).IsUnique();
         });
     }
 }
