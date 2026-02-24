@@ -166,6 +166,7 @@ try
     builder.Services.AddScoped<IDocumentUploadService, DocumentUploadService>();
     builder.Services.AddSingleton<IDocumentMatchingService, DocumentMatchingService>();
     builder.Services.AddScoped<IAuthorizedSenderService, ZSR.Underwriting.Infrastructure.Services.AuthorizedSenderService>();
+    builder.Services.AddScoped<IEmailIngestionService, ZSR.Underwriting.Infrastructure.Services.EmailIngestionService>();
 
     // Rate limiting — per-user upload throttle
     builder.Services.AddRateLimiter(options =>
@@ -227,6 +228,7 @@ try
 
     app.MapExternalAuthEndpoints();
     app.MapDocumentEndpoints();
+    app.MapEmailIngestEndpoints();
 
     app.MapStaticAssets().AllowAnonymous();
     app.MapRazorComponents<App>()
