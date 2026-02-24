@@ -36,16 +36,16 @@
 - [x] Task 4.7: bUnit tests for settings page (5 tests)
 
 ## Phase 5: Inbound Email Ingestion
-*Status: Pending*
+*Status: In Progress*
 
-- [ ] Task 5.1: Add `ShortCode` property to Deal entity (8-char unique, generated on creation) + migration
-- [ ] Task 5.2: Display deal email address in DealTabs UI (`deal-{shortcode}@ingest.zsrunderwriting.com`) with copy button
-- [ ] Task 5.3: Create `EmailIngestionLog` entity — DealId?, SenderEmail, Status (Accepted/Rejected), Reason, AttachmentCount, CreatedAt
-- [ ] Task 5.4: Add DbSet + EF configuration + migration for EmailIngestionLog
-- [ ] Task 5.5: Create `EmailIngestionService` in Application/Services — parse inbound email payload, verify sender against deal owner email + authorized senders, reject unknowns with audit log
+- [x] Task 5.1: Add `ShortCode` property to Deal entity (8-char unique, generated on creation) + migration
+- [~] Task 5.2: Display deal email address in DealTabs UI (`deal-{shortcode}@ingest.zsrunderwriting.com`) with copy button
+- [x] Task 5.3: Create `EmailIngestionLog` entity — DealId?, SenderEmail, Status (Accepted/Rejected), Reason, AttachmentCount, CreatedAt
+- [x] Task 5.4: Add DbSet + EF configuration + migration for EmailIngestionLog
+- [x] Task 5.5: Create `EmailIngestionService` in Infrastructure/Services — parse inbound email payload, verify sender against deal owner email + authorized senders, reject unknowns with audit log
 - [ ] Task 5.6: Create webhook endpoint `/api/ingest/email` — receive SendGrid Inbound Parse payload, delegate to EmailIngestionService
-- [ ] Task 5.7: Process verified attachments — run through DocumentUploadService pipeline, then auto-match to checklist items via DocumentMatchingService
-- [ ] Task 5.8: Unit tests for EmailIngestionService (owner email accepted, authorized sender accepted, unknown rejected, multiple attachments, no deal found)
+- [x] Task 5.7: Process verified attachments — run through DocumentUploadService pipeline, then auto-match to checklist items via DocumentMatchingService
+- [x] Task 5.8: Unit tests for EmailIngestionService (9 tests — owner email accepted, authorized sender accepted, unknown rejected + log, accepted log, multiple attachments, no deal found, case-insensitive, attachment count log)
 - [ ] Task 5.9: Integration tests for webhook endpoint (valid payload, invalid sender, missing deal, malformed request)
 
 ## Phase 6: Chat Side Panel
