@@ -6,6 +6,7 @@ public class Deal
 {
     public Guid Id { get; private set; }
     public string Name { get; private set; }
+    public string ShortCode { get; private set; } = string.Empty;
     public DealStatus Status { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime UpdatedAt { get; private set; }
@@ -65,10 +66,22 @@ public class Deal
 
         Id = Guid.NewGuid();
         Name = name;
+        ShortCode = GenerateShortCode();
         UserId = userId ?? string.Empty;
         Status = DealStatus.Draft;
         CreatedAt = DateTime.UtcNow;
         UpdatedAt = CreatedAt;
+    }
+
+    private static string GenerateShortCode()
+    {
+        const string chars = "abcdefghjkmnpqrstuvwxyz23456789";
+        Span<char> code = stackalloc char[8];
+        var bytes = new byte[8];
+        System.Security.Cryptography.RandomNumberGenerator.Fill(bytes);
+        for (int i = 0; i < 8; i++)
+            code[i] = chars[bytes[i] % chars.Length];
+        return new string(code);
     }
 
     public void UpdateStatus(DealStatus newStatus)

@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ChecklistTemplate> ChecklistTemplates => Set<ChecklistTemplate>();
     public DbSet<DealChecklistItem> DealChecklistItems => Set<DealChecklistItem>();
     public DbSet<AuthorizedSender> AuthorizedSenders => Set<AuthorizedSender>();
+    public DbSet<EmailIngestionLog> EmailIngestionLogs => Set<EmailIngestionLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -47,6 +48,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CapexBudget).HasPrecision(18, 2);
             entity.Property(e => e.TargetOccupancy).HasPrecision(5, 2);
             entity.Property(e => e.ValueAddPlans).HasMaxLength(2000);
+
+            // ShortCode for email ingestion
+            entity.Property(e => e.ShortCode).IsRequired().HasMaxLength(8);
+            entity.HasIndex(e => e.ShortCode).IsUnique();
 
             // Multi-tenant ownership
             entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
@@ -313,6 +318,22 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.Label).HasMaxLength(200);
 
             entity.HasIndex(e => new { e.UserId, e.Email }).IsUnique();
+        });
+
+        modelBuilder.Entity<EmailIngestionLog>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.SenderEmail).IsRequired().HasMaxLength(256);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.Reason).IsRequired().HasMaxLength(500);
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.DealId);
         });
     }
 }
