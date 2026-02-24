@@ -225,6 +225,7 @@ try
     app.UseAntiforgery();
 
     app.MapExternalAuthEndpoints();
+    app.MapDocumentEndpoints();
 
     app.MapStaticAssets().AllowAnonymous();
     app.MapRazorComponents<App>()

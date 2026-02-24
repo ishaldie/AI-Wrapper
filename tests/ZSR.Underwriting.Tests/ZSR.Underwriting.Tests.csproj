@@ -130,6 +130,7 @@
     <Compile Include="Components\DealTabsTests.cs" />
     <!-- Document Management track -->
     <Compile Include="Services\DocumentMatchingServiceTests.cs" />
+    <Compile Include="Services\DocumentDownloadTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

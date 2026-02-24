@@ -6,15 +6,15 @@
 - [x] Task 1.1: Create `DocumentMatchingService` in Application/Services — keyword-based matching of filename + DocumentType against ChecklistTemplate.ItemName
 - [x] Task 1.2: Wire auto-match into `DealChatTab` upload flow — after `UploadDocumentAsync`, call matching service, then `MarkSatisfied(documentId)` on best match
 - [x] Task 1.3: Wire auto-match into `ApplyDealUpdate` checklist handling — when AI references a document, link if available
-- [ ] Task 1.4: Unit tests for DocumentMatchingService (exact match, partial match, no match, ambiguous)
+- [x] Task 1.4: Unit tests for DocumentMatchingService (exact match, partial match, no match, ambiguous) — completed in Task 1.1 (14 tests)
 
 ## Phase 2: Document Download
-*Status: Pending*
+*Status: In Progress*
 
-- [ ] Task 2.1: Create download API endpoint `/api/documents/{id}/download` — stream file from IFileStorageService with deal ownership verification
+- [x] Task 2.1: Create download API endpoint `/api/documents/{id}/download` — stream file from IFileStorageService with deal ownership verification
 - [ ] Task 2.2: Add download icon/link on checklist items with linked DocumentId (MudIconButton with download icon)
 - [ ] Task 2.3: Add "Documents" panel to DealTabs — list all UploadedDocuments for the deal with filename, type, upload date, size, and download link
-- [ ] Task 2.4: Integration tests for download endpoint (auth, ownership, file not found, happy path)
+- [x] Task 2.4: Integration tests for download endpoint (auth, ownership, file not found, happy path)
 
 ## Phase 3: Checklist File Upload
 *Status: Pending*
@@ -48,10 +48,20 @@
 - [ ] Task 5.8: Unit tests for EmailIngestionService (owner email accepted, authorized sender accepted, unknown rejected, multiple attachments, no deal found)
 - [ ] Task 5.9: Integration tests for webhook endpoint (valid payload, invalid sender, missing deal, malformed request)
 
-## Phase 6: Document Reassignment & Polish
+## Phase 6: Chat Side Panel
 *Status: Pending*
 
-- [ ] Task 6.1: Add reassignment dropdown on checklist items — user can change which checklist item a document is linked to
-- [ ] Task 6.2: Show ingestion log in deal (recent email activity — accepted/rejected with sender and timestamp)
-- [ ] Task 6.3: CSS polish — consistent styling for upload buttons, download links, document panels
-- [ ] Task 6.4: Verify all existing tests pass + coverage for new features
+- [ ] Task 6.1: Refactor DealTabs layout — remove Chat from MudTabs (5 tabs → 4), add collapsible side panel for DealChatTab on the right side of the page
+- [ ] Task 6.2: Add toggle button (MudIconButton or FAB) to open/close the chat panel — persist open/close state during session
+- [ ] Task 6.3: Responsive layout — chat panel takes ~40% width when open, tabs expand to full width when closed; stack vertically on mobile
+- [ ] Task 6.4: Ensure OnDealUpdated callback still refreshes tab data when chat is in side panel
+- [ ] Task 6.5: Update `/deals/{id}?tab=chat` route handling — open chat panel instead of switching to a tab
+- [ ] Task 6.6: bUnit tests for side panel rendering, toggle behavior, and tab count
+
+## Phase 7: Document Reassignment & Polish
+*Status: Pending*
+
+- [ ] Task 7.1: Add reassignment dropdown on checklist items — user can change which checklist item a document is linked to
+- [ ] Task 7.2: Show ingestion log in deal (recent email activity — accepted/rejected with sender and timestamp)
+- [ ] Task 7.3: CSS polish — consistent styling for upload buttons, download links, document panels, chat side panel
+- [ ] Task 7.4: Verify all existing tests pass + coverage for new features
