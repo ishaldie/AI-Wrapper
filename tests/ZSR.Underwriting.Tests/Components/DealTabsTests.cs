@@ -410,6 +410,132 @@ public class DealTabsChecklistTests : IAsyncLifetime
     }
 }
 
+public class DealTabsChecklistUploadTests : IAsyncLifetime
+{
+    private readonly BunitContext _ctx;
+    private readonly AppDbContext _db;
+    private readonly Guid _dealId;
+
+    public DealTabsChecklistUploadTests()
+    {
+        _ctx = new BunitContext();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddMudServices();
+
+        var dbName = $"DealTabsCLUploadTests_{Guid.NewGuid()}";
+        _ctx.Services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase(dbName));
+
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
+
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+
+        var sp = _ctx.Services.BuildServiceProvider();
+        _db = sp.GetRequiredService<AppDbContext>();
+
+        // Seed checklist templates
+        var t1 = new ChecklistTemplate("Operations", 1, "Current Months Rent Roll", 1, ExecutionType.All, "All");
+        var t2 = new ChecklistTemplate("Operations", 1, "Trailing 12 Month Operating Statement", 2, ExecutionType.All, "All");
+        _db.ChecklistTemplates.AddRange(t1, t2);
+
+        var deal = new Deal("Test Property", "test-user-id");
+        deal.PropertyName = "Upload Test Deal";
+        deal.Address = "100 Upload Ave";
+        deal.UnitCount = 10;
+        _db.Deals.Add(deal);
+        _db.SaveChanges();
+        _dealId = deal.Id;
+    }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        await _db.DisposeAsync();
+        await _ctx.DisposeAsync();
+    }
+
+    private RenderFragment RenderDealTabs(Guid dealId)
+    {
+        return builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealTabs>(1);
+            builder.AddAttribute(2, "DealId", dealId);
+            builder.CloseComponent();
+        };
+    }
+
+    [Fact]
+    public void ChecklistItems_RenderWithStatusAndNames()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Current Months Rent Roll"));
+
+        // Both checklist items should render with their names
+        Assert.Contains("Current Months Rent Roll", cut.Markup);
+        Assert.Contains("Trailing 12 Month Operating Statement", cut.Markup);
+
+        // Default status should be Outstanding
+        Assert.Contains("Outstanding", cut.Markup);
+    }
+
+    [Fact]
+    public void ChecklistItems_NoProgressSpinnerByDefault()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Current Months Rent Roll"));
+
+        // Progress spinner should NOT be present when not uploading
+        Assert.DoesNotContain("mud-progress-circular", cut.Markup);
+    }
+
+    [Fact]
+    public void ChecklistItem_WithLinkedDocument_ShowsSatisfiedStatus()
+    {
+        // Pre-seed checklist items for ALL templates (mimic GenerateChecklistItems)
+        var templates = _db.ChecklistTemplates.OrderBy(t => t.SortOrder).ToList();
+        var doc = new UploadedDocument(_dealId, "rent_roll.pdf", "stored/path.pdf", DocumentType.RentRoll, 1024);
+        _db.UploadedDocuments.Add(doc);
+        _db.SaveChanges();
+
+        foreach (var t in templates)
+        {
+            var ci = new DealChecklistItem(_dealId, t.Id);
+            ci.Template = t;
+            if (t.ItemName.Contains("Rent Roll"))
+                ci.MarkSatisfied(doc.Id);
+            _db.DealChecklistItems.Add(ci);
+        }
+        _db.SaveChanges();
+
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Current Months Rent Roll"));
+
+        // When a document is linked via MarkSatisfied, the status chip shows "Satisfied"
+        Assert.Contains("Satisfied", cut.Markup);
+
+        // Verify the document was correctly linked in the data model
+        var savedItem = _db.DealChecklistItems.First(ci => ci.DocumentId != null);
+        Assert.Equal(doc.Id, savedItem.DocumentId);
+        Assert.Equal(ChecklistStatus.Satisfied, savedItem.Status);
+    }
+
+    [Fact]
+    public void ChecklistItems_HaveStatusDropdowns()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Current Months Rent Roll"));
+
+        // Each checklist item should have a MudSelect status dropdown
+        var selects = cut.FindAll(".mud-select");
+        // At least 2 selects for the 2 checklist items
+        Assert.True(selects.Count >= 2, $"Expected at least 2 status dropdowns, found {selects.Count}");
+    }
+}
+
 public class DealTabsInvestorTests : IAsyncLifetime
 {
     private readonly BunitContext _ctx;
