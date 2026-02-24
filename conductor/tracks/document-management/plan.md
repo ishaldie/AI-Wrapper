@@ -12,8 +12,8 @@
 *Status: In Progress*
 
 - [x] Task 2.1: Create download API endpoint `/api/documents/{id}/download` — stream file from IFileStorageService with deal ownership verification
-- [ ] Task 2.2: Add download icon/link on checklist items with linked DocumentId (MudIconButton with download icon)
-- [ ] Task 2.3: Add "Documents" panel to DealTabs — list all UploadedDocuments for the deal with filename, type, upload date, size, and download link
+- [x] Task 2.2: Add download icon/link on checklist items with linked DocumentId (MudIconButton with download icon)
+- [x] Task 2.3: Add "Documents" panel to DealTabs — list all UploadedDocuments for the deal with filename, type, upload date, size, and download link
 - [x] Task 2.4: Integration tests for download endpoint (auth, ownership, file not found, happy path)
 
 ## Phase 3: Checklist File Upload

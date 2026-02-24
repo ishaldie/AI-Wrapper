@@ -391,6 +391,15 @@ else
                                 @FormatChecklistStatus(item.Status)
                             </MudChip>
                             <MudText Style="flex: 1; color: #1A2332;">@item.Template.ItemName</MudText>
+                            @if (item.DocumentId != null)
+                            {
+                                <MudTooltip Text="@($"Download: {item.Document?.FileName ?? "document"}")">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                                   Size="Size.Small" Color="Color.Primary"
+                                                   Href="@($"/api/documents/{item.DocumentId}/download")"
+                                                   Target="_blank" />
+                                </MudTooltip>
+                            }
                             <MudSelect T="ChecklistStatus" Value="item.Status"
                                        ValueChanged="@(val => UpdateChecklistStatus(item, val))"
                                        Variant="Variant.Outlined" Dense="true"
@@ -411,8 +420,58 @@ else
             </div>
         </MudTabPanel>
 
+        <MudTabPanel Text="Documents" Icon="@Icons.Material.Filled.FolderOpen">
+            <div class="deal-tab-content">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                    <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">
+                        Documents (@_documents.Count)
+                    </MudText>
+                </MudStack>
+
+                @if (!_documents.Any())
+                {
+                    <MudPaper Elevation="0" Class="pa-8" Style="text-align: center; border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <MudIcon Icon="@Icons.Material.Outlined.FolderOff" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.body1" Style="color: #6B7280; margin-top: 0.5rem;">
+                            No documents uploaded yet. Upload files via the Chat tab.
+                        </MudText>
+                    </MudPaper>
+                }
+                else
+                {
+                    <MudTable Items="_documents" Dense="true" Hover="true" Elevation="0"
+                              Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <HeaderContent>
+                            <MudTh>File Name</MudTh>
+                            <MudTh>Type</MudTh>
+                            <MudTh>Size</MudTh>
+                            <MudTh>Uploaded</MudTh>
+                            <MudTh Style="text-align: center;">Download</MudTh>
+                        </HeaderContent>
+                        <RowTemplate>
+                            <MudTd>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                                    <MudIcon Icon="@GetDocIcon(context.FileName)" Size="Size.Small" Style="color: #F97316;" />
+                                    <span>@context.FileName</span>
+                                </MudStack>
+                            </MudTd>
+                            <MudTd>@context.DocumentType</MudTd>
+                            <MudTd>@FormatFileSize(context.FileSize)</MudTd>
+                            <MudTd>@context.UploadedAt.ToString("MMM dd, yyyy h:mm tt")</MudTd>
+                            <MudTd Style="text-align: center;">
+                                <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                               Size="Size.Small" Color="Color.Primary"
+                                               Href="@($"/api/documents/{context.Id}/download")"
+                                               Target="_blank" />
+                            </MudTd>
+                        </RowTemplate>
+                    </MudTable>
+                }
+            </div>
+        </MudTabPanel>
+
         <MudTabPanel Text="Chat" Icon="@Icons.Material.Filled.Chat">
-            @if (_activePanelIndex == 4)
+            @if (_activePanelIndex == 5)
             {
                 <DealChatTab DealId="DealId" OnDealUpdated="RefreshDealData" />
             }
@@ -430,6 +489,7 @@ else
     private CalculationResult? _calc;
     private List<CapitalStackItem> _capitalStack = new();
     private List<DealChecklistItem> _checklistItems = new();
+    private List<UploadedDocument> _documents = new();
     private List<DealInvestor> _investors = new();
     private bool _loading = true;
     private bool _saving;
@@ -464,6 +524,8 @@ else
             .Include(d => d.CalculationResult)
             .Include(d => d.CapitalStackItems)
             .Include(d => d.DealChecklistItems).ThenInclude(i => i.Template)
+            .Include(d => d.DealChecklistItems).ThenInclude(i => i.Document)
+            .Include(d => d.UploadedDocuments)
             .Include(d => d.DealInvestors)
             .FirstOrDefaultAsync(d => d.Id == DealId);
 
@@ -480,10 +542,13 @@ else
             }
 
             _checklistItems = _deal.DealChecklistItems
+                .GroupBy(i => i.ChecklistTemplateId)
+                .Select(g => g.First())
                 .OrderBy(i => i.Template.SectionOrder)
                 .ThenBy(i => i.Template.SortOrder)
                 .ToList();
 
+            _documents = _deal.UploadedDocuments.OrderByDescending(d => d.UploadedAt).ToList();
             _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
         }
 
@@ -496,7 +561,8 @@ else
                 "underwriting" => 1,
                 "investors" => 2,
                 "checklist" => 3,
-                "chat" => 4,
+                "documents" => 4,
+                "chat" => 5,
                 _ => 0
             };
         }
@@ -516,6 +582,7 @@ else
         await Db.Entry(_deal).Collection(d => d.DealChecklistItems).LoadAsync();
         foreach (var item in _deal.DealChecklistItems)
             await Db.Entry(item).Reference(i => i.Template).LoadAsync();
+        await Db.Entry(_deal).Collection(d => d.UploadedDocuments).LoadAsync();
         await Db.Entry(_deal).Collection(d => d.DealInvestors).LoadAsync();
 
         _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
@@ -525,6 +592,7 @@ else
             .OrderBy(i => i.Template.SectionOrder)
             .ThenBy(i => i.Template.SortOrder)
             .ToList();
+        _documents = _deal.UploadedDocuments.OrderByDescending(d => d.UploadedAt).ToList();
         _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
 
         await InvokeAsync(StateHasChanged);
@@ -540,8 +608,14 @@ else
             .OrderBy(t => t.SectionOrder).ThenBy(t => t.SortOrder)
             .ToListAsync();
 
+        var existingTemplateIds = _deal.DealChecklistItems
+            .Select(ci => ci.ChecklistTemplateId)
+            .ToHashSet();
+
         foreach (var template in templates)
         {
+            if (existingTemplateIds.Contains(template.Id)) continue;
+
             var item = new DealChecklistItem(_deal.Id, template.Id);
             item.Template = template;
             Db.DealChecklistItems.Add(item);
@@ -761,6 +835,25 @@ else
 
     private static string FormatMultiple(decimal? value)
         => value.HasValue ? $"{value.Value:F2}x" : "\u2014";
+
+    private static string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024.0:F1} KB";
+        return $"{bytes / (1024.0 * 1024.0):F1} MB";
+    }
+
+    private static string GetDocIcon(string fileName)
+    {
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        return ext switch
+        {
+            ".pdf" => Icons.Material.Filled.PictureAsPdf,
+            ".xlsx" or ".csv" => Icons.Material.Filled.TableChart,
+            ".docx" => Icons.Material.Filled.Article,
+            _ => Icons.Material.Filled.InsertDriveFile
+        };
+    }
 
     private static Color GetStatusColor(string status) => status switch
     {
