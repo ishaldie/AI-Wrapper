@@ -9,11 +9,11 @@
 - [x] 517511a 1.6 Unit tests: CSPRNG range validation, brute-force lockout after 5 attempts, rate limiter rejects excess requests, no code in log output
 
 ## Phase 2: Seed Data & Secrets Hardening
-- [ ] 2.1 Replace hardcoded `Admin123!` in `SeedData.cs` with `Environment.GetEnvironmentVariable("ADMIN_SEED_PASSWORD")`
-- [ ] 2.2 Log a warning at startup if `ADMIN_SEED_PASSWORD` is not set and skip admin seeding
-- [ ] 2.3 Add `ADMIN_SEED_PASSWORD` to `appsettings.Development.json` (dev-only) and document in README
-- [ ] 2.4 Lock `AllowedHosts` in `appsettings.json` to production hostname, set `localhost` in `appsettings.Development.json`
-- [ ] 2.5 Unit tests: seed skips when env var missing, seed creates admin when env var present
+- [x] 2763742 2.1 Replace hardcoded `Admin123!` in `SeedData.cs` with `Environment.GetEnvironmentVariable("ADMIN_SEED_PASSWORD")`
+- [x] 2763742 2.2 Log a warning at startup if `ADMIN_SEED_PASSWORD` is not set and skip admin seeding
+- [x] 24fd76c 2.3 Add `ADMIN_SEED_PASSWORD` to `appsettings.Development.json` (dev-only) and document in README
+- [x] 796df11 2.4 Lock `AllowedHosts` in `appsettings.json` to production hostname, set `localhost` in `appsettings.Development.json`
+- [x] 2763742 2.5 Unit tests: seed skips when env var missing, seed creates admin when env var present
 
 ## Phase 3: Security Headers Middleware
 - [ ] 3.1 Create `SecurityHeadersMiddleware` — adds CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy to every response
