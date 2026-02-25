@@ -140,6 +140,8 @@
     <Compile Include="Services\AuthorizedSenderServiceTests.cs" />
     <Compile Include="Services\EmailIngestionServiceTests.cs" />
     <Compile Include="Components\AuthorizedSendersPageTests.cs" />
+    <!-- SOC 2 Remediation track -->
+    <Compile Include="Services\SecurityHeadersMiddlewareTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

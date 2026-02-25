@@ -237,6 +237,13 @@ try
     builder.Services.AddScoped<IDocumentParsingService, DocumentParsingService>();
     builder.Services.AddScoped<IOverrideService, OverrideService>();
 
+    // HSTS — 1-year max-age with includeSubDomains
+    builder.Services.AddHsts(options =>
+    {
+        options.MaxAge = TimeSpan.FromDays(365);
+        options.IncludeSubDomains = true;
+    });
+
     // Add Blazor services
     builder.Services.AddCascadingAuthenticationState();
     builder.Services.AddRazorComponents()
@@ -264,6 +271,7 @@ try
 
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
+    app.UseMiddleware<ZSR.Underwriting.Web.Middleware.SecurityHeadersMiddleware>();
     app.UseSerilogRequestLogging();
 
     app.UseAuthentication();
