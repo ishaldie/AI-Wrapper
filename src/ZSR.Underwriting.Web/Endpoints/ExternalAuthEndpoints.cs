@@ -1,7 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
 
 namespace ZSR.Underwriting.Web.Endpoints;
 
@@ -48,6 +50,7 @@ public static class ExternalAuthEndpoints
     private static async Task<IResult> HandleExternalCallback(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
+        IActivityTracker activityTracker,
         string? returnUrl = "/search")
     {
         var info = await signInManager.GetExternalLoginInfoAsync();
@@ -62,6 +65,8 @@ public static class ExternalAuthEndpoints
 
         if (signInResult.Succeeded)
         {
+            var userId = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+            await TrackOAuthLogin(activityTracker, userId, info.LoginProvider);
             return Results.Redirect(returnUrl ?? "/search");
         }
 
@@ -83,6 +88,7 @@ public static class ExternalAuthEndpoints
             }
 
             await signInManager.SignInAsync(existingUser, isPersistent: true);
+            await TrackOAuthLogin(activityTracker, existingUser.Id, info.LoginProvider);
             return Results.Redirect(returnUrl ?? "/search");
         }
 
@@ -105,6 +111,7 @@ public static class ExternalAuthEndpoints
         await userManager.AddToRoleAsync(newUser, "Analyst");
         await userManager.AddLoginAsync(newUser, info);
         await signInManager.SignInAsync(newUser, isPersistent: true);
+        await TrackOAuthLogin(activityTracker, newUser.Id, info.LoginProvider);
 
         // New OAuth users must accept TOS before accessing the app
         var acceptTermsUrl = "/accept-terms";
@@ -113,5 +120,11 @@ public static class ExternalAuthEndpoints
             acceptTermsUrl += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
         }
         return Results.Redirect(acceptTermsUrl);
+    }
+
+    private static async Task TrackOAuthLogin(IActivityTracker activityTracker, string userId, string provider)
+    {
+        await activityTracker.StartSessionAsync(userId);
+        await activityTracker.TrackEventAsync(ActivityEventType.OAuthLoginCompleted, metadata: provider);
     }
 }

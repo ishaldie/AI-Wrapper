@@ -17,5 +17,7 @@ public enum ActivityEventType
     DocumentAccessDenied,
     DocumentScanFailed,
     DocumentRateLimited,
-    DocumentDeleted
+    DocumentDeleted,
+    DocumentDownloaded,
+    OAuthLoginCompleted
 }

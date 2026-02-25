@@ -79,5 +79,34 @@ public class ActivityEventTests
         Assert.Contains(ActivityEventType.DocumentUploaded, values);
         Assert.Contains(ActivityEventType.DealCreated, values);
         Assert.Contains(ActivityEventType.DealDeleted, values);
+        Assert.Contains(ActivityEventType.DocumentDownloaded, values);
+        Assert.Contains(ActivityEventType.OAuthLoginCompleted, values);
+    }
+
+    [Fact]
+    public void DocumentDownloaded_Event_Stores_DealId_And_Filename()
+    {
+        var dealId = Guid.NewGuid();
+        var evt = new ActivityEvent(Guid.NewGuid(), "user-1", ActivityEventType.DocumentDownloaded)
+        {
+            DealId = dealId,
+            Metadata = "report.pdf"
+        };
+
+        Assert.Equal(ActivityEventType.DocumentDownloaded, evt.EventType);
+        Assert.Equal(dealId, evt.DealId);
+        Assert.Equal("report.pdf", evt.Metadata);
+    }
+
+    [Fact]
+    public void OAuthLoginCompleted_Event_Stores_Provider()
+    {
+        var evt = new ActivityEvent(Guid.NewGuid(), "user-1", ActivityEventType.OAuthLoginCompleted)
+        {
+            Metadata = "Google"
+        };
+
+        Assert.Equal(ActivityEventType.OAuthLoginCompleted, evt.EventType);
+        Assert.Equal("Google", evt.Metadata);
     }
 }

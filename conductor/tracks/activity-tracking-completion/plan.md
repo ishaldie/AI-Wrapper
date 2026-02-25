@@ -16,10 +16,10 @@
 - [x] 2.4 bUnit test: PdfExported includes DealId, Dashboard/DealTabs render without errors
 
 ## Phase 3: New Event Types
-- [ ] 3.1 Add `DocumentDownloaded` and `OAuthLoginCompleted` to `ActivityEventType` enum
-- [ ] 3.2 Emit `DocumentDownloaded` from `/api/documents/{id}/download` endpoint with `DealId` and filename metadata
-- [ ] 3.3 Emit `OAuthLoginCompleted` from `ExternalAuthEndpoints.cs` OAuth callback with provider name as metadata
-- [ ] 3.4 Unit tests: both new events emitted with correct metadata
+- [x] 3.1 Add `DocumentDownloaded` and `OAuthLoginCompleted` to `ActivityEventType` enum
+- [x] 3.2 Emit `DocumentDownloaded` from `/api/documents/{id}/download` endpoint with `DealId` and filename metadata
+- [x] 3.3 Emit `OAuthLoginCompleted` from `ExternalAuthEndpoints.cs` OAuth callback with provider name as metadata
+- [x] 3.4 Unit tests: both new events verified with correct metadata
 
 ## Phase 4: Admin Activity Dashboard
 - [ ] 4.1 Create `/admin/activity` page (`AdminActivity.razor`) with `[Authorize(Roles = "Admin")]`

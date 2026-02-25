@@ -1,5 +1,7 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Data;
 
@@ -17,6 +19,7 @@ public static class DocumentEndpoints
         Guid id,
         AppDbContext db,
         IFileStorageService fileStorage,
+        IActivityTracker activityTracker,
         ClaimsPrincipal user,
         CancellationToken ct)
     {
@@ -41,6 +44,8 @@ public static class DocumentEndpoints
 
         var stream = await fileStorage.GetFileAsync(document.StoredPath, ct);
         var contentType = GetContentType(document.FileName);
+
+        await activityTracker.TrackEventAsync(ActivityEventType.DocumentDownloaded, dealId: document.DealId, metadata: document.FileName);
 
         return Results.File(stream, contentType, document.FileName);
     }
