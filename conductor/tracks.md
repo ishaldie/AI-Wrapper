@@ -107,8 +107,8 @@
 
 ---
 
-## [x] Track: Activity Tracking Completion
-*Link: [./conductor/tracks/activity-tracking-completion/](./conductor/tracks/activity-tracking-completion/)*
+## [x] Track: Activity Tracking Completion (completed 2026-02-25)
+*Link: [./conductor/archive/activity-tracking-completion_20260225/](./conductor/archive/activity-tracking-completion_20260225/)*
 
 ---
 
@@ -117,7 +117,7 @@
 
 ---
 
-## [ ] Track: BYOK API Key Support
+## [x] Track: BYOK API Key Support
 *Link: [./conductor/tracks/byok-api-key-support/](./conductor/tracks/byok-api-key-support/)*
 
 ---
