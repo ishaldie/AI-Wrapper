@@ -23,11 +23,11 @@
 - [x] 8f33060 3.5 Integration tests: verify all 5 headers present on responses, verify CSP does not break Blazor WebSocket
 
 ## Phase 4: Cookie & Session Hardening
-- [ ] 4.1 Add `options.Cookie.SecurePolicy = CookieSecurePolicy.Always` to `ConfigureApplicationCookie`
-- [ ] 4.2 Add `options.Cookie.SameSite = SameSiteMode.Strict`
-- [ ] 4.3 Add absolute session timeout — `options.ExpireTimeSpan = TimeSpan.FromHours(24)` as hard ceiling alongside sliding expiration
-- [ ] 4.4 Configure `AddDataProtection()` with `PersistKeysToFileSystem()` using a path from configuration, with app name isolation
-- [ ] 4.5 Unit tests: verify cookie options are configured correctly, Data Protection key directory exists
+- [x] 2ecf65d 4.1 Add `options.Cookie.SecurePolicy = CookieSecurePolicy.Always` to `ConfigureApplicationCookie`
+- [x] 2ecf65d 4.2 Add `options.Cookie.SameSite = SameSiteMode.Strict`
+- [x] 2ecf65d 4.3 Add absolute session timeout — `options.ExpireTimeSpan = TimeSpan.FromHours(24)` as hard ceiling alongside sliding expiration
+- [x] 2ecf65d 4.4 Configure `AddDataProtection()` with `PersistKeysToFileSystem()` using a path from configuration, with app name isolation
+- [x] 2ecf65d 4.5 Unit tests: verify cookie options are configured correctly, Data Protection key directory exists
 
 ## Phase 5: Audit Trail Enhancement
 - [ ] 5.1 Add `IpAddress` string property to `ActivityEvent` entity
