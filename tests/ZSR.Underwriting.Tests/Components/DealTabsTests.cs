@@ -40,6 +40,7 @@ public class DealTabsTests : IAsyncLifetime
         // Register stub services required by DealTabs
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
@@ -233,6 +234,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
@@ -388,6 +390,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
@@ -504,6 +507,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
@@ -632,6 +636,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
@@ -796,6 +801,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentParsingService>(new StubDocumentParsingService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddLogging();
@@ -938,4 +944,11 @@ internal class StubMarketDataService : IMarketDataService
 
     public Task<MarketContextDto> GetMarketContextAsync(string city, string state)
         => Task.FromResult(new MarketContextDto());
+}
+
+internal class NoOpActivityTracker : IActivityTracker
+{
+    public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+    public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+    public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null) => Task.CompletedTask;
 }

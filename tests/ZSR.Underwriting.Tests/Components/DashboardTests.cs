@@ -122,7 +122,7 @@ public class DashboardTests : IAsyncLifetime
 
     private class StubQuickAnalysisService : IQuickAnalysisService
     {
-        public Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, string userId, CancellationToken ct = default)
+        public Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, string userId, CancellationToken ct = default, IActivityTracker? activityTracker = null)
             => Task.FromResult(new QuickAnalysisProgress { DealId = Guid.NewGuid(), SearchQuery = searchQuery });
     }
 

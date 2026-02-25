@@ -14,6 +14,7 @@
 @inject ISnackbar Snackbar
 @inject IDocumentUploadService UploadService
 @inject IDocumentMatchingService MatchingService
+@inject IActivityTracker ActivityTracker
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
 @inject ISensitivityCalculator SensitivityCalc
@@ -1041,6 +1042,7 @@ else
             await Db.SaveChangesAsync();
 
             Snackbar.Add($"Uploaded and linked: {file.Name}", Severity.Success);
+            await ActivityTracker.TrackEventAsync(ActivityEventType.DocumentUploaded, dealId: DealId, metadata: file.Name);
 
             // Refresh to show the download icon and updated status
             await RefreshDealData();

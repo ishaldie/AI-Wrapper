@@ -5,6 +5,7 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 @inject IQuickAnalysisService QuickAnalysisService
+@inject IActivityTracker ActivityTracker
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILogger<AnalysisStart> Logger
 @rendermode InteractiveServer
@@ -152,7 +153,7 @@
         _analyzing = true;
         try
         {
-            var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery, _userId);
+            var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery, _userId, activityTracker: ActivityTracker);
             Navigation.NavigateTo($"/deals/{progress.DealId}?tab=chat");
         }
         catch (Exception ex)

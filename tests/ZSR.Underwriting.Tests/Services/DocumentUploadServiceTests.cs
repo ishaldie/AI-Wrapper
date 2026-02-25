@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
@@ -292,6 +293,71 @@ public class DocumentUploadServiceTests : IDisposable
         Assert.Equal(VirusScanStatus.Pending, doc.VirusScanStatus);
     }
 
+    // --- Activity tracking event tests ---
+
+    [Fact]
+    public async Task DeleteDocumentAsync_EmitsDocumentDeletedEvent()
+    {
+        var tracker = new SpyActivityTracker();
+        var sut = CreateSutWithTracker(tracker);
+        var dealId = await SeedDealAsync();
+        using var stream = new MemoryStream(new byte[] { 1, 2 });
+        var result = await sut.UploadDocumentAsync(dealId, stream, "test.pdf", DocumentType.Appraisal, "test-user");
+
+        await sut.DeleteDocumentAsync(result.DocumentId, "test-user");
+
+        var evt = Assert.Single(tracker.TrackedEvents, e => e.EventType == ActivityEventType.DocumentDeleted);
+        Assert.Equal(dealId, evt.DealId);
+        Assert.Equal("test.pdf", evt.Metadata);
+    }
+
+    [Fact]
+    public async Task VerifyDealOwnership_EmitsDocumentAccessDeniedEvent()
+    {
+        var tracker = new SpyActivityTracker();
+        var sut = CreateSutWithTracker(tracker);
+        var dealId = await SeedDealAsync("owner-user");
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(
+            () => sut.UploadDocumentAsync(dealId, stream, "test.pdf", DocumentType.RentRoll, "other-user"));
+
+        var evt = Assert.Single(tracker.TrackedEvents, e => e.EventType == ActivityEventType.DocumentAccessDenied);
+        Assert.Equal(dealId, evt.DealId);
+        Assert.Equal("other-user", evt.Metadata);
+    }
+
+    [Fact]
+    public async Task VirusScanFailed_EmitsDocumentScanFailedEvent()
+    {
+        var tracker = new SpyActivityTracker();
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+        using var db = new AppDbContext(options);
+        var storage = new LocalFileStorageService(_tempDir);
+        var sut = new DocumentUploadService(db, storage, virusScanner: new StubScanFailedService(),
+            logger: NullLogger<DocumentUploadService>.Instance, activityTracker: tracker);
+
+        var deal = new Deal("Test Property", "test-user");
+        db.Deals.Add(deal);
+        await db.SaveChangesAsync();
+
+        using var stream = new MemoryStream(new byte[] { 1, 2, 3 });
+        // ScanFailed doesn't throw — the upload proceeds but we track the failure
+        await sut.UploadDocumentAsync(deal.Id, stream, "test.csv", DocumentType.RentRoll, "test-user");
+
+        var evt = Assert.Single(tracker.TrackedEvents, e => e.EventType == ActivityEventType.DocumentScanFailed);
+        Assert.Equal(deal.Id, evt.DealId);
+        Assert.Equal("test.csv", evt.Metadata);
+    }
+
+    private DocumentUploadService CreateSutWithTracker(SpyActivityTracker tracker)
+    {
+        var storage = new LocalFileStorageService(_tempDir);
+        return new DocumentUploadService(_db, storage, activityTracker: tracker);
+    }
+
     private async Task<Guid> SeedDealAsync(string userId = "test-user")
     {
         var deal = new Deal("Test Property", userId);
@@ -311,5 +377,25 @@ public class DocumentUploadServiceTests : IDisposable
     {
         public Task<VirusScanResult> ScanAsync(Stream fileStream, CancellationToken ct = default)
             => Task.FromResult(new VirusScanResult(VirusScanStatus.Infected, "TestMalware.A"));
+    }
+
+    private class StubScanFailedService : IVirusScanService
+    {
+        public Task<VirusScanResult> ScanAsync(Stream fileStream, CancellationToken ct = default)
+            => Task.FromResult(new VirusScanResult(VirusScanStatus.ScanFailed, "ScanError"));
+    }
+
+    private sealed class SpyActivityTracker : IActivityTracker
+    {
+        public List<(ActivityEventType EventType, Guid? DealId, string? Metadata)> TrackedEvents { get; } = new();
+
+        public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+        public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+
+        public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null)
+        {
+            TrackedEvents.Add((eventType, dealId, metadata));
+            return Task.CompletedTask;
+        }
     }
 }

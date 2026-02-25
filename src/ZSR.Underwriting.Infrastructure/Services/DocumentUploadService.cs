@@ -18,19 +18,22 @@ public class DocumentUploadService : IDocumentUploadService
     private readonly IFileContentValidator? _contentValidator;
     private readonly IVirusScanService? _virusScanner;
     private readonly ILogger<DocumentUploadService>? _logger;
+    private readonly IActivityTracker? _activityTracker;
 
     public DocumentUploadService(
         AppDbContext db,
         IFileStorageService storage,
         IFileContentValidator? contentValidator = null,
         IVirusScanService? virusScanner = null,
-        ILogger<DocumentUploadService>? logger = null)
+        ILogger<DocumentUploadService>? logger = null,
+        IActivityTracker? activityTracker = null)
     {
         _db = db;
         _storage = storage;
         _contentValidator = contentValidator;
         _virusScanner = virusScanner;
         _logger = logger;
+        _activityTracker = activityTracker;
     }
 
     public async Task<FileUploadResultDto> UploadDocumentAsync(
@@ -84,6 +87,8 @@ public class DocumentUploadService : IDocumentUploadService
             {
                 _logger?.LogWarning("Virus scan failed for {FileName} by user {UserId} for deal {DealId}: {Error}",
                     fileName, userId, dealId, scanResult.ThreatName);
+                if (_activityTracker is not null)
+                    await _activityTracker.TrackEventAsync(ActivityEventType.DocumentScanFailed, dealId: dealId, metadata: fileName);
             }
 
             _logger?.LogInformation("Virus scan complete for {FileName}: {ScanStatus}", fileName, scanStatus);
@@ -138,11 +143,17 @@ public class DocumentUploadService : IDocumentUploadService
 
         await VerifyDealOwnershipAsync(doc.DealId, userId, ct);
 
+        var dealId = doc.DealId;
+        var fileName = doc.FileName;
+
         await _storage.DeleteFileAsync(doc.StoredPath, ct);
         _db.UploadedDocuments.Remove(doc);
         await _db.SaveChangesAsync(ct);
 
-        _logger?.LogInformation("Document deleted: {DocumentId} ({FileName}) by user {UserId}", documentId, doc.FileName, userId);
+        _logger?.LogInformation("Document deleted: {DocumentId} ({FileName}) by user {UserId}", documentId, fileName, userId);
+
+        if (_activityTracker is not null)
+            await _activityTracker.TrackEventAsync(ActivityEventType.DocumentDeleted, dealId: dealId, metadata: fileName);
     }
 
     private async Task VerifyDealOwnershipAsync(Guid dealId, string userId, CancellationToken ct)
@@ -153,6 +164,8 @@ public class DocumentUploadService : IDocumentUploadService
         if (deal is null || deal.UserId != userId)
         {
             _logger?.LogWarning("Access denied: user {UserId} attempted to access deal {DealId}", userId, dealId);
+            if (_activityTracker is not null)
+                await _activityTracker.TrackEventAsync(ActivityEventType.DocumentAccessDenied, dealId: dealId, metadata: userId);
             throw new UnauthorizedAccessException($"User does not have access to deal {dealId}.");
         }
     }

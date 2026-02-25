@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Infrastructure.Data;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -20,7 +21,7 @@ public class QuickAnalysisService : IQuickAnalysisService
         _logger = logger;
     }
 
-    public async Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, string userId, CancellationToken ct = default)
+    public async Task<QuickAnalysisProgress> StartAnalysisAsync(string searchQuery, string userId, CancellationToken ct = default, IActivityTracker? activityTracker = null)
     {
         var progress = new QuickAnalysisProgress { SearchQuery = searchQuery };
 
@@ -40,6 +41,11 @@ public class QuickAnalysisService : IQuickAnalysisService
 
             progress.DealId = deal.Id;
             progress.SetStepStatus(AnalysisStep.DealCreation, StepStatus.Complete);
+
+            if (activityTracker is not null)
+            {
+                await activityTracker.TrackEventAsync(ActivityEventType.DealCreated, dealId: deal.Id);
+            }
         }
         catch (Exception ex)
         {

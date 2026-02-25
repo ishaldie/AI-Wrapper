@@ -12,6 +12,7 @@ using Serilog;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Application.Services;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Data;
@@ -241,6 +242,17 @@ try
                     Window = TimeSpan.FromMinutes(5),
                     QueueLimit = 0
                 }));
+
+        options.OnRejected = async (context, cancellationToken) =>
+        {
+            var userId = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var tracker = context.HttpContext.RequestServices.GetService<IActivityTracker>();
+                if (tracker is not null)
+                    await tracker.TrackEventAsync(ActivityEventType.DocumentRateLimited, metadata: userId);
+            }
+        };
     });
 
     // Add document parsers

@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Application.DTOs;
+using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Infrastructure.Data;
 using ZSR.Underwriting.Infrastructure.Services;
 
@@ -52,8 +54,43 @@ public class QuickAnalysisServiceTests : IDisposable
         Assert.Equal("456 Oak Ave, Austin TX", deal.Address);
     }
 
+    [Fact]
+    public async Task StartAnalysisAsync_EmitsDealCreatedEvent()
+    {
+        var tracker = new SpyActivityTracker();
+
+        var progress = await _sut.StartAnalysisAsync("789 Elm St, Houston TX", "test-user", activityTracker: tracker);
+
+        Assert.Single(tracker.TrackedEvents);
+        var (eventType, dealId, metadata) = tracker.TrackedEvents[0];
+        Assert.Equal(ActivityEventType.DealCreated, eventType);
+        Assert.Equal(progress.DealId, dealId);
+    }
+
+    [Fact]
+    public async Task StartAnalysisAsync_NullTracker_DoesNotThrow()
+    {
+        var progress = await _sut.StartAnalysisAsync("100 Pine St, San Antonio TX", "test-user", activityTracker: null);
+
+        Assert.NotEqual(Guid.Empty, progress.DealId);
+    }
+
     public void Dispose()
     {
         _serviceProvider.Dispose();
+    }
+
+    private sealed class SpyActivityTracker : IActivityTracker
+    {
+        public List<(ActivityEventType EventType, Guid? DealId, string? Metadata)> TrackedEvents { get; } = new();
+
+        public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+        public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+
+        public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null)
+        {
+            TrackedEvents.Add((eventType, dealId, metadata));
+            return Task.CompletedTask;
+        }
     }
 }
