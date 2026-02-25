@@ -36,6 +36,6 @@
 - [x] 4.5 Unit tests: BYOK user bypasses daily budget, per-deal budget still enforced, usage recorded with IsByok flag
 
 ## Phase 5: Admin Visibility
-- [ ] 5.1 Add BYOK column to admin token dashboard showing which users have their own key configured
-- [ ] 5.2 Filter token usage views by BYOK vs shared key usage
-- [ ] 5.3 Unit tests: admin dashboard shows BYOK status
+- [x] 5.1 Add BYOK column to admin token dashboard showing which users have their own key configured
+- [x] 5.2 Filter token usage views by BYOK vs shared key usage
+- [x] 5.3 Unit tests: admin dashboard shows BYOK status

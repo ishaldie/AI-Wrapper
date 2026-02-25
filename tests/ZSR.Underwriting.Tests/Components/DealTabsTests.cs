@@ -808,6 +808,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
+        _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
         _ctx.Services.AddSingleton<IOptions<TokenManagementOptions>>(
             Options.Create(new TokenManagementOptions()));
         _ctx.Services.AddLogging();
@@ -971,4 +972,13 @@ internal class NoOpTokenBudgetService : ITokenBudgetService
         => Task.FromResult((true, 0, 500_000));
     public Task<(bool Allowed, int Used, int Limit, bool Warning)> CheckDealBudgetAsync(Guid dealId)
         => Task.FromResult((true, 0, 1_000_000, false));
+}
+
+internal class NoOpApiKeyService : IApiKeyService
+{
+    public Task SaveKeyAsync(string userId, string apiKey, string? model = null) => Task.CompletedTask;
+    public Task<(string ApiKey, string? Model)?> GetDecryptedKeyAsync(string userId) => Task.FromResult<(string, string?)?>(null);
+    public Task RemoveKeyAsync(string userId) => Task.CompletedTask;
+    public Task<bool> HasKeyAsync(string userId) => Task.FromResult(false);
+    public Task<(bool Success, string? ErrorMessage)> ValidateKeyAsync(string apiKey) => Task.FromResult((true, (string?)null));
 }

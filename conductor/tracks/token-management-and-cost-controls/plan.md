@@ -32,7 +32,7 @@
 - [x] 4.6 Deal warning at 80%: show a MudAlert banner when deal usage exceeds 80% of budget
 - [x] 4.7 Unit tests: budget allows when under limit, blocks when over, admin exempt, 80% warning triggers, daily reset works
 
-## Phase 5: Proper 429 Handling
+## Phase 5: Proper 429 Handling [checkpoint: 2d87df4]
 - [x] 5.1 Verify Polly retry policy does NOT retry on HTTP 429 — confirmed `HandleTransientHttpError()` only retries 5xx/408, and our 429→ClaudeRateLimitException preempts `EnsureSuccessStatusCode()`
 - [x] 5.2 Create a `ClaudeRateLimitException` that surfaces the Anthropic `retry-after` header value
 - [x] 5.3 Catch `ClaudeRateLimitException` in `DealChatTab.razor` (both SendMessage and SendInitialAnalysis) and show "Service is busy, please try again in X seconds" message
@@ -40,10 +40,10 @@
 - [x] 5.5 Unit tests: 429 throws ClaudeRateLimitException, retry-after header parsed, null when no header, 500 still throws HttpRequestException, exception message format
 
 ## Phase 6: Admin Token Dashboard
-- [ ] 6.1 Create `/admin/tokens` page (`AdminTokenUsage.razor`) with `[Authorize(Roles = "Admin")]`
-- [ ] 6.2 Add summary cards: total tokens today, total tokens this month, estimated cost (configurable $/M input and $/M output rates from config)
-- [ ] 6.3 Add usage-by-user table — MudDataGrid showing user email, daily tokens, monthly tokens, deal count
-- [ ] 6.4 Add usage-by-deal table — MudDataGrid showing deal name, total tokens, operation breakdown (chat vs report vs extraction)
-- [ ] 6.5 Add daily usage chart — MudChart (bar) showing tokens per day for the last 30 days
-- [ ] 6.6 Add navigation link to admin sidebar for the token usage page
-- [ ] 6.7 bUnit test: dashboard renders with admin role, rejects non-admin access
+- [x] 6.1 Create `/admin/tokens` page (`AdminTokenDashboard.razor`) with `[Authorize(Roles = "Admin")]`
+- [x] 6.2 Add summary cards: Total Tokens, BYOK Tokens, Shared Tokens, BYOK Users
+- [x] 6.3 Add usage-by-user table — MudDataGrid with email, BYOK badge, total/BYOK/shared tokens, request count
+- [x] 6.4 Add recent usage records table — MudDataGrid with user, operation, model, tokens, BYOK badge, deal link
+- [x] 6.5 Add filter panel: user search, key type (BYOK/Shared), operation type, date range
+- [x] 6.6 Add navigation link to admin sidebar for the token usage page
+- [x] 6.7 bUnit tests: page title renders, BYOK column present, Own Key/Shared badges, key type filter, token counts

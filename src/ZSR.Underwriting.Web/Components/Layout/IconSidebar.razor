@@ -33,6 +33,9 @@
 
         @* Admin *@
         <AuthorizeView Roles="Admin">
+            <NavLink href="admin/tokens" class="icon-sidebar-btn" Match="NavLinkMatch.Prefix" title="Token Usage">
+                <MudIcon Icon="@Icons.Material.Filled.Token" Size="Size.Small" />
+            </NavLink>
             <NavLink href="admin/activity" class="icon-sidebar-btn" Match="NavLinkMatch.Prefix" title="Activity Log">
                 <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
             </NavLink>

@@ -1,0 +1,267 @@
+@page "/admin/tokens"
+@using Microsoft.AspNetCore.Authorization
+@using ZSR.Underwriting.Domain.Entities
+@using ZSR.Underwriting.Domain.Enums
+@using ZSR.Underwriting.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize(Roles = "Admin")]
+@inject AppDbContext Db
+@rendermode InteractiveServer
+
+<PageTitle>Token Usage - Admin</PageTitle>
+
+<MudText Typo="Typo.h4" Style="color: #1A1D23; font-weight: 700; margin-bottom: 1.5rem;">Token Usage</MudText>
+
+@* Filters *@
+<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudTextField @bind-Value="_userFilter" Label="User" Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"
+                          Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="ApplyFilters" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect T="string" Value="_keyTypeFilter" Label="Key Type" Variant="Variant.Outlined"
+                       Clearable="true" ValueChanged="OnKeyTypeChanged">
+                <MudSelectItem Value="@("byok")">Own Key (BYOK)</MudSelectItem>
+                <MudSelectItem Value="@("shared")">Shared</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect T="OperationType?" Value="_operationFilter" Label="Operation" Variant="Variant.Outlined"
+                       Clearable="true" ValueChanged="OnOperationChanged">
+                @foreach (var op in Enum.GetValues<OperationType>())
+                {
+                    <MudSelectItem Value="@((OperationType?)op)">@op</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudDateRangePicker DateRange="_dateRange" Label="Date Range" Variant="Variant.Outlined"
+                                Clearable="true" DateRangeChanged="OnDateRangeChanged" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Summary Cards *@
+<MudGrid Class="mb-4">
+    <MudItem xs="12" sm="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #E5E7EB; text-align: center;">
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">Total Tokens</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: 700;">@_totalTokens.ToString("N0")</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #E5E7EB; text-align: center;">
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">BYOK Tokens</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: 700; color: #059669;">@_byokTokens.ToString("N0")</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #E5E7EB; text-align: center;">
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">Shared Tokens</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: 700; color: #2563EB;">@_sharedTokens.ToString("N0")</MudText>
+        </MudPaper>
+    </MudItem>
+    <MudItem xs="12" sm="3">
+        <MudPaper Class="pa-4" Elevation="0" Style="border: 1px solid #E5E7EB; text-align: center;">
+            <MudText Typo="Typo.body2" Style="color: #6B7280;">BYOK Users</MudText>
+            <MudText Typo="Typo.h5" Style="font-weight: 700;">@_byokUserCount</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@* Per-User Usage Table *@
+<MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600;">Usage by User</MudText>
+<MudDataGrid T="UserTokenSummary" Items="@_userSummaries" Hover="true" Dense="true" Striped="true"
+             Loading="@_loading" Class="mb-6" Style="border: 1px solid #E5E7EB;">
+    <Columns>
+        <PropertyColumn Property="x => x.UserId" Title="User" />
+        <PropertyColumn Property="x => x.UserName" Title="Email" />
+        <TemplateColumn Title="BYOK">
+            <CellTemplate>
+                @if (context.Item.HasByokKey)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Own Key</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default">Shared</MudChip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.TotalTokens" Title="Total Tokens" Format="N0" />
+        <PropertyColumn Property="x => x.ByokTokens" Title="BYOK Tokens" Format="N0" />
+        <PropertyColumn Property="x => x.SharedTokens" Title="Shared Tokens" Format="N0" />
+        <PropertyColumn Property="x => x.RequestCount" Title="Requests" />
+    </Columns>
+</MudDataGrid>
+
+@* Recent Records Table *@
+<MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600;">Recent Usage Records</MudText>
+<MudDataGrid T="TokenUsageRecord" Items="@_records" Hover="true" Dense="true" Striped="true"
+             Loading="@_loading" Style="border: 1px solid #E5E7EB;">
+    <Columns>
+        <PropertyColumn Property="x => x.UserId" Title="User" />
+        <PropertyColumn Property="x => x.OperationType" Title="Operation" />
+        <PropertyColumn Property="x => x.Model" Title="Model" />
+        <TemplateColumn Title="Tokens">
+            <CellTemplate>
+                @((context.Item.InputTokens + context.Item.OutputTokens).ToString("N0"))
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="BYOK">
+            <CellTemplate>
+                @if (context.Item.IsByok)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">Own Key</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Default">Shared</MudChip>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Deal">
+            <CellTemplate>
+                @if (context.Item.DealId.HasValue)
+                {
+                    <MudLink Href="@($"/deals/{context.Item.DealId}")">@context.Item.DealId.Value.ToString()[..8]…</MudLink>
+                }
+                else
+                {
+                    <MudText>—</MudText>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.CreatedAt" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private List<TokenUsageRecord> _records = new();
+    private List<UserTokenSummary> _userSummaries = new();
+    private bool _loading = true;
+    private long _totalTokens;
+    private long _byokTokens;
+    private long _sharedTokens;
+    private int _byokUserCount;
+
+    private string? _userFilter;
+    private string? _keyTypeFilter;
+    private OperationType? _operationFilter;
+    private DateRange? _dateRange;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task OnKeyTypeChanged(string? value)
+    {
+        _keyTypeFilter = value;
+        await LoadDataAsync();
+    }
+
+    private async Task OnOperationChanged(OperationType? value)
+    {
+        _operationFilter = value;
+        await LoadDataAsync();
+    }
+
+    private async Task OnDateRangeChanged(DateRange? range)
+    {
+        _dateRange = range;
+        await LoadDataAsync();
+    }
+
+    private async Task ApplyFilters()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+
+        var query = Db.TokenUsageRecords.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(_userFilter))
+            query = query.Where(r => r.UserId.Contains(_userFilter));
+
+        if (_keyTypeFilter == "byok")
+            query = query.Where(r => r.IsByok);
+        else if (_keyTypeFilter == "shared")
+            query = query.Where(r => !r.IsByok);
+
+        if (_operationFilter.HasValue)
+            query = query.Where(r => r.OperationType == _operationFilter.Value);
+
+        if (_dateRange?.Start is not null)
+        {
+            var start = _dateRange.Start.Value.ToUniversalTime();
+            query = query.Where(r => r.CreatedAt >= start);
+        }
+
+        if (_dateRange?.End is not null)
+        {
+            var end = _dateRange.End.Value.AddDays(1).ToUniversalTime();
+            query = query.Where(r => r.CreatedAt < end);
+        }
+
+        // Summary stats
+        var allRecords = await query.ToListAsync();
+        _totalTokens = allRecords.Sum(r => (long)r.InputTokens + r.OutputTokens);
+        _byokTokens = allRecords.Where(r => r.IsByok).Sum(r => (long)r.InputTokens + r.OutputTokens);
+        _sharedTokens = allRecords.Where(r => !r.IsByok).Sum(r => (long)r.InputTokens + r.OutputTokens);
+
+        // Users with BYOK keys configured (check ApplicationUser table)
+        _byokUserCount = await Db.Users
+            .Where(u => u.EncryptedAnthropicApiKey != null)
+            .CountAsync();
+
+        // Per-user summaries
+        var byokUserIds = await Db.Users
+            .Where(u => u.EncryptedAnthropicApiKey != null)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        var userLookup = await Db.Users
+            .Where(u => allRecords.Select(r => r.UserId).Distinct().Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Email ?? u.UserName ?? "—");
+
+        _userSummaries = allRecords
+            .GroupBy(r => r.UserId)
+            .Select(g => new UserTokenSummary
+            {
+                UserId = g.Key,
+                UserName = userLookup.GetValueOrDefault(g.Key, "—") ?? "—",
+                HasByokKey = byokUserIds.Contains(g.Key),
+                TotalTokens = g.Sum(r => (long)r.InputTokens + r.OutputTokens),
+                ByokTokens = g.Where(r => r.IsByok).Sum(r => (long)r.InputTokens + r.OutputTokens),
+                SharedTokens = g.Where(r => !r.IsByok).Sum(r => (long)r.InputTokens + r.OutputTokens),
+                RequestCount = g.Count()
+            })
+            .OrderByDescending(s => s.TotalTokens)
+            .ToList();
+
+        // Recent records
+        _records = allRecords
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(200)
+            .ToList();
+
+        _loading = false;
+    }
+
+    private class UserTokenSummary
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public bool HasByokKey { get; set; }
+        public long TotalTokens { get; set; }
+        public long ByokTokens { get; set; }
+        public long SharedTokens { get; set; }
+        public int RequestCount { get; set; }
+    }
+}
