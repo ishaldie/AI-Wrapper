@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using MailKit.Net.Smtp;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -24,7 +25,7 @@ public class EmailCodeService : IEmailCodeService
 
     public async Task<string> GenerateCodeAsync(string email)
     {
-        var code = Random.Shared.Next(100000, 999999).ToString();
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var key = CacheKey(email);
         _cache.Set(key, code, CodeTtl);
 
