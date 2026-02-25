@@ -13,7 +13,7 @@
 - [x] 2.4 Add `TokenManagement` section to `appsettings.json` with `MaxConversationMessages`, `MaxConversationTokens`, `DailyUserTokenBudget`, `DealTokenBudget` config keys
 - [x] 2.5 Unit tests: truncation by message count, truncation by token estimate, keeps most recent messages, handles empty history
 
-## Phase 3: Token Usage Tracking
+## Phase 3: Token Usage Tracking [checkpoint: 4fefbea]
 - [x] 3.1 Create `TokenUsageRecord` entity — Id, UserId, DealId (nullable), OperationType (enum: Chat, ReportProse, SalesCompExtraction, QuickAnalysis), InputTokens, OutputTokens, Model, CreatedAt
 - [x] 3.2 Create `ITokenUsageTracker` interface with `RecordUsageAsync(userId, dealId, operationType, inputTokens, outputTokens, model)`
 - [x] 3.3 Implement `TokenUsageTracker` service — persists `TokenUsageRecord` to database, with fire-and-forget pattern (never blocks the caller)
@@ -24,13 +24,13 @@
 - [x] 3.8 Unit tests: usage recorded with correct fields, fire-and-forget doesn't throw on failure, all operation types covered
 
 ## Phase 4: Budget Enforcement
-- [ ] 4.1 Create `ITokenBudgetService` interface with `CheckUserBudgetAsync(userId)` returning `(bool allowed, int used, int limit)` and `CheckDealBudgetAsync(dealId)` returning `(bool allowed, int used, int limit, bool warning)`
-- [ ] 4.2 Implement `TokenBudgetService` — queries `TokenUsageRecords` for daily user totals and lifetime deal totals against configured limits
-- [ ] 4.3 Wire budget check into `DealChatTab.razor` — check before sending, show "daily limit reached" or "deal token limit reached" message
-- [ ] 4.4 Wire budget check into report generation path — check before `ReportAssembler` calls prose generator
-- [ ] 4.5 Admin exemption: skip budget check when user has Admin role
-- [ ] 4.6 Deal warning at 80%: show a MudAlert banner when deal usage exceeds 80% of budget
-- [ ] 4.7 Unit tests: budget allows when under limit, blocks when over, admin exempt, 80% warning triggers, daily reset works
+- [x] 4.1 Create `ITokenBudgetService` interface with `CheckUserBudgetAsync(userId)` returning `(bool allowed, int used, int limit)` and `CheckDealBudgetAsync(dealId)` returning `(bool allowed, int used, int limit, bool warning)`
+- [x] 4.2 Implement `TokenBudgetService` — queries `TokenUsageRecords` for daily user totals and lifetime deal totals against configured limits
+- [x] 4.3 Wire budget check into `DealChatTab.razor` — check before sending, show "daily limit reached" or "deal token limit reached" message
+- [x] 4.4 Wire budget check into report generation path — check before `ReportAssembler` calls prose generator
+- [x] 4.5 Admin exemption: skip budget check when user has Admin role
+- [x] 4.6 Deal warning at 80%: show a MudAlert banner when deal usage exceeds 80% of budget
+- [x] 4.7 Unit tests: budget allows when under limit, blocks when over, admin exempt, 80% warning triggers, daily reset works
 
 ## Phase 5: Proper 429 Handling
 - [ ] 5.1 Update Polly retry policy in `ClaudeClient` — do NOT retry on HTTP 429, only retry on 5xx and transient network errors

@@ -22,6 +22,7 @@ public class ReportAssembler : IReportAssembler
     private readonly IReportProseGenerator? _proseGenerator;
     private readonly IHudApiClient? _hudApiClient;
     private readonly ITokenUsageTracker? _tokenTracker;
+    private readonly ITokenBudgetService? _budgetService;
     private readonly UnderwritingCalculator _calc = new();
     private readonly AffordabilityCalculator _affordabilityCalc = new();
 
@@ -32,7 +33,8 @@ public class ReportAssembler : IReportAssembler
         IPublicDataService? publicDataService = null,
         IReportProseGenerator? proseGenerator = null,
         IHudApiClient? hudApiClient = null,
-        ITokenUsageTracker? tokenTracker = null)
+        ITokenUsageTracker? tokenTracker = null,
+        ITokenBudgetService? budgetService = null)
     {
         _db = db;
         _marketDataService = marketDataService;
@@ -41,6 +43,7 @@ public class ReportAssembler : IReportAssembler
         _proseGenerator = proseGenerator;
         _hudApiClient = hudApiClient;
         _tokenTracker = tokenTracker;
+        _budgetService = budgetService;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -117,9 +120,16 @@ public class ReportAssembler : IReportAssembler
         var acqCosts = _calc.CalculateAcquisitionCosts(deal.PurchasePrice);
         var totalEquity = _calc.CalculateEquityRequired(deal.PurchasePrice, acqCosts, loanAmount);
 
-        // Generate AI prose if generator is available
+        // Generate AI prose if generator is available and deal budget allows
         GeneratedProse? prose = null;
-        if (_proseGenerator != null)
+        var dealBudgetAllowed = true;
+        if (_budgetService != null)
+        {
+            var (allowed, _, _, _) = await _budgetService.CheckDealBudgetAsync(dealId);
+            dealBudgetAllowed = allowed;
+        }
+
+        if (_proseGenerator != null && dealBudgetAllowed)
         {
             prose = await GenerateProseAsync(deal, noi, egi, opEx, capRate, debtService,
                 loanAmount, totalEquity, effectiveHold, effectiveAmort, loanRate,

@@ -148,6 +148,7 @@
     <!-- Token Management & Cost Controls track -->
     <Compile Include="Services\ConversationTruncatorTests.cs" />
     <Compile Include="Services\TokenUsageTrackerTests.cs" />
+    <Compile Include="Services\TokenBudgetServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -28,6 +28,7 @@
 @inject ILogger<DealChatTab> Logger
 @inject IOptions<TokenManagementOptions> TokenConfig
 @inject ITokenUsageTracker TokenTracker
+@inject ITokenBudgetService BudgetService
 
 <div class="deal-chat-tab-container">
     @* Messages area with drag-and-drop *@
@@ -122,6 +123,14 @@
                         <span style="color: #9CA3AF; font-size: 0.875rem;">Analyzing...</span>
                     </div>
                 </div>
+            }
+
+            @if (_dealBudgetWarning)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mx-4 mb-2" Variant="Variant.Outlined"
+                          Style="max-width: 600px;">
+                    This deal has used over 80% of its token budget. Usage may be restricted soon.
+                </MudAlert>
             }
 
             @if (!string.IsNullOrEmpty(_errorMessage))
@@ -404,6 +413,9 @@
     private static readonly TimeSpan SendCooldown = TimeSpan.FromSeconds(2);
     private bool IsSendOnCooldown => DateTime.UtcNow - _lastSendTime < SendCooldown;
 
+    // Budget warning state
+    private bool _dealBudgetWarning;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -594,6 +606,27 @@
         if ((!hasText && !hasFiles) || _thinking || IsSendOnCooldown) return;
 
         _lastSendTime = DateTime.UtcNow;
+
+        // Budget enforcement (admin users exempt)
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var isAdmin = authState.User.IsInRole("Admin");
+        if (!isAdmin)
+        {
+            var (userAllowed, _, _) = await BudgetService.CheckUserBudgetAsync(_userId);
+            if (!userAllowed)
+            {
+                _errorMessage = "You've reached your daily token limit. Please try again tomorrow or contact an admin.";
+                return;
+            }
+
+            var (dealAllowed, _, _, dealWarning) = await BudgetService.CheckDealBudgetAsync(DealId);
+            _dealBudgetWarning = dealWarning;
+            if (!dealAllowed)
+            {
+                _errorMessage = "This deal has reached its token usage limit. Please contact an admin.";
+                return;
+            }
+        }
 
         var input = _userInput.Trim();
         _userInput = "";
