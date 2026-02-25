@@ -194,10 +194,31 @@ try
     builder.Services.AddScoped<IAuthorizedSenderService, ZSR.Underwriting.Infrastructure.Services.AuthorizedSenderService>();
     builder.Services.AddScoped<IEmailIngestionService, ZSR.Underwriting.Infrastructure.Services.EmailIngestionService>();
 
-    // Rate limiting — per-user upload throttle
+    // Rate limiting — per-user upload throttle + auth endpoint protection
     builder.Services.AddRateLimiter(options =>
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Global limiter: rate-limit auth form submissions by IP
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        {
+            if (httpContext.Request.Method == "POST" &&
+                (httpContext.Request.Path.StartsWithSegments("/verify-code") ||
+                 httpContext.Request.Path.StartsWithSegments("/login")))
+            {
+                var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    $"auth:{ip}",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(5),
+                        QueueLimit = 0
+                    });
+            }
+            return RateLimitPartition.GetNoLimiter("");
+        });
+
         options.AddPolicy("upload", httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
                 partitionKey: httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "anonymous",
