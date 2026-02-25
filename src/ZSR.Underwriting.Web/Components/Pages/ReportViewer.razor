@@ -487,6 +487,6 @@
         using var stream = new MemoryStream(pdfBytes);
         using var streamRef = new DotNetStreamReference(stream);
         await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
-        await ActivityTracker.TrackEventAsync(ActivityEventType.PdfExported, metadata: Report.PropertyName);
+        await ActivityTracker.TrackEventAsync(ActivityEventType.PdfExported, dealId: Report.DealId, metadata: Report.PropertyName);
     }
 }

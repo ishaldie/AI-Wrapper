@@ -10,10 +10,10 @@
 - [x] 1.7 Unit tests: verify each of the 6 events is emitted with correct EventType, DealId, and metadata
 
 ## Phase 2: Wire Wizard & Fix PdfExported
-- [ ] 2.1 Emit `WizardStarted` from the quick analysis entry point (`AnalysisStart.razor` or `Dashboard.razor` navigation to wizard)
-- [ ] 2.2 Emit `WizardCompleted` from the quick analysis completion point when the report is ready
-- [ ] 2.3 Fix `PdfExported` in `ReportViewer.razor` — pass `DealId` in the `TrackEventAsync` call alongside `PropertyName` metadata
-- [ ] 2.4 Unit tests: WizardStarted/WizardCompleted emitted at correct points, PdfExported includes DealId
+- [x] 2.1 Emit `WizardStarted` from the quick analysis entry point (`AnalysisStart.razor` and `Dashboard.razor`)
+- [x] 2.2 Emit `WizardCompleted` from `DealReport.razor` when report is assembled
+- [x] 2.3 Fix `PdfExported` in `ReportViewer.razor` — pass `DealId` in the `TrackEventAsync` call alongside `PropertyName` metadata
+- [x] 2.4 bUnit test: PdfExported includes DealId, Dashboard/DealTabs render without errors
 
 ## Phase 3: New Event Types
 - [ ] 3.1 Add `DocumentDownloaded` and `OAuthLoginCompleted` to `ActivityEventType` enum

@@ -150,4 +150,50 @@ public class ReportViewerTests : IAsyncLifetime
         Assert.Contains("$10,000,000", markup);
         Assert.Contains("100", markup);
     }
+
+    [Fact]
+    public async Task ExportPdf_TracksEventWithDealId()
+    {
+        var spy = new SpyActivityTracker();
+        var ctx = new BunitContext();
+        ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        ctx.Services.AddMudServices();
+        ctx.Services.AddSingleton<IReportPdfExporter, StubPdfExporter>();
+        ctx.Services.AddSingleton<IActivityTracker>(spy);
+
+        try
+        {
+            var report = CreateTestReport();
+            var cut = ctx.Render<ReportViewer>(p => p.Add(x => x.Report, report));
+
+            // Find and click the Export PDF button
+            var exportBtn = cut.Find(".mud-button-root");
+            // The first MudButton is the Export PDF button
+            var pdfBtn = cut.FindAll("button").FirstOrDefault(b => b.TextContent.Contains("Export PDF"));
+            if (pdfBtn is not null)
+                await cut.InvokeAsync(() => pdfBtn.Click());
+
+            var evt = Assert.Single(spy.TrackedEvents, e => e.EventType == ActivityEventType.PdfExported);
+            Assert.Equal(report.DealId, evt.DealId);
+            Assert.Equal("Sunset Apartments", evt.Metadata);
+        }
+        finally
+        {
+            await ctx.DisposeAsync();
+        }
+    }
+
+    private sealed class SpyActivityTracker : IActivityTracker
+    {
+        public List<(ActivityEventType EventType, Guid? DealId, string? Metadata)> TrackedEvents { get; } = new();
+
+        public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
+        public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
+
+        public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null)
+        {
+            TrackedEvents.Add((eventType, dealId, metadata));
+            return Task.CompletedTask;
+        }
+    }
 }

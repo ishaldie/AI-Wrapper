@@ -1,5 +1,6 @@
 @page "/analysis/start"
 @using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @inject NavigationManager Navigation
@@ -153,6 +154,7 @@
         _analyzing = true;
         try
         {
+            await ActivityTracker.TrackEventAsync(ActivityEventType.WizardStarted, metadata: _searchQuery);
             var progress = await QuickAnalysisService.StartAnalysisAsync(_searchQuery, _userId, activityTracker: ActivityTracker);
             Navigation.NavigateTo($"/deals/{progress.DealId}?tab=chat");
         }

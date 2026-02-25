@@ -75,6 +75,7 @@
         {
             _report = await ReportAssembler.AssembleReportAsync(DealId);
             await ActivityTracker.TrackEventAsync(ActivityEventType.ReportViewed, dealId: DealId);
+            await ActivityTracker.TrackEventAsync(ActivityEventType.WizardCompleted, dealId: DealId);
         }
         catch (KeyNotFoundException)
         {
