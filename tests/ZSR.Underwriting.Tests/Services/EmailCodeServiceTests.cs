@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -10,12 +11,14 @@ namespace ZSR.Underwriting.Tests.Services;
 public class EmailCodeServiceTests
 {
     private readonly EmailCodeService _sut;
+    private readonly CapturingLogger<EmailCodeService> _capturingLogger;
 
     public EmailCodeServiceTests()
     {
         var cache = new MemoryCache(new MemoryCacheOptions());
         var smtpOptions = Options.Create(new SmtpOptions());
-        _sut = new EmailCodeService(cache, NullLogger<EmailCodeService>.Instance, smtpOptions);
+        _capturingLogger = new CapturingLogger<EmailCodeService>();
+        _sut = new EmailCodeService(cache, _capturingLogger, smtpOptions);
     }
 
     [Fact]
@@ -112,5 +115,37 @@ public class EmailCodeServiceTests
         // Generate new code — counter should reset
         var code2 = await _sut.GenerateCodeAsync(email);
         Assert.True(_sut.ValidateCode(email, code2));
+    }
+
+    [Fact]
+    public async Task GenerateCodeAsync_DoesNotLogCodeValue()
+    {
+        var code = await _sut.GenerateCodeAsync("secret@test.com");
+
+        // No log message should contain the actual code value
+        foreach (var msg in _capturingLogger.Messages)
+        {
+            Assert.DoesNotContain(code, msg);
+        }
+
+        // Should still log that a code was sent (without the code)
+        Assert.Contains(_capturingLogger.Messages,
+            m => m.Contains("secret@test.com", StringComparison.OrdinalIgnoreCase));
+    }
+}
+
+/// <summary>
+/// Logger that captures formatted log messages for assertion.
+/// </summary>
+internal sealed class CapturingLogger<T> : ILogger<T>
+{
+    public List<string> Messages { get; } = new();
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => true;
+
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    {
+        Messages.Add(formatter(state, exception));
     }
 }

@@ -41,13 +41,13 @@ public class EmailCodeService : IEmailCodeService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send verification code to {Email}, falling back to console", email);
-                _logger.LogInformation("Verification code for {Email}: {Code}", email, code);
+                _logger.LogError(ex, "Failed to send verification code to {Email}", email);
+                _logger.LogWarning("Verification code generated for {Email} but email delivery failed", email);
             }
         }
         else
         {
-            _logger.LogInformation("Verification code for {Email}: {Code}", email, code);
+            _logger.LogInformation("Verification code generated for {Email} (SMTP not configured)", email);
         }
 
         return code;
