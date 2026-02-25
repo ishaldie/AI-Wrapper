@@ -36,7 +36,8 @@ public static class MarketDataEnricher
     public static TenantMarketSection EnrichTenantMarket(
         MarketContextDto marketContext,
         decimal subjectRentPerUnit,
-        decimal subjectOccupancy)
+        decimal subjectOccupancy,
+        TenantDemographicsDto? demographics = null)
     {
         var employers = marketContext.MajorEmployers;
         var drivers = marketContext.EconomicDrivers;
@@ -46,7 +47,7 @@ public static class MarketDataEnricher
                     || (drivers != null && drivers.Count > 0)
                     || (pipeline != null && pipeline.Count > 0);
 
-        if (!hasData)
+        if (!hasData && demographics == null)
         {
             return new TenantMarketSection
             {
@@ -79,11 +80,70 @@ public static class MarketDataEnricher
             sb.Append(". ");
         }
 
+        // Build benchmarks from Census demographics
+        var benchmarks = new List<BenchmarkRow>();
+        decimal marketRent = 0m;
+
+        if (demographics != null)
+        {
+            sb.Append($"(Source: {demographics.Source}) ");
+
+            if (demographics.MedianHouseholdIncome > 0)
+            {
+                benchmarks.Add(new BenchmarkRow
+                {
+                    Metric = "Median Household Income",
+                    Subject = "N/A",
+                    Market = $"${demographics.MedianHouseholdIncome:N0}",
+                    Variance = "N/A"
+                });
+            }
+
+            if (demographics.MedianGrossRent > 0)
+            {
+                marketRent = demographics.MedianGrossRent;
+                var variance = subjectRentPerUnit > 0
+                    ? Math.Round((subjectRentPerUnit - marketRent) / marketRent * 100m, 1)
+                    : 0m;
+                benchmarks.Add(new BenchmarkRow
+                {
+                    Metric = "Median Gross Rent",
+                    Subject = $"${subjectRentPerUnit:N0}",
+                    Market = $"${marketRent:N0}",
+                    Variance = $"{(variance >= 0 ? "+" : "")}{variance}%"
+                });
+            }
+
+            if (demographics.AverageHouseholdSize > 0)
+            {
+                benchmarks.Add(new BenchmarkRow
+                {
+                    Metric = "Avg Household Size",
+                    Subject = "N/A",
+                    Market = demographics.AverageHouseholdSize.ToString("F2"),
+                    Variance = "N/A"
+                });
+            }
+
+            if (demographics.RentBurdenPercent > 0)
+            {
+                benchmarks.Add(new BenchmarkRow
+                {
+                    Metric = "Rent Burden (>=30% HHI)",
+                    Subject = "N/A",
+                    Market = $"{demographics.RentBurdenPercent}%",
+                    Variance = "N/A"
+                });
+            }
+        }
+
         return new TenantMarketSection
         {
             Narrative = sb.ToString().TrimEnd(),
             SubjectRentPerUnit = subjectRentPerUnit,
-            SubjectOccupancy = subjectOccupancy
+            SubjectOccupancy = subjectOccupancy,
+            MarketRentPerUnit = marketRent,
+            Benchmarks = benchmarks
         };
     }
 

@@ -29,21 +29,21 @@
 - [x] 0c7f291 4.5 Unit tests with mock Claude response
 
 ## Phase 5: Public API Enrichment
-- [~] 5.1 Create `IPublicDataService` interface with methods: `GetCensusDataAsync(string zipCode)`, `GetBlsDataAsync(string state, string metro)`, `GetFredDataAsync()`
-- [~] 5.2 Implement `CensusApiClient` — call Census Bureau ACS API for HHI, population, demographics by zip/tract
-- [~] 5.3 Implement `BlsApiClient` — call BLS API for unemployment rate, job growth by metro area
-- [~] 5.4 Implement `FredApiClient` — call FRED API for rent index, CPI, treasury rates
-- [~] 5.5 Create `PublicDataDto` to hold aggregated results from all 3 sources
-- [~] 5.6 Register services in DI, add HttpClient registrations in `Program.cs`
-- [~] 5.7 Wire into `ReportAssembler` — enrich market context with public data before prose generation
-- [~] 5.8 Unit tests with mocked HTTP responses
+- [x] e774315 5.1 Create `IPublicDataService` interface with methods: `GetCensusDataAsync(string zipCode)`, `GetBlsDataAsync(string state, string metro)`, `GetFredDataAsync()`
+- [x] e774315 5.2 Implement `CensusApiClient` — call Census Bureau ACS API for HHI, population, demographics by zip/tract
+- [x] e774315 5.3 Implement `BlsApiClient` — call BLS API for unemployment rate, job growth by metro area
+- [x] e774315 5.4 Implement `FredApiClient` — call FRED API for rent index, CPI, treasury rates
+- [x] e774315 5.5 Create `PublicDataDto` to hold aggregated results from all 3 sources
+- [x] e774315 5.6 Register services in DI, add HttpClient registrations in `Program.cs`
+- [x] e774315 5.7 Wire into `ReportAssembler` — enrich market context with public data before prose generation
+- [x] e774315 5.8 Unit tests with mocked HTTP responses
 
 ## Phase 6: Tenant Demographics
-- [ ] 6.1 Extend `CensusApiClient` to pull ACS tenant demographics: median HHI, age distribution, household size, rent burden %
-- [ ] 6.2 Create `TenantDemographicsDto` with structured fields
-- [ ] 6.3 Wire into `MarketDataEnricher.EnrichTenantMarket()` — add Census benchmarks to `BenchmarkRow[]` (Subject vs Market median)
-- [ ] 6.4 Display demographics in TenantMarket report section with source attribution ("U.S. Census Bureau ACS")
-- [ ] 6.5 Unit tests for demographics enrichment
+- [~] 6.1 Extend `CensusApiClient` to pull ACS tenant demographics: median HHI, age distribution, household size, rent burden %
+- [~] 6.2 Create `TenantDemographicsDto` with structured fields
+- [~] 6.3 Wire into `MarketDataEnricher.EnrichTenantMarket()` — add Census benchmarks to `BenchmarkRow[]` (Subject vs Market median)
+- [~] 6.4 Display demographics in TenantMarket report section with source attribution ("U.S. Census Bureau ACS")
+- [~] 6.5 Unit tests for demographics enrichment
 
 ## Phase 7: Report Prose Generation
 - [ ] 7.1 Inject `IReportProseGenerator` into `ReportAssembler`

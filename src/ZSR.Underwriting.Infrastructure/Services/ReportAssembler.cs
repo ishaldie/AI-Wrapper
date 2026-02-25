@@ -99,7 +99,7 @@ public class ReportAssembler : IReportAssembler
             ExecutiveSummary = BuildExecutiveSummary(),
             Assumptions = BuildAssumptions(deal, effectiveLtv, effectiveHold, effectiveOccupancy, effectiveAmort, effectiveTerm),
             PropertyComps = await BuildPropertyCompsAsync(deal, marketContext, pricePerUnit, cancellationToken),
-            TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext),
+            TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext, publicData?.TenantDemographics),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
             FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
                 debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
@@ -203,11 +203,13 @@ public class ReportAssembler : IReportAssembler
         return section;
     }
 
-    private static TenantMarketSection BuildTenantMarket(Deal deal, decimal effectiveOccupancy, MarketContextDto? marketContext)
+    private static TenantMarketSection BuildTenantMarket(
+        Deal deal, decimal effectiveOccupancy, MarketContextDto? marketContext, TenantDemographicsDto? demographics = null)
     {
-        if (marketContext != null)
+        if (marketContext != null || demographics != null)
         {
-            var enriched = MarketDataEnricher.EnrichTenantMarket(marketContext, deal.RentRollSummary ?? 0m, effectiveOccupancy);
+            var enriched = MarketDataEnricher.EnrichTenantMarket(
+                marketContext ?? new MarketContextDto(), deal.RentRollSummary ?? 0m, effectiveOccupancy, demographics);
             if (!enriched.Narrative.Contains("unavailable", StringComparison.OrdinalIgnoreCase))
                 return enriched;
         }

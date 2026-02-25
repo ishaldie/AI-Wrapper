@@ -5,6 +5,7 @@ public class PublicDataDto
     public CensusData? Census { get; set; }
     public BlsData? Bls { get; set; }
     public FredData? Fred { get; set; }
+    public TenantDemographicsDto? TenantDemographics { get; set; }
     public DateTime RetrievedAt { get; set; } = DateTime.UtcNow;
 }
 

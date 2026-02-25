@@ -28,18 +28,22 @@ public class PublicDataService : IPublicDataService
     public async Task<PublicDataDto> GetAllPublicDataAsync(
         string zipCode, string state, string metro, CancellationToken cancellationToken = default)
     {
-        // Run all 3 API calls in parallel for performance
+        // Run all API calls in parallel for performance
         var censusTask = GetCensusDataAsync(zipCode, cancellationToken);
         var blsTask = GetBlsDataAsync(state, metro, cancellationToken);
         var fredTask = GetFredDataAsync(cancellationToken);
+        var demographicsTask = !string.IsNullOrEmpty(zipCode)
+            ? _census.GetTenantDemographicsAsync(zipCode, cancellationToken)
+            : Task.FromResult<TenantDemographicsDto?>(null);
 
-        await Task.WhenAll(censusTask, blsTask, fredTask);
+        await Task.WhenAll(censusTask, blsTask, fredTask, demographicsTask);
 
         return new PublicDataDto
         {
             Census = await censusTask,
             Bls = await blsTask,
             Fred = await fredTask,
+            TenantDemographics = await demographicsTask,
             RetrievedAt = DateTime.UtcNow
         };
     }
