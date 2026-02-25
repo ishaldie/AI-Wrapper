@@ -30,9 +30,9 @@
 - [x] 2ecf65d 4.5 Unit tests: verify cookie options are configured correctly, Data Protection key directory exists
 
 ## Phase 5: Audit Trail Enhancement
-- [ ] 5.1 Add `IpAddress` string property to `ActivityEvent` entity
-- [ ] 5.2 Add EF migration for `IpAddress` column on `ActivityEvents` table
-- [ ] 5.3 Update `ActivityTracker` to accept `IHttpContextAccessor` and capture `RemoteIpAddress` on every tracked event
-- [ ] 5.4 Register `IHttpContextAccessor` in DI if not already registered
-- [ ] 5.5 Add IP address to structured log enrichment via Serilog `WithClientIp()` or manual `LogContext.PushProperty`
-- [ ] 5.6 Unit tests: IP captured in activity events, null IP handled gracefully (e.g., background jobs)
+- [x] 16bb0c5 5.1 Add `IpAddress` string property to `ActivityEvent` entity
+- [x] 16bb0c5 5.2 Add EF migration for `IpAddress` column on `ActivityEvents` table
+- [x] 16bb0c5 5.3 Update `ActivityTracker` to accept `IHttpContextAccessor` and capture `RemoteIpAddress` on every tracked event
+- [x] 16bb0c5 5.4 Register `IHttpContextAccessor` in DI if not already registered
+- [x] 16bb0c5 5.5 Add IP address to structured log enrichment via Serilog `WithClientIp()` or manual `LogContext.PushProperty`
+- [x] 16bb0c5 5.6 Unit tests: IP captured in activity events, null IP handled gracefully (e.g., background jobs)
