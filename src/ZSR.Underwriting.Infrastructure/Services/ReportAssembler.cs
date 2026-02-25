@@ -16,16 +16,19 @@ public class ReportAssembler : IReportAssembler
     private readonly AppDbContext _db;
     private readonly IMarketDataService? _marketDataService;
     private readonly ISalesCompExtractor? _salesCompExtractor;
+    private readonly IPublicDataService? _publicDataService;
     private readonly UnderwritingCalculator _calc = new();
 
     public ReportAssembler(
         AppDbContext db,
         IMarketDataService? marketDataService = null,
-        ISalesCompExtractor? salesCompExtractor = null)
+        ISalesCompExtractor? salesCompExtractor = null,
+        IPublicDataService? publicDataService = null)
     {
         _db = db;
         _marketDataService = marketDataService;
         _salesCompExtractor = salesCompExtractor;
+        _publicDataService = publicDataService;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -66,6 +69,19 @@ public class ReportAssembler : IReportAssembler
             }
         }
 
+        // Fetch public data (Census, BLS, FRED) if service available
+        PublicDataDto? publicData = null;
+        if (_publicDataService != null)
+        {
+            var (city, state) = ParseCityState(deal.Address);
+            var zip = ParseZipCode(deal.Address);
+            if (!string.IsNullOrEmpty(zip) || !string.IsNullOrEmpty(state))
+            {
+                publicData = await _publicDataService.GetAllPublicDataAsync(
+                    zip, state, city, cancellationToken);
+            }
+        }
+
         // Debt service calculation — prefer user rate, fall back to market rate
         var loanRate = MarketDataEnricher.GetEffectiveLoanRate(deal.LoanRate, marketContext ?? new MarketContextDto()) ?? 0m;
         var debtService = _calc.CalculateAnnualDebtService(loanAmount, loanRate, deal.IsInterestOnly, effectiveAmort);
@@ -89,7 +105,8 @@ public class ReportAssembler : IReportAssembler
                 debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
             ValueCreation = BuildValueCreation(deal),
             RiskAssessment = BuildRiskAssessment(),
-            InvestmentDecision = BuildInvestmentDecision()
+            InvestmentDecision = BuildInvestmentDecision(),
+            PublicData = publicData
         };
     }
 
@@ -217,6 +234,16 @@ public class ReportAssembler : IReportAssembler
             return (parts[0], parts[1]);
 
         return (string.Empty, string.Empty);
+    }
+
+    internal static string ParseZipCode(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+            return string.Empty;
+
+        // Look for a 5-digit zip code pattern at the end of the address
+        var match = System.Text.RegularExpressions.Regex.Match(address, @"\b(\d{5})(?:-\d{4})?\s*$");
+        return match.Success ? match.Groups[1].Value : string.Empty;
     }
 
     private static OperationsSection BuildOperations(

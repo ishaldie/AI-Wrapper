@@ -157,6 +157,15 @@ try
     // Add sales comp extractor (Claude-powered structured extraction)
     builder.Services.AddScoped<ISalesCompExtractor, SalesCompExtractor>();
 
+    // Add public data API clients (Census, BLS, FRED)
+    builder.Services.AddHttpClient<CensusApiClient>(client =>
+        client.BaseAddress = new Uri("https://api.census.gov/"));
+    builder.Services.AddHttpClient<BlsApiClient>(client =>
+        client.BaseAddress = new Uri("https://api.bls.gov/"));
+    builder.Services.AddHttpClient<FredApiClient>(client =>
+        client.BaseAddress = new Uri("https://api.stlouisfed.org/"));
+    builder.Services.AddScoped<IPublicDataService, PublicDataService>();
+
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
 

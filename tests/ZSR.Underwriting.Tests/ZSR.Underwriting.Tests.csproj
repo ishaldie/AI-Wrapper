@@ -130,6 +130,7 @@
     <Compile Include="Components\DealTabsTests.cs" />
     <!-- Report & Analysis Enhancements track -->
     <Compile Include="Services\SalesCompExtractorTests.cs" />
+    <Compile Include="Services\PublicDataServiceTests.cs" />
     <!-- Document Management track -->
     <Compile Include="Services\DocumentMatchingServiceTests.cs" />
     <Compile Include="Services\DocumentDownloadTests.cs" />

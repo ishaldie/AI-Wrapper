@@ -22,6 +22,9 @@ public class UnderwritingReportDto
     public RiskAssessmentSection RiskAssessment { get; init; } = new();
     public InvestmentDecisionSection InvestmentDecision { get; init; } = new();
 
+    /// <summary>Public API enrichment data (Census, BLS, FRED). Null if unavailable.</summary>
+    public PublicDataDto? PublicData { get; init; }
+
     /// <summary>Returns all sections in protocol order (1-10).</summary>
     public IReadOnlyList<ReportSectionBase> GetSectionsInOrder() =>
     [

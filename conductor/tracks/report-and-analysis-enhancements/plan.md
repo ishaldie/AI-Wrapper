@@ -22,21 +22,21 @@
 - [x] f87005e 3.5 Unit tests for market-enriched report sections
 
 ## Phase 4: Sales Comps Extraction
-- [~] 4.1 Create `ISalesCompExtractor` service interface with `Task<List<SalesCompRow>> ExtractCompsAsync(MarketContextDto context, string subjectAddress)`
-- [~] 4.2 Implement `SalesCompExtractor` — sends ComparableTransactions web search results to Claude with a structured extraction prompt, parses response into `SalesCompRow[]`
-- [~] 4.3 Wire into `ReportAssembler` — call after market data, populate `PropertyCompsSection.Comps`
-- [~] 4.4 Add adjustments logic — Claude generates `AdjustmentRow[]` comparing each comp to the subject
-- [~] 4.5 Unit tests with mock Claude response
+- [x] 0c7f291 4.1 Create `ISalesCompExtractor` service interface with `Task<SalesCompResult> ExtractCompsAsync(MarketContextDto context, string subjectAddress, ...)`
+- [x] 0c7f291 4.2 Implement `SalesCompExtractor` — sends ComparableTransactions web search results to Claude with a structured extraction prompt, parses response into `SalesCompRow[]`
+- [x] 0c7f291 4.3 Wire into `ReportAssembler` — call after market data, populate `PropertyCompsSection.Comps`
+- [x] 0c7f291 4.4 Add adjustments logic — Claude generates `AdjustmentRow[]` comparing each comp to the subject
+- [x] 0c7f291 4.5 Unit tests with mock Claude response
 
 ## Phase 5: Public API Enrichment
-- [ ] 5.1 Create `IPublicDataService` interface with methods: `GetCensusDataAsync(string zipCode)`, `GetBlsDataAsync(string state, string metro)`, `GetFredDataAsync()`
-- [ ] 5.2 Implement `CensusApiClient` — call Census Bureau ACS API for HHI, population, demographics by zip/tract
-- [ ] 5.3 Implement `BlsApiClient` — call BLS API for unemployment rate, job growth by metro area
-- [ ] 5.4 Implement `FredApiClient` — call FRED API for rent index, CPI, treasury rates
-- [ ] 5.5 Create `PublicDataDto` to hold aggregated results from all 3 sources
-- [ ] 5.6 Register services in DI, add HttpClient registrations in `Program.cs`
-- [ ] 5.7 Wire into `ReportAssembler` — enrich market context with public data before prose generation
-- [ ] 5.8 Unit tests with mocked HTTP responses
+- [~] 5.1 Create `IPublicDataService` interface with methods: `GetCensusDataAsync(string zipCode)`, `GetBlsDataAsync(string state, string metro)`, `GetFredDataAsync()`
+- [~] 5.2 Implement `CensusApiClient` — call Census Bureau ACS API for HHI, population, demographics by zip/tract
+- [~] 5.3 Implement `BlsApiClient` — call BLS API for unemployment rate, job growth by metro area
+- [~] 5.4 Implement `FredApiClient` — call FRED API for rent index, CPI, treasury rates
+- [~] 5.5 Create `PublicDataDto` to hold aggregated results from all 3 sources
+- [~] 5.6 Register services in DI, add HttpClient registrations in `Program.cs`
+- [~] 5.7 Wire into `ReportAssembler` — enrich market context with public data before prose generation
+- [~] 5.8 Unit tests with mocked HTTP responses
 
 ## Phase 6: Tenant Demographics
 - [ ] 6.1 Extend `CensusApiClient` to pull ACS tenant demographics: median HHI, age distribution, household size, rent burden %

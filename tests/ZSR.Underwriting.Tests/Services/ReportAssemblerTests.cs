@@ -454,6 +454,28 @@ public class ReportAssemblerTests : IDisposable
         Assert.Equal("Unit Count", report.PropertyComps.Adjustments[0].Factor);
     }
 
+    [Fact]
+    public async Task AssembleReportAsync_WithPublicDataService_PopulatesPublicData()
+    {
+        var deal = CreateTestDeal();
+        deal.Address = "123 Main St, Dallas, TX 75201"; // Address with zip code
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var publicDataService = new StubPublicDataService(
+            new CensusData { MedianHouseholdIncome = 65_000, TotalPopulation = 45_000, MedianAge = 35.2m, ZipCode = "75201" },
+            new BlsData { UnemploymentRate = 3.8m, AreaName = "Dallas" },
+            new FredData { CpiAllItems = 315.5m });
+        var assembler = new ReportAssembler(_db, publicDataService: publicDataService);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.NotNull(report.PublicData);
+        Assert.NotNull(report.PublicData!.Census);
+        Assert.Equal(65_000m, report.PublicData.Census!.MedianHouseholdIncome);
+        Assert.NotNull(report.PublicData.Bls);
+        Assert.Equal(3.8m, report.PublicData.Bls!.UnemploymentRate);
+    }
+
     private static MarketContextDto CreateTestMarketContext()
     {
         return new MarketContextDto
