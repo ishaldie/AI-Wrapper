@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using ZSR.Underwriting.Application.Constants;
+using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Formatting;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Infrastructure.Data;
 using ZSR.Underwriting.Infrastructure.Services;
@@ -332,4 +334,135 @@ public class ReportAssemblerTests : IDisposable
         Assert.True(report.FinancialAnalysis.Exit.LoanBalance > 0,
             "Loan balance at exit should be positive");
     }
+
+    // === Phase 3: Market Data Wiring ===
+
+    [Fact]
+    public async Task AssembleReportAsync_WithMarketData_PropertyCompsEnriched()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var marketService = new StubMarketDataService(CreateTestMarketContext());
+        var assembler = new ReportAssembler(_db, marketService);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.DoesNotContain("pending", report.PropertyComps.Narrative, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("comparable", report.PropertyComps.Narrative, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithMarketData_TenantMarketEnriched()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var marketService = new StubMarketDataService(CreateTestMarketContext());
+        var assembler = new ReportAssembler(_db, marketService);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.DoesNotContain("pending", report.TenantMarket.Narrative, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Major employers", report.TenantMarket.Narrative);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithMarketData_TenantMarketHasSubjectMetrics()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var marketService = new StubMarketDataService(CreateTestMarketContext());
+        var assembler = new ReportAssembler(_db, marketService);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.TenantMarket.SubjectRentPerUnit > 0);
+        Assert.True(report.TenantMarket.SubjectOccupancy > 0);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithoutMarketData_FallsBackToPlaceholders()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        // No market service — should still produce a valid report with placeholders
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.NotNull(report.PropertyComps.Narrative);
+        Assert.NotNull(report.TenantMarket.Narrative);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithNullMarketData_FallsBackToPlaceholders()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        // Market service returns null context
+        var marketService = new StubMarketDataService(null);
+        var assembler = new ReportAssembler(_db, marketService);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.NotNull(report.PropertyComps.Narrative);
+        Assert.NotNull(report.TenantMarket.Narrative);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithMarketData_UsesMarketLoanRate()
+    {
+        var deal = CreateTestDeal();
+        deal.LoanRate = null; // No user-provided rate
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var ctx = CreateTestMarketContext();
+        ctx.CurrentFannieMaeRate = 5.75m;
+        var marketService = new StubMarketDataService(ctx);
+        var assembler = new ReportAssembler(_db, marketService);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        // Debt service should be calculated (not zero) when market rate available
+        Assert.True(report.FinancialAnalysis.FiveYearCashFlow[0].DebtService > 0,
+            "Debt service should use market rate when user rate is null");
+    }
+
+    private static MarketContextDto CreateTestMarketContext()
+    {
+        return new MarketContextDto
+        {
+            MajorEmployers = [new() { Name = "Acme Corp", Description = "Major tech employer", SourceUrl = "https://example.com" }],
+            EconomicDrivers = [new() { Name = "Tech Growth", Description = "Strong tech sector expansion", SourceUrl = "https://example.com" }],
+            ConstructionPipeline = [new() { Name = "New Complex", Description = "200-unit development", SourceUrl = "https://example.com" }],
+            ComparableTransactions = [new() { Name = "Oak Park Apts", Description = "$95K/unit, 5.5% cap", SourceUrl = "https://example.com" }],
+            CurrentFannieMaeRate = 5.75m,
+            SourceUrls = new Dictionary<string, List<string>>
+            {
+                ["MajorEmployers"] = ["https://example.com/employers"],
+                ["ComparableTransactions"] = ["https://example.com/comps"]
+            },
+            RetrievedAt = DateTime.UtcNow
+        };
+    }
+}
+
+internal class StubMarketDataService : IMarketDataService
+{
+    private readonly MarketContextDto? _context;
+
+    public StubMarketDataService(MarketContextDto? context)
+    {
+        _context = context;
+    }
+
+    public Task<MarketContextDto> GetMarketContextForDealAsync(Guid dealId, string city, string state)
+        => Task.FromResult(_context ?? new MarketContextDto());
+
+    public Task<MarketContextDto> GetMarketContextAsync(string city, string state)
+        => Task.FromResult(_context ?? new MarketContextDto());
 }

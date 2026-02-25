@@ -1,9 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using ZSR.Underwriting.Application.Calculations;
 using ZSR.Underwriting.Application.Constants;
+using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Formatting;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Application.Services;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Infrastructure.Data;
 
@@ -12,11 +14,13 @@ namespace ZSR.Underwriting.Infrastructure.Services;
 public class ReportAssembler : IReportAssembler
 {
     private readonly AppDbContext _db;
+    private readonly IMarketDataService? _marketDataService;
     private readonly UnderwritingCalculator _calc = new();
 
-    public ReportAssembler(AppDbContext db)
+    public ReportAssembler(AppDbContext db, IMarketDataService? marketDataService = null)
     {
         _db = db;
+        _marketDataService = marketDataService;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -46,8 +50,19 @@ public class ReportAssembler : IReportAssembler
         var noiMargin = egi > 0 ? noi / egi * 100m : 0m;
         var capRate = deal.PurchasePrice > 0 ? noi / deal.PurchasePrice * 100m : 0m;
 
-        // Debt service calculation
-        var loanRate = deal.LoanRate ?? 0m;
+        // Fetch market data if service available
+        MarketContextDto? marketContext = null;
+        if (_marketDataService != null)
+        {
+            var (city, state) = ParseCityState(deal.Address);
+            if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(state))
+            {
+                marketContext = await _marketDataService.GetMarketContextForDealAsync(deal.Id, city, state);
+            }
+        }
+
+        // Debt service calculation — prefer user rate, fall back to market rate
+        var loanRate = MarketDataEnricher.GetEffectiveLoanRate(deal.LoanRate, marketContext ?? new MarketContextDto()) ?? 0m;
         var debtService = _calc.CalculateAnnualDebtService(loanAmount, loanRate, deal.IsInterestOnly, effectiveAmort);
         var reserves = _calc.CalculateAnnualReserves(deal.UnitCount);
         var acqCosts = _calc.CalculateAcquisitionCosts(deal.PurchasePrice);
@@ -62,8 +77,8 @@ public class ReportAssembler : IReportAssembler
             CoreMetrics = BuildCoreMetrics(deal, loanAmount, effectiveLtv, pricePerUnit, noi, egi, opEx, capRate),
             ExecutiveSummary = BuildExecutiveSummary(),
             Assumptions = BuildAssumptions(deal, effectiveLtv, effectiveHold, effectiveOccupancy, effectiveAmort, effectiveTerm),
-            PropertyComps = BuildPropertyComps(),
-            TenantMarket = BuildTenantMarket(deal, effectiveOccupancy),
+            PropertyComps = BuildPropertyComps(marketContext),
+            TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
             FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
                 debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
@@ -134,8 +149,11 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static PropertyCompsSection BuildPropertyComps()
+    private static PropertyCompsSection BuildPropertyComps(MarketContextDto? marketContext)
     {
+        if (marketContext != null && marketContext.ComparableTransactions.Count > 0)
+            return MarketDataEnricher.EnrichPropertyComps(marketContext);
+
         return new PropertyCompsSection
         {
             Narrative = "[AI-generated comparables analysis pending]",
@@ -144,8 +162,15 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static TenantMarketSection BuildTenantMarket(Deal deal, decimal effectiveOccupancy)
+    private static TenantMarketSection BuildTenantMarket(Deal deal, decimal effectiveOccupancy, MarketContextDto? marketContext)
     {
+        if (marketContext != null)
+        {
+            var enriched = MarketDataEnricher.EnrichTenantMarket(marketContext, deal.RentRollSummary ?? 0m, effectiveOccupancy);
+            if (!enriched.Narrative.Contains("unavailable", StringComparison.OrdinalIgnoreCase))
+                return enriched;
+        }
+
         return new TenantMarketSection
         {
             Narrative = "[AI-generated market intelligence pending]",
@@ -153,6 +178,21 @@ public class ReportAssembler : IReportAssembler
             SubjectOccupancy = effectiveOccupancy,
             Benchmarks = []
         };
+    }
+
+    internal static (string city, string state) ParseCityState(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+            return (string.Empty, string.Empty);
+
+        // Expected format: "123 Main St, Dallas, TX" or "Dallas, TX"
+        var parts = address.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 3)
+            return (parts[^2], parts[^1]);
+        if (parts.Length == 2)
+            return (parts[0], parts[1]);
+
+        return (string.Empty, string.Empty);
     }
 
     private static OperationsSection BuildOperations(

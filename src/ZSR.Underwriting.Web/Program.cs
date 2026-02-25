@@ -151,6 +151,9 @@ try
     builder.Services.AddScoped<IReportProseGenerator, ZSR.Underwriting.Application.Services.ReportProseGenerator>();
     builder.Services.AddSingleton<ISensitivityCalculator, ZSR.Underwriting.Application.Calculations.SensitivityCalculatorService>();
 
+    // Add market data service
+    builder.Services.AddScoped<IMarketDataService, MarketDataService>();
+
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
 

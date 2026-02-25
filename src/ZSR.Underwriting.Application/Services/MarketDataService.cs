@@ -1,13 +1,14 @@
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using ZSR.Underwriting.Application.DTOs;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Domain.Models;
 
 namespace ZSR.Underwriting.Application.Services;
 
-public class MarketDataService
+public class MarketDataService : IMarketDataService
 {
     private readonly IWebSearchService _searchService;
     private readonly ConcurrentDictionary<Guid, MarketContextDto> _dealCache = new();

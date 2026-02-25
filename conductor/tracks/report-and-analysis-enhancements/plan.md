@@ -8,18 +8,18 @@
 - [x] ce25d56 1.5 Unit tests for populated financial sections
 
 ## Phase 2: Sensitivity Analysis UI
-- [x] 2.1 Add `ISensitivityCalculator` interface wrapping the existing static `SensitivityCalculator`
-- [x] 2.2 Register in DI and wire into DealTabs
-- [x] 2.3 Add sensitivity matrix section to the Underwriting tab in `DealTabs.razor` — MudSimpleTable showing 4 scenarios with NOI, NOI delta, exit value, exit value delta
-- [x] 2.4 Color-code deltas (green positive, red negative)
-- [x] 2.5 bUnit test for sensitivity section rendering
+- [x] 7a64806 2.1 Add `ISensitivityCalculator` interface wrapping the existing static `SensitivityCalculator`
+- [x] 7a64806 2.2 Register in DI and wire into DealTabs
+- [x] 7a64806 2.3 Add sensitivity matrix section to the Underwriting tab in `DealTabs.razor` — MudSimpleTable showing 4 scenarios with NOI, NOI delta, exit value, exit value delta
+- [x] 7a64806 2.4 Color-code deltas (green positive, red negative)
+- [x] 7a64806 2.5 bUnit test for sensitivity section rendering
 
 ## Phase 3: Market Data Wiring
-- [ ] 3.1 Inject `MarketDataService` into `ReportAssembler` (add to constructor)
-- [ ] 3.2 Call `GetMarketContextAsync(city, state)` during report assembly using address parsing
-- [ ] 3.3 Call `MarketDataEnricher.EnrichPropertyComps()` to populate PropertyComps narrative and source attribution
-- [ ] 3.4 Call `MarketDataEnricher.EnrichTenantMarket()` to populate TenantMarket narrative and benchmarks
-- [ ] 3.5 Unit tests for market-enriched report sections
+- [~] 3.1 Inject `MarketDataService` into `ReportAssembler` (add to constructor)
+- [~] 3.2 Call `GetMarketContextAsync(city, state)` during report assembly using address parsing
+- [~] 3.3 Call `MarketDataEnricher.EnrichPropertyComps()` to populate PropertyComps narrative and source attribution
+- [~] 3.4 Call `MarketDataEnricher.EnrichTenantMarket()` to populate TenantMarket narrative and benchmarks
+- [~] 3.5 Unit tests for market-enriched report sections
 
 ## Phase 4: Sales Comps Extraction
 - [ ] 4.1 Create `ISalesCompExtractor` service interface with `Task<List<SalesCompRow>> ExtractCompsAsync(MarketContextDto context, string subjectAddress)`
