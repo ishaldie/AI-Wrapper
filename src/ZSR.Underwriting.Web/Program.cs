@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +42,14 @@ try
         options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
             ?? "Data Source=zsr_underwriting.db"));
 
+    // Data Protection — persist keys to filesystem with app isolation
+    var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"]
+        ?? Path.Combine(builder.Environment.ContentRootPath, "keys");
+    Directory.CreateDirectory(dataProtectionKeysPath);
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath))
+        .SetApplicationName("ZSR.Underwriting");
+
     // Add ASP.NET Identity
     builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
@@ -62,14 +71,17 @@ try
     .AddEntityFrameworkStores<AppDbContext>()
     .AddDefaultTokenProviders();
 
-    // Configure cookie authentication
+    // Configure cookie authentication — hardened for SOC 2
     builder.Services.ConfigureApplicationCookie(options =>
     {
         options.LoginPath = "/login";
         options.LogoutPath = "/logout";
         options.AccessDeniedPath = "/access-denied";
-        options.ExpireTimeSpan = TimeSpan.FromDays(14);
+        options.ExpireTimeSpan = TimeSpan.FromHours(24);
         options.SlidingExpiration = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.HttpOnly = true;
     });
 
     // Register external OAuth providers (Google + Microsoft)

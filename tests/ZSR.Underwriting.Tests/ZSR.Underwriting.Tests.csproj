@@ -142,6 +142,7 @@
     <Compile Include="Components\AuthorizedSendersPageTests.cs" />
     <!-- SOC 2 Remediation track -->
     <Compile Include="Services\SecurityHeadersMiddlewareTests.cs" />
+    <Compile Include="Infrastructure\CookieAndDataProtectionTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
