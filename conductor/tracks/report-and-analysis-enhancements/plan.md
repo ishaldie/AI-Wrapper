@@ -15,18 +15,18 @@
 - [x] 7a64806 2.5 bUnit test for sensitivity section rendering
 
 ## Phase 3: Market Data Wiring
-- [~] 3.1 Inject `MarketDataService` into `ReportAssembler` (add to constructor)
-- [~] 3.2 Call `GetMarketContextAsync(city, state)` during report assembly using address parsing
-- [~] 3.3 Call `MarketDataEnricher.EnrichPropertyComps()` to populate PropertyComps narrative and source attribution
-- [~] 3.4 Call `MarketDataEnricher.EnrichTenantMarket()` to populate TenantMarket narrative and benchmarks
-- [~] 3.5 Unit tests for market-enriched report sections
+- [x] f87005e 3.1 Inject `MarketDataService` into `ReportAssembler` (add to constructor)
+- [x] f87005e 3.2 Call `GetMarketContextAsync(city, state)` during report assembly using address parsing
+- [x] f87005e 3.3 Call `MarketDataEnricher.EnrichPropertyComps()` to populate PropertyComps narrative and source attribution
+- [x] f87005e 3.4 Call `MarketDataEnricher.EnrichTenantMarket()` to populate TenantMarket narrative and benchmarks
+- [x] f87005e 3.5 Unit tests for market-enriched report sections
 
 ## Phase 4: Sales Comps Extraction
-- [ ] 4.1 Create `ISalesCompExtractor` service interface with `Task<List<SalesCompRow>> ExtractCompsAsync(MarketContextDto context, string subjectAddress)`
-- [ ] 4.2 Implement `SalesCompExtractor` — sends ComparableTransactions web search results to Claude with a structured extraction prompt, parses response into `SalesCompRow[]`
-- [ ] 4.3 Wire into `ReportAssembler` — call after market data, populate `PropertyCompsSection.Comps`
-- [ ] 4.4 Add adjustments logic — Claude generates `AdjustmentRow[]` comparing each comp to the subject
-- [ ] 4.5 Unit tests with mock Claude response
+- [~] 4.1 Create `ISalesCompExtractor` service interface with `Task<List<SalesCompRow>> ExtractCompsAsync(MarketContextDto context, string subjectAddress)`
+- [~] 4.2 Implement `SalesCompExtractor` — sends ComparableTransactions web search results to Claude with a structured extraction prompt, parses response into `SalesCompRow[]`
+- [~] 4.3 Wire into `ReportAssembler` — call after market data, populate `PropertyCompsSection.Comps`
+- [~] 4.4 Add adjustments logic — Claude generates `AdjustmentRow[]` comparing each comp to the subject
+- [~] 4.5 Unit tests with mock Claude response
 
 ## Phase 5: Public API Enrichment
 - [ ] 5.1 Create `IPublicDataService` interface with methods: `GetCensusDataAsync(string zipCode)`, `GetBlsDataAsync(string state, string metro)`, `GetFredDataAsync()`

@@ -154,6 +154,9 @@ try
     // Add market data service
     builder.Services.AddScoped<IMarketDataService, MarketDataService>();
 
+    // Add sales comp extractor (Claude-powered structured extraction)
+    builder.Services.AddScoped<ISalesCompExtractor, SalesCompExtractor>();
+
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
 

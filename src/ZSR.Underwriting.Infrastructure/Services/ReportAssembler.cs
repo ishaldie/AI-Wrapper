@@ -15,12 +15,17 @@ public class ReportAssembler : IReportAssembler
 {
     private readonly AppDbContext _db;
     private readonly IMarketDataService? _marketDataService;
+    private readonly ISalesCompExtractor? _salesCompExtractor;
     private readonly UnderwritingCalculator _calc = new();
 
-    public ReportAssembler(AppDbContext db, IMarketDataService? marketDataService = null)
+    public ReportAssembler(
+        AppDbContext db,
+        IMarketDataService? marketDataService = null,
+        ISalesCompExtractor? salesCompExtractor = null)
     {
         _db = db;
         _marketDataService = marketDataService;
+        _salesCompExtractor = salesCompExtractor;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -77,7 +82,7 @@ public class ReportAssembler : IReportAssembler
             CoreMetrics = BuildCoreMetrics(deal, loanAmount, effectiveLtv, pricePerUnit, noi, egi, opEx, capRate),
             ExecutiveSummary = BuildExecutiveSummary(),
             Assumptions = BuildAssumptions(deal, effectiveLtv, effectiveHold, effectiveOccupancy, effectiveAmort, effectiveTerm),
-            PropertyComps = BuildPropertyComps(marketContext),
+            PropertyComps = await BuildPropertyCompsAsync(deal, marketContext, pricePerUnit, cancellationToken),
             TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
             FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
@@ -149,17 +154,36 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static PropertyCompsSection BuildPropertyComps(MarketContextDto? marketContext)
+    private async Task<PropertyCompsSection> BuildPropertyCompsAsync(
+        Deal deal, MarketContextDto? marketContext, decimal pricePerUnit, CancellationToken cancellationToken)
     {
-        if (marketContext != null && marketContext.ComparableTransactions.Count > 0)
-            return MarketDataEnricher.EnrichPropertyComps(marketContext);
+        // Start with enriched narrative from market data
+        var section = marketContext != null && marketContext.ComparableTransactions.Count > 0
+            ? MarketDataEnricher.EnrichPropertyComps(marketContext)
+            : new PropertyCompsSection
+            {
+                Narrative = "[AI-generated comparables analysis pending]",
+                Comps = [],
+                Adjustments = []
+            };
 
-        return new PropertyCompsSection
+        // Extract structured comps via Claude if available
+        if (_salesCompExtractor != null && marketContext != null && marketContext.ComparableTransactions.Count > 0)
         {
-            Narrative = "[AI-generated comparables analysis pending]",
-            Comps = [],
-            Adjustments = []
-        };
+            var result = await _salesCompExtractor.ExtractCompsAsync(
+                marketContext, deal.Address, pricePerUnit, deal.UnitCount, cancellationToken);
+            if (result.Comps.Count > 0)
+            {
+                section = new PropertyCompsSection
+                {
+                    Narrative = section.Narrative,
+                    Comps = result.Comps,
+                    Adjustments = result.Adjustments
+                };
+            }
+        }
+
+        return section;
     }
 
     private static TenantMarketSection BuildTenantMarket(Deal deal, decimal effectiveOccupancy, MarketContextDto? marketContext)

@@ -432,6 +432,28 @@ public class ReportAssemblerTests : IDisposable
             "Debt service should use market rate when user rate is null");
     }
 
+    [Fact]
+    public async Task AssembleReportAsync_WithSalesCompExtractor_PopulatesComps()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var marketService = new StubMarketDataService(CreateTestMarketContext());
+        var compExtractor = new StubSalesCompExtractor(new SalesCompResult
+        {
+            Comps = [new() { Address = "100 Oak Park Dr", SalePrice = 11_400_000m, Units = 120, PricePerUnit = 95_000m, CapRate = 5.5m }],
+            Adjustments = [new() { Factor = "Unit Count", Adjustment = "+5%", Rationale = "Fewer units" }]
+        });
+        var assembler = new ReportAssembler(_db, marketService, compExtractor);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Single(report.PropertyComps.Comps);
+        Assert.Equal("100 Oak Park Dr", report.PropertyComps.Comps[0].Address);
+        Assert.Single(report.PropertyComps.Adjustments);
+        Assert.Equal("Unit Count", report.PropertyComps.Adjustments[0].Factor);
+    }
+
     private static MarketContextDto CreateTestMarketContext()
     {
         return new MarketContextDto
@@ -465,4 +487,19 @@ internal class StubMarketDataService : IMarketDataService
 
     public Task<MarketContextDto> GetMarketContextAsync(string city, string state)
         => Task.FromResult(_context ?? new MarketContextDto());
+}
+
+internal class StubSalesCompExtractor : ISalesCompExtractor
+{
+    private readonly SalesCompResult _result;
+
+    public StubSalesCompExtractor(SalesCompResult result)
+    {
+        _result = result;
+    }
+
+    public Task<SalesCompResult> ExtractCompsAsync(
+        MarketContextDto marketContext, string subjectAddress, decimal subjectPricePerUnit,
+        int subjectUnits, CancellationToken cancellationToken = default)
+        => Task.FromResult(_result);
 }
