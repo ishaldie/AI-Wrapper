@@ -143,6 +143,8 @@
     <!-- SOC 2 Remediation track -->
     <Compile Include="Services\SecurityHeadersMiddlewareTests.cs" />
     <Compile Include="Infrastructure\CookieAndDataProtectionTests.cs" />
+    <!-- Activity Tracking Completion track -->
+    <Compile Include="Components\AdminActivityTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

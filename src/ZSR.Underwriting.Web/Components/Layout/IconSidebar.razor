@@ -26,8 +26,11 @@
     </div>
 
     <div class="icon-sidebar-bottom">
-        @* Settings / Admin *@
+        @* Admin *@
         <AuthorizeView Roles="Admin">
+            <NavLink href="admin/activity" class="icon-sidebar-btn" Match="NavLinkMatch.Prefix" title="Activity Log">
+                <MudIcon Icon="@Icons.Material.Filled.Timeline" Size="Size.Small" />
+            </NavLink>
             <NavLink href="admin/users" class="icon-sidebar-btn" Match="NavLinkMatch.Prefix" title="Settings">
                 <MudIcon Icon="@Icons.Material.Filled.Settings" Size="Size.Small" />
             </NavLink>

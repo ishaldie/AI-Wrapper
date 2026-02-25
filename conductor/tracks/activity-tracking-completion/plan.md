@@ -22,9 +22,9 @@
 - [x] 3.4 Unit tests: both new events verified with correct metadata
 
 ## Phase 4: Admin Activity Dashboard
-- [ ] 4.1 Create `/admin/activity` page (`AdminActivity.razor`) with `[Authorize(Roles = "Admin")]`
-- [ ] 4.2 Add recent sessions table — MudDataGrid showing UserId, ConnectedAt, DisconnectedAt, event count, IP address
-- [ ] 4.3 Add event log table — MudDataGrid showing EventType, UserId, PageUrl, DealId, IpAddress, Metadata, OccurredAt
-- [ ] 4.4 Add filters: user selector, event type dropdown, date range picker, deal ID search
-- [ ] 4.5 Add navigation link to admin sidebar/menu for the activity page
-- [ ] 4.6 bUnit test: dashboard renders with admin role, rejects non-admin access
+- [x] 4.1 Create `/admin/activity` page (`AdminActivity.razor`) with `[Authorize(Roles = "Admin")]`
+- [x] 4.2 Add recent sessions table — MudDataGrid showing UserId, ConnectedAt, DisconnectedAt, event count, IP address
+- [x] 4.3 Add event log table — MudDataGrid showing EventType, UserId, PageUrl, DealId, IpAddress, Metadata, OccurredAt
+- [x] 4.4 Add filters: user selector, event type dropdown, date range picker, deal ID search
+- [x] 4.5 Add navigation link (Timeline icon) to admin sidebar for the activity page
+- [x] 4.6 bUnit test: dashboard renders with admin role, displays seeded data

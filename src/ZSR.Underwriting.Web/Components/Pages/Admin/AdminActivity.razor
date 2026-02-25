@@ -1,0 +1,176 @@
+@page "/admin/activity"
+@using Microsoft.AspNetCore.Authorization
+@using ZSR.Underwriting.Domain.Entities
+@using ZSR.Underwriting.Domain.Enums
+@using ZSR.Underwriting.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize(Roles = "Admin")]
+@inject AppDbContext Db
+@rendermode InteractiveServer
+
+<PageTitle>Activity Log - Admin</PageTitle>
+
+<MudText Typo="Typo.h4" Style="color: #1A1D23; font-weight: 700; margin-bottom: 1.5rem;">Activity Log</MudText>
+
+@* Filters *@
+<MudPaper Class="pa-4 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB;">
+    <MudGrid>
+        <MudItem xs="12" sm="3">
+            <MudTextField @bind-Value="_userFilter" Label="User ID" Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Person"
+                          Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="ApplyFilters" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudSelect T="ActivityEventType?" Value="_eventTypeFilter" Label="Event Type" Variant="Variant.Outlined"
+                       Clearable="true" ValueChanged="OnEventTypeChanged">
+                @foreach (var eventType in Enum.GetValues<ActivityEventType>())
+                {
+                    <MudSelectItem Value="@((ActivityEventType?)eventType)">@eventType</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudDateRangePicker DateRange="_dateRange" Label="Date Range" Variant="Variant.Outlined"
+                                Clearable="true" DateRangeChanged="OnDateRangeChanged" />
+        </MudItem>
+        <MudItem xs="12" sm="3">
+            <MudTextField @bind-Value="_dealIdFilter" Label="Deal ID" Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" DebounceInterval="400" OnDebounceIntervalElapsed="ApplyFilters" />
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@* Sessions Table *@
+<MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600;">Recent Sessions</MudText>
+<MudDataGrid T="UserSession" Items="@_sessions" Hover="true" Dense="true" Striped="true"
+             Loading="@_loading" Class="mb-6" Style="border: 1px solid #E5E7EB;">
+    <Columns>
+        <PropertyColumn Property="x => x.UserId" Title="User" />
+        <PropertyColumn Property="x => x.ConnectedAt" Title="Connected" Format="yyyy-MM-dd HH:mm" />
+        <TemplateColumn Title="Disconnected">
+            <CellTemplate>
+                @(context.Item.DisconnectedAt?.ToString("yyyy-MM-dd HH:mm") ?? "Active")
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="Events">
+            <CellTemplate>
+                @(context.Item.ActivityEvents?.Count ?? 0)
+            </CellTemplate>
+        </TemplateColumn>
+        <TemplateColumn Title="IP">
+            <CellTemplate>
+                @(context.Item.ActivityEvents?.FirstOrDefault()?.IpAddress ?? "—")
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@* Events Table *@
+<MudText Typo="Typo.h6" Class="mb-2" Style="font-weight: 600;">Event Log</MudText>
+<MudDataGrid T="ActivityEvent" Items="@_events" Hover="true" Dense="true" Striped="true"
+             Loading="@_loading" Style="border: 1px solid #E5E7EB;">
+    <Columns>
+        <PropertyColumn Property="x => x.EventType" Title="Event" />
+        <PropertyColumn Property="x => x.UserId" Title="User" />
+        <PropertyColumn Property="x => x.PageUrl" Title="Page" />
+        <TemplateColumn Title="Deal">
+            <CellTemplate>
+                @if (context.Item.DealId.HasValue)
+                {
+                    <MudLink Href="@($"/deals/{context.Item.DealId}")">@context.Item.DealId.Value.ToString()[..8]…</MudLink>
+                }
+                else
+                {
+                    <MudText>—</MudText>
+                }
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.IpAddress" Title="IP" />
+        <PropertyColumn Property="x => x.Metadata" Title="Metadata" />
+        <PropertyColumn Property="x => x.OccurredAt" Title="When" Format="yyyy-MM-dd HH:mm:ss" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private List<UserSession> _sessions = new();
+    private List<ActivityEvent> _events = new();
+    private bool _loading = true;
+
+    private string? _userFilter;
+    private ActivityEventType? _eventTypeFilter;
+    private DateRange? _dateRange;
+    private string? _dealIdFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task OnEventTypeChanged(ActivityEventType? value)
+    {
+        _eventTypeFilter = value;
+        await LoadDataAsync();
+    }
+
+    private async Task OnDateRangeChanged(DateRange? range)
+    {
+        _dateRange = range;
+        await LoadDataAsync();
+    }
+
+    private async Task ApplyFilters()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _loading = true;
+
+        var sessionsQuery = Db.UserSessions
+            .Include(s => s.ActivityEvents)
+            .OrderByDescending(s => s.ConnectedAt)
+            .AsQueryable();
+
+        var eventsQuery = Db.ActivityEvents
+            .OrderByDescending(e => e.OccurredAt)
+            .AsQueryable();
+
+        // Apply filters
+        if (!string.IsNullOrWhiteSpace(_userFilter))
+        {
+            sessionsQuery = sessionsQuery.Where(s => s.UserId.Contains(_userFilter));
+            eventsQuery = eventsQuery.Where(e => e.UserId.Contains(_userFilter));
+        }
+
+        if (_eventTypeFilter.HasValue)
+        {
+            eventsQuery = eventsQuery.Where(e => e.EventType == _eventTypeFilter.Value);
+        }
+
+        if (_dateRange?.Start is not null)
+        {
+            var start = _dateRange.Start.Value.ToUniversalTime();
+            sessionsQuery = sessionsQuery.Where(s => s.ConnectedAt >= start);
+            eventsQuery = eventsQuery.Where(e => e.OccurredAt >= start);
+        }
+
+        if (_dateRange?.End is not null)
+        {
+            var end = _dateRange.End.Value.AddDays(1).ToUniversalTime();
+            sessionsQuery = sessionsQuery.Where(s => s.ConnectedAt < end);
+            eventsQuery = eventsQuery.Where(e => e.OccurredAt < end);
+        }
+
+        if (!string.IsNullOrWhiteSpace(_dealIdFilter) && Guid.TryParse(_dealIdFilter, out var dealGuid))
+        {
+            eventsQuery = eventsQuery.Where(e => e.DealId == dealGuid);
+        }
+
+        _sessions = await sessionsQuery.Take(50).ToListAsync();
+        _events = await eventsQuery.Take(200).ToListAsync();
+
+        _loading = false;
+    }
+}
