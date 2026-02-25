@@ -23,7 +23,7 @@ Write-Host "=== ZSR Underwriting Deploy ===" -ForegroundColor Cyan
 
 # Step 1: Git push
 if (-not $SkipPush) {
-    Write-Host "`n[1/4] Pushing to GitHub..." -ForegroundColor Yellow
+    Write-Host "`n[1/5] Pushing to GitHub..." -ForegroundColor Yellow
     Set-Location $ProjectRoot
     git add -A
     $hasChanges = git diff --cached --quiet 2>&1; $LASTEXITCODE -ne 0
@@ -39,21 +39,32 @@ if (-not $SkipPush) {
     }
     Write-Host "Git push complete." -ForegroundColor Green
 } else {
-    Write-Host "`n[1/4] Skipping git push." -ForegroundColor Gray
+    Write-Host "`n[1/5] Skipping git push." -ForegroundColor Gray
 }
 
-# Step 2: Publish
-Write-Host "`n[2/4] Publishing..." -ForegroundColor Yellow
+# Step 2: Stop IIS (release file locks)
+Write-Host "`n[2/5] Stopping IIS..." -ForegroundColor Yellow
+iisreset /stop
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "IIS stop failed!" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
+    exit 1
+}
+Write-Host "IIS stopped." -ForegroundColor Green
+
+# Step 3: Publish
+Write-Host "`n[3/5] Publishing..." -ForegroundColor Yellow
 dotnet publish $WebProject -c Release -o $PublishDir --nologo
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Publish failed!" -ForegroundColor Red
+    Write-Host "Publish failed! Restarting IIS..." -ForegroundColor Red
+    iisreset /start
     Read-Host "Press Enter to exit"
     exit 1
 }
 Write-Host "Publish complete." -ForegroundColor Green
 
-# Step 3: Apply EF migrations to published DB
-Write-Host "`n[3/4] Applying database migrations..." -ForegroundColor Yellow
+# Step 4: Apply EF migrations to published DB
+Write-Host "`n[4/5] Applying database migrations..." -ForegroundColor Yellow
 $dbPath = "$PublishDir\zsr_underwriting.db"
 if (Test-Path $dbPath) {
     dotnet ef database update `
@@ -68,11 +79,11 @@ if (Test-Path $dbPath) {
     Write-Host "Database copied." -ForegroundColor Green
 }
 
-# Step 4: Restart IIS
-Write-Host "`n[4/4] Restarting IIS..." -ForegroundColor Yellow
-iisreset /restart
+# Step 5: Start IIS
+Write-Host "`n[5/5] Starting IIS..." -ForegroundColor Yellow
+iisreset /start
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "IIS restart failed!" -ForegroundColor Red
+    Write-Host "IIS start failed!" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }

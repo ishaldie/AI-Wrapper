@@ -63,12 +63,12 @@
 ---
 
 ## [x] Track: UI Redesign & Web Fixes (completed 2026-02-22)
-*Link: [./conductor/tracks/ui-redesign-and-web-fixes/](./conductor/tracks/ui-redesign-and-web-fixes/)*
+*Link: [./conductor/archive/ui-redesign-and-web-fixes_20260222/](./conductor/archive/ui-redesign-and-web-fixes_20260222/)*
 
 ---
 
 ## [x] Track: Document Upload Security Hardening (completed 2026-02-22)
-*Link: [./conductor/tracks/document_upload_security_hardening_20260222/](./conductor/tracks/document_upload_security_hardening_20260222/)*
+*Link: [./conductor/archive/document_upload_security_hardening_20260222/](./conductor/archive/document_upload_security_hardening_20260222/)*
 
 ---
 
@@ -78,21 +78,21 @@
 ---
 
 ## [x] Track: MVP (completed 2026-02-14)
-*Link: [./conductor/tracks/mvp_20260214/](./conductor/tracks/mvp_20260214/)*
+*Link: [./conductor/archive/mvp_20260214/](./conductor/archive/mvp_20260214/)*
 
 ---
 
 ## [x] Track: Track Set Up (archived)
-*Link: [./conductor/tracks/track_set_up_20260214/](./conductor/tracks/track_set_up_20260214/)*
+*Link: [./conductor/archive/track_set_up_20260214/](./conductor/archive/track_set_up_20260214/)*
 
 ---
 
 ## [x] Track: Deal Tabs (completed 2026-02-23)
-*Link: [./conductor/tracks/deal-tabs/](./conductor/tracks/deal-tabs/)*
+*Link: [./conductor/archive/deal-tabs_20260223/](./conductor/archive/deal-tabs_20260223/)*
 
 ---
 
 ## [x] Track: Document Management (completed 2026-02-24)
-*Link: [./conductor/tracks/document-management/](./conductor/tracks/document-management/)*
+*Link: [./conductor/archive/document-management_20260224/](./conductor/archive/document-management_20260224/)*
 
 ---
