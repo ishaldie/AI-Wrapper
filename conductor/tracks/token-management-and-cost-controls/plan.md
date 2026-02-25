@@ -39,7 +39,7 @@
 - [x] 5.4 Catch in `ReportProseGenerator.GenerateSectionAsync` — add to `failedSections` with rate-limit context instead of generic failure
 - [x] 5.5 Unit tests: 429 throws ClaudeRateLimitException, retry-after header parsed, null when no header, 500 still throws HttpRequestException, exception message format
 
-## Phase 6: Admin Token Dashboard
+## Phase 6: Admin Token Dashboard [checkpoint: c9f941d]
 - [x] 6.1 Create `/admin/tokens` page (`AdminTokenDashboard.razor`) with `[Authorize(Roles = "Admin")]`
 - [x] 6.2 Add summary cards: Total Tokens, BYOK Tokens, Shared Tokens, BYOK Users
 - [x] 6.3 Add usage-by-user table — MudDataGrid with email, BYOK badge, total/BYOK/shared tokens, request count
