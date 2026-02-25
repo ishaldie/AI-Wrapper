@@ -107,6 +107,8 @@ try
     // Add Claude client — supports "cli" mode (your subscription) or "api" mode (API key)
     builder.Services.Configure<ClaudeOptions>(
         builder.Configuration.GetSection(ClaudeOptions.SectionName));
+    builder.Services.Configure<TokenManagementOptions>(
+        builder.Configuration.GetSection("TokenManagement"));
 
     var claudeSection = builder.Configuration.GetSection(ClaudeOptions.SectionName);
     var claudeMode = claudeSection["Mode"];

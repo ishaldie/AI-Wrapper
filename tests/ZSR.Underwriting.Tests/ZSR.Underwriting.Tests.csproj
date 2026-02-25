@@ -145,6 +145,8 @@
     <Compile Include="Infrastructure\CookieAndDataProtectionTests.cs" />
     <!-- Activity Tracking Completion track -->
     <Compile Include="Components\AdminActivityTests.cs" />
+    <!-- Token Management & Cost Controls track -->
+    <Compile Include="Services\ConversationTruncatorTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

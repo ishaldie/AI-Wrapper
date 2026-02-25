@@ -1,17 +1,17 @@
 # Plan: Token Management & Cost Controls
 
-## Phase 1: Fix ConversationHistory & Chat Hardening
+## Phase 1: Fix ConversationHistory & Chat Hardening [checkpoint: ee5e980]
 - [x] 1.1 Update `ClaudeClient.SendMessageAsync` to map `ConversationHistory` into alternating user/assistant `Messages` array in the API payload
 - [x] 1.2 Append `UserMessage` as the final user message after history in the messages array
 - [x] 1.3 Add chat send debounce in `DealChatTab.razor` — disable send button while `_isLoading`, enforce 2-second cooldown via `DateTime` check
 - [x] 1.4 Unit tests: ClaudeClient sends full conversation history, empty history still works, debounce prevents rapid sends
 
 ## Phase 2: Conversation History Truncation
-- [ ] 2.1 Create `ConversationTruncator` utility — takes a `List<ConversationMessage>` and returns a truncated list based on max message count (default 20) and estimated token limit (default 150,000)
-- [ ] 2.2 Token estimation: count characters / 4 as rough token approximation (no external tokenizer dependency)
-- [ ] 2.3 Wire `ConversationTruncator` into `DealChatTab.razor` — truncate before building `ClaudeRequest`, keeping system prompt + last N messages within budget
-- [ ] 2.4 Add `TokenManagement` section to `appsettings.json` with `MaxConversationMessages`, `MaxConversationTokens`, `DailyUserTokenBudget`, `DealTokenBudget` config keys
-- [ ] 2.5 Unit tests: truncation by message count, truncation by token estimate, keeps most recent messages, handles empty history
+- [x] 2.1 Create `ConversationTruncator` utility — takes a `List<ConversationMessage>` and returns a truncated list based on max message count (default 20) and estimated token limit (default 150,000)
+- [x] 2.2 Token estimation: count characters / 4 as rough token approximation (no external tokenizer dependency)
+- [x] 2.3 Wire `ConversationTruncator` into `DealChatTab.razor` — truncate before building `ClaudeRequest`, keeping system prompt + last N messages within budget
+- [x] 2.4 Add `TokenManagement` section to `appsettings.json` with `MaxConversationMessages`, `MaxConversationTokens`, `DailyUserTokenBudget`, `DealTokenBudget` config keys
+- [x] 2.5 Unit tests: truncation by message count, truncation by token estimate, keeps most recent messages, handles empty history
 
 ## Phase 3: Token Usage Tracking
 - [ ] 3.1 Create `TokenUsageRecord` entity — Id, UserId, DealId (nullable), OperationType (enum: Chat, ReportProse, SalesCompExtraction, QuickAnalysis), InputTokens, OutputTokens, Model, CreatedAt

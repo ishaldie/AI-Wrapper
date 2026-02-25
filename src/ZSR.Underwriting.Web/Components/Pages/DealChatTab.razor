@@ -13,6 +13,8 @@
 @using System.Text
 @using System.Text.RegularExpressions
 @using ZSR.Underwriting.Application.Services
+@using ZSR.Underwriting.Infrastructure.Configuration
+@using Microsoft.Extensions.Options
 @using DocumentFormat.OpenXml.Packaging
 @inject AppDbContext Db
 @inject IClaudeClient ClaudeClient
@@ -24,6 +26,7 @@
 @inject ISnackbar Snackbar
 @inject IDocumentMatchingService MatchingService
 @inject ILogger<DealChatTab> Logger
+@inject IOptions<TokenManagementOptions> TokenConfig
 
 <div class="deal-chat-tab-container">
     @* Messages area with drag-and-drop *@
@@ -674,10 +677,14 @@
                 .Select(m => new ConversationMessage { Role = m.Role, Content = m.Content })
                 .ToList();
 
+            var tc = TokenConfig.Value;
+            var truncatedHistory = ConversationTruncator.Truncate(
+                history, tc.MaxConversationMessages, tc.MaxConversationTokens);
+
             var request = new ClaudeRequest
             {
                 SystemPrompt = BuildSystemPrompt(),
-                ConversationHistory = history,
+                ConversationHistory = truncatedHistory,
                 MaxTokens = 4000
             };
 
