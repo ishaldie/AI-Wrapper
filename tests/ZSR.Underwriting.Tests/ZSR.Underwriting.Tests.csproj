@@ -147,6 +147,7 @@
     <Compile Include="Components\AdminActivityTests.cs" />
     <!-- Token Management & Cost Controls track -->
     <Compile Include="Services\ConversationTruncatorTests.cs" />
+    <Compile Include="Services\TokenUsageTrackerTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

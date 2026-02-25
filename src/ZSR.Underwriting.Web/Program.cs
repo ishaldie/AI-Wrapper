@@ -198,6 +198,9 @@ try
     builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IActivityTracker, ActivityTracker>();
 
+    // Add token usage tracking
+    builder.Services.AddScoped<ITokenUsageTracker, TokenUsageTracker>();
+
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();

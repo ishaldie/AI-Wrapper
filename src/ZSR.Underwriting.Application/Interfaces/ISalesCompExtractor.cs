@@ -17,4 +17,6 @@ public class SalesCompResult
 {
     public List<SalesCompRow> Comps { get; init; } = [];
     public List<AdjustmentRow> Adjustments { get; init; } = [];
+    public int InputTokens { get; set; }
+    public int OutputTokens { get; set; }
 }

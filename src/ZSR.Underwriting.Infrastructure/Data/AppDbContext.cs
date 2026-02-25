@@ -25,6 +25,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<DealChecklistItem> DealChecklistItems => Set<DealChecklistItem>();
     public DbSet<AuthorizedSender> AuthorizedSenders => Set<AuthorizedSender>();
     public DbSet<EmailIngestionLog> EmailIngestionLogs => Set<EmailIngestionLog>();
+    public DbSet<TokenUsageRecord> TokenUsageRecords => Set<TokenUsageRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -335,6 +336,18 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasIndex(e => e.DealId);
+        });
+
+        // --- TokenUsageRecord ---
+        modelBuilder.Entity<TokenUsageRecord>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.OperationType).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.Model).HasMaxLength(100);
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.DealId);
+            entity.HasIndex(e => e.CreatedAt);
         });
     }
 }

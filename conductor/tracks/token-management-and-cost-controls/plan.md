@@ -6,7 +6,7 @@
 - [x] 1.3 Add chat send debounce in `DealChatTab.razor` — disable send button while `_isLoading`, enforce 2-second cooldown via `DateTime` check
 - [x] 1.4 Unit tests: ClaudeClient sends full conversation history, empty history still works, debounce prevents rapid sends
 
-## Phase 2: Conversation History Truncation
+## Phase 2: Conversation History Truncation [checkpoint: 644b85b]
 - [x] 2.1 Create `ConversationTruncator` utility — takes a `List<ConversationMessage>` and returns a truncated list based on max message count (default 20) and estimated token limit (default 150,000)
 - [x] 2.2 Token estimation: count characters / 4 as rough token approximation (no external tokenizer dependency)
 - [x] 2.3 Wire `ConversationTruncator` into `DealChatTab.razor` — truncate before building `ClaudeRequest`, keeping system prompt + last N messages within budget
@@ -14,14 +14,14 @@
 - [x] 2.5 Unit tests: truncation by message count, truncation by token estimate, keeps most recent messages, handles empty history
 
 ## Phase 3: Token Usage Tracking
-- [ ] 3.1 Create `TokenUsageRecord` entity — Id, UserId, DealId (nullable), OperationType (enum: Chat, ReportProse, SalesCompExtraction, QuickAnalysis), InputTokens, OutputTokens, Model, CreatedAt
-- [ ] 3.2 Create `ITokenUsageTracker` interface with `RecordUsageAsync(userId, dealId, operationType, inputTokens, outputTokens, model)`
-- [ ] 3.3 Implement `TokenUsageTracker` service — persists `TokenUsageRecord` to database, with fire-and-forget pattern (never blocks the caller)
-- [ ] 3.4 Add EF migration for `TokenUsageRecords` table with indexes on UserId, DealId, CreatedAt
-- [ ] 3.5 Wire `ITokenUsageTracker` into `ClaudeClient` — record after every successful API call
-- [ ] 3.6 Wire into `SalesCompExtractor` — record extraction call tokens
-- [ ] 3.7 Wire into `ReportProseGenerator` — record per-section tokens with `ReportProse` operation type
-- [ ] 3.8 Unit tests: usage recorded with correct fields, fire-and-forget doesn't throw on failure, all operation types covered
+- [x] 3.1 Create `TokenUsageRecord` entity — Id, UserId, DealId (nullable), OperationType (enum: Chat, ReportProse, SalesCompExtraction, QuickAnalysis), InputTokens, OutputTokens, Model, CreatedAt
+- [x] 3.2 Create `ITokenUsageTracker` interface with `RecordUsageAsync(userId, dealId, operationType, inputTokens, outputTokens, model)`
+- [x] 3.3 Implement `TokenUsageTracker` service — persists `TokenUsageRecord` to database, with fire-and-forget pattern (never blocks the caller)
+- [x] 3.4 Add EF migration for `TokenUsageRecords` table with indexes on UserId, DealId, CreatedAt
+- [x] 3.5 Wire `ITokenUsageTracker` into DealChatTab — record Chat tokens after every Claude response
+- [x] 3.6 Wire into `ReportAssembler` — record SalesCompExtraction tokens via SalesCompResult
+- [x] 3.7 Wire into `ReportAssembler` — record ReportProse tokens from GeneratedProse totals
+- [x] 3.8 Unit tests: usage recorded with correct fields, fire-and-forget doesn't throw on failure, all operation types covered
 
 ## Phase 4: Budget Enforcement
 - [ ] 4.1 Create `ITokenBudgetService` interface with `CheckUserBudgetAsync(userId)` returning `(bool allowed, int used, int limit)` and `CheckDealBudgetAsync(dealId)` returning `(bool allowed, int used, int limit, bool warning)`

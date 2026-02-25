@@ -7,6 +7,8 @@ using ZSR.Underwriting.Application.Formatting;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Application.Services;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
+using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Data;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -19,6 +21,7 @@ public class ReportAssembler : IReportAssembler
     private readonly IPublicDataService? _publicDataService;
     private readonly IReportProseGenerator? _proseGenerator;
     private readonly IHudApiClient? _hudApiClient;
+    private readonly ITokenUsageTracker? _tokenTracker;
     private readonly UnderwritingCalculator _calc = new();
     private readonly AffordabilityCalculator _affordabilityCalc = new();
 
@@ -28,7 +31,8 @@ public class ReportAssembler : IReportAssembler
         ISalesCompExtractor? salesCompExtractor = null,
         IPublicDataService? publicDataService = null,
         IReportProseGenerator? proseGenerator = null,
-        IHudApiClient? hudApiClient = null)
+        IHudApiClient? hudApiClient = null,
+        ITokenUsageTracker? tokenTracker = null)
     {
         _db = db;
         _marketDataService = marketDataService;
@@ -36,6 +40,7 @@ public class ReportAssembler : IReportAssembler
         _publicDataService = publicDataService;
         _proseGenerator = proseGenerator;
         _hudApiClient = hudApiClient;
+        _tokenTracker = tokenTracker;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -119,6 +124,13 @@ public class ReportAssembler : IReportAssembler
             prose = await GenerateProseAsync(deal, noi, egi, opEx, capRate, debtService,
                 loanAmount, totalEquity, effectiveHold, effectiveAmort, loanRate,
                 marketContext, publicData, cancellationToken);
+
+            if (prose != null && _tokenTracker != null)
+            {
+                _ = _tokenTracker.RecordUsageAsync(
+                    deal.UserId, deal.Id, OperationType.ReportProse,
+                    prose.TotalInputTokens, prose.TotalOutputTokens, string.Empty);
+            }
         }
 
         return new UnderwritingReportDto
@@ -240,6 +252,14 @@ public class ReportAssembler : IReportAssembler
         {
             var result = await _salesCompExtractor.ExtractCompsAsync(
                 marketContext, deal.Address, pricePerUnit, deal.UnitCount, cancellationToken);
+
+            if (_tokenTracker != null && (result.InputTokens > 0 || result.OutputTokens > 0))
+            {
+                _ = _tokenTracker.RecordUsageAsync(
+                    deal.UserId, deal.Id, OperationType.SalesCompExtraction,
+                    result.InputTokens, result.OutputTokens, string.Empty);
+            }
+
             if (result.Comps.Count > 0)
             {
                 section = new PropertyCompsSection

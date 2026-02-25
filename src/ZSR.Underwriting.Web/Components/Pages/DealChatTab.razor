@@ -27,6 +27,7 @@
 @inject IDocumentMatchingService MatchingService
 @inject ILogger<DealChatTab> Logger
 @inject IOptions<TokenManagementOptions> TokenConfig
+@inject ITokenUsageTracker TokenTracker
 
 <div class="deal-chat-tab-container">
     @* Messages area with drag-and-drop *@
@@ -567,6 +568,10 @@
             Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
                 DealId, response.Content?.Length ?? 0);
 
+            _ = TokenTracker.RecordUsageAsync(
+                _userId, DealId, Domain.Enums.OperationType.Chat,
+                response.InputTokens, response.OutputTokens, response.Model);
+
             await ProcessAiResponse(response);
         }
         catch (Exception ex)
@@ -691,6 +696,10 @@
             var response = await ClaudeClient.SendMessageAsync(request);
             Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
                 DealId, response.Content?.Length ?? 0);
+
+            _ = TokenTracker.RecordUsageAsync(
+                _userId, DealId, Domain.Enums.OperationType.Chat,
+                response.InputTokens, response.OutputTokens, response.Model);
 
             await ProcessAiResponse(response);
         }

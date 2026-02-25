@@ -43,7 +43,10 @@ public class SalesCompExtractor : ISalesCompExtractor
                 MaxTokens = 2000
             }, cancellationToken);
 
-            return ParseResponse(response.Content);
+            var result = ParseResponse(response.Content);
+            result.InputTokens = response.InputTokens;
+            result.OutputTokens = response.OutputTokens;
+            return result;
         }
         catch
         {
