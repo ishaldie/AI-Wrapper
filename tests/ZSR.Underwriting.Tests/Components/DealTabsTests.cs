@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
+using ZSR.Underwriting.Application.Calculations;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
@@ -39,6 +40,7 @@ public class DealTabsTests : IAsyncLifetime
         // Register stub services required by DealTabs
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -211,6 +213,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -331,6 +334,16 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         // Total of 7M + 3M = 10M
         Assert.Contains("10,000,000", cut.Markup);
     }
+
+    [Fact]
+    public void UnderwritingTab_ShowsSensitivityAnalysis()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Sensitivity Analysis", cut.Markup);
+        Assert.Contains("Base Case", cut.Markup);
+    }
 }
 
 public class DealTabsChecklistTests : IAsyncLifetime
@@ -354,6 +367,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -468,6 +482,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -594,6 +609,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
 
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -756,6 +772,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentParsingService>(new StubDocumentParsingService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddLogging();
 
         var sp = _ctx.Services.BuildServiceProvider();

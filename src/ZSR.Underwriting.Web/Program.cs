@@ -149,6 +149,7 @@ try
     builder.Services.AddSingleton<IReportPdfExporter, ReportPdfExporter>();
     builder.Services.AddScoped<IPromptBuilder, ZSR.Underwriting.Application.Services.UnderwritingPromptBuilder>();
     builder.Services.AddScoped<IReportProseGenerator, ZSR.Underwriting.Application.Services.ReportProseGenerator>();
+    builder.Services.AddSingleton<ISensitivityCalculator, ZSR.Underwriting.Application.Calculations.SensitivityCalculatorService>();
 
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();

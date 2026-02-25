@@ -96,3 +96,8 @@
 *Link: [./conductor/archive/document-management_20260224/](./conductor/archive/document-management_20260224/)*
 
 ---
+
+## [ ] Track: Report & Analysis Enhancements
+*Link: [./conductor/tracks/report-and-analysis-enhancements/](./conductor/tracks/report-and-analysis-enhancements/)*
+
+---

@@ -1,0 +1,7 @@
+{
+  "id": "report-and-analysis-enhancements",
+  "type": "feature",
+  "status": "pending",
+  "created": "2026-02-24",
+  "description": "Wire ReportProseGenerator, PDF export, SensitivityCalculator, MarketDataEnricher, and public APIs (Census/BLS/FRED) into the report pipeline"
+}

@@ -5,6 +5,7 @@
 @using ZSR.Underwriting.Application.Constants
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Application.Calculations
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
@@ -15,6 +16,7 @@
 @inject IDocumentMatchingService MatchingService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
+@inject ISensitivityCalculator SensitivityCalc
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -203,6 +205,35 @@ else
                             <tr><td>DSCR</td><td style="text-align: right;">@FormatMultiple(_calc.DebtServiceCoverageRatio)</td></tr>
                         </tbody>
                     </MudSimpleTable>
+
+                    @* Sensitivity Analysis *@
+                    @if (_sensitivityScenarios?.Count > 0)
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Sensitivity Analysis</MudText>
+                        <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px; margin-bottom: 1.5rem;">
+                            <thead>
+                                <tr style="background: #F9FAFB;">
+                                    <th>Scenario</th>
+                                    <th style="text-align: right;">NOI</th>
+                                    <th style="text-align: right;">NOI Delta</th>
+                                    <th style="text-align: right;">Exit Value</th>
+                                    <th style="text-align: right;">Exit Delta</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in _sensitivityScenarios)
+                                {
+                                    <tr>
+                                        <td style="font-weight: @(s.Name == "Base Case" ? "700" : "400");">@s.Name</td>
+                                        <td style="text-align: right;">@FormatCurrency(s.Noi)</td>
+                                        <td style="text-align: right; color: @DeltaColor(s.NoiDelta);">@FormatDelta(s.NoiDelta)</td>
+                                        <td style="text-align: right;">@FormatCurrency(s.ExitValue)</td>
+                                        <td style="text-align: right; color: @DeltaColor(s.ExitValueDelta);">@FormatDelta(s.ExitValueDelta)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
                 }
 
                 @* Capital Stack *@
@@ -589,6 +620,7 @@ else
     private Deal? _deal;
     private Property _property = null!;
     private CalculationResult? _calc;
+    private List<SensitivityScenario> _sensitivityScenarios = new();
     private List<CapitalStackItem> _capitalStack = new();
     private List<DealChecklistItem> _checklistItems = new();
     private List<UploadedDocument> _documents = new();
@@ -644,6 +676,7 @@ else
         {
             _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
             _calc = _deal.CalculationResult;
+            ComputeSensitivityScenarios();
             _capitalStack = _deal.CapitalStackItems.OrderBy(c => c.SortOrder).ToList();
 
             // Auto-generate checklist items on first visit
@@ -709,6 +742,7 @@ else
 
         _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
         _calc = _deal.CalculationResult;
+        ComputeSensitivityScenarios();
         _capitalStack = _deal.CapitalStackItems.OrderBy(c => c.SortOrder).ToList();
         _checklistItems = _deal.DealChecklistItems
             .OrderBy(i => i.Template.SectionOrder)
@@ -1052,6 +1086,29 @@ else
 
     private static string FormatMultiple(decimal? value)
         => value.HasValue ? $"{value.Value:F2}x" : "\u2014";
+
+    private static string FormatDelta(decimal value)
+        => value == 0m ? "\u2014" : $"{(value > 0 ? "+" : "")}{value:N0}";
+
+    private static string DeltaColor(decimal value)
+        => value > 0 ? "#16A34A" : value < 0 ? "#DC2626" : "#6B7280";
+
+    private void ComputeSensitivityScenarios()
+    {
+        if (_calc is null || _deal is null) return;
+        var gpr = _calc.GrossPotentialRent ?? 0m;
+        var occupancy = ProtocolDefaults.GetEffectiveOccupancy(_deal.TargetOccupancy);
+        var egi = _calc.EffectiveGrossIncome ?? 0m;
+        var opExRatio = egi > 0 ? (_calc.OperatingExpenses ?? 0m) / egi : 0.5435m;
+        var exitCapPct = (_calc.ExitCapRate ?? 0.07m) * 100m;
+        var noi = _calc.NetOperatingIncome ?? 0m;
+        var debtService = _calc.AnnualDebtService ?? 0m;
+        var reserves = _deal.UnitCount * 250m;
+        var equity = _deal.PurchasePrice - (_calc.LoanAmount ?? 0m);
+        _sensitivityScenarios = SensitivityCalc.RunScenarios(
+            gpr, occupancy, 0.135m, opExRatio, _deal.PurchasePrice,
+            debtService, reserves, equity, exitCapPct, noi);
+    }
 
     private static string FormatFileSize(long bytes)
     {
