@@ -102,7 +102,7 @@
 
 ---
 
-## [ ] Track: SOC 2 Remediation
-*Link: [./conductor/tracks/soc2-remediation/](./conductor/tracks/soc2-remediation/)*
+## [x] Track: SOC 2 Remediation (completed 2026-02-25)
+*Link: [./conductor/archive/soc2-remediation_20260225/](./conductor/archive/soc2-remediation_20260225/)*
 
 ---
