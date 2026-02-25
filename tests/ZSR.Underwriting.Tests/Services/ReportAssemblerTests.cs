@@ -182,4 +182,154 @@ public class ReportAssemblerTests : IDisposable
 
         Assert.Equal(10, report.InvestmentDecision.SectionNumber);
     }
+
+    // === Phase 1: Financial Analysis Completion ===
+
+    [Fact]
+    public async Task AssembleReportAsync_FiveYearCashFlow_Has5Years()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Equal(5, report.FinancialAnalysis.FiveYearCashFlow.Count);
+        Assert.Equal(1, report.FinancialAnalysis.FiveYearCashFlow[0].Year);
+        Assert.Equal(5, report.FinancialAnalysis.FiveYearCashFlow[4].Year);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_FiveYearCashFlow_NoiGrowsOverTime()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        var cf = report.FinancialAnalysis.FiveYearCashFlow;
+        Assert.True(cf[1].Noi > cf[0].Noi, "Year 2 NOI should exceed Year 1");
+        Assert.True(cf[4].Noi > cf[3].Noi, "Year 5 NOI should exceed Year 4");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_FiveYearCashFlow_DebtServiceConstant()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        var cf = report.FinancialAnalysis.FiveYearCashFlow;
+        Assert.True(cf[0].DebtService > 0, "Debt service should be positive");
+        Assert.Equal(cf[0].DebtService, cf[4].DebtService);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_FiveYearCashFlow_EgiAndOpExPopulated()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        var year1 = report.FinancialAnalysis.FiveYearCashFlow[0];
+        Assert.True(year1.Egi > 0, "Year 1 EGI should be positive");
+        Assert.True(year1.OpEx > 0, "Year 1 OpEx should be positive");
+        Assert.True(year1.Noi > 0, "Year 1 NOI should be positive");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_Returns_IrrIsPositive()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.FinancialAnalysis.Returns.Irr > 0,
+            "IRR should be positive for a deal with positive cash flows");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_Returns_EquityMultipleAboveOne()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.FinancialAnalysis.Returns.EquityMultiple > 1.0m,
+            "Equity multiple should exceed 1.0x for a deal with positive returns");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_Returns_AverageCashOnCashPopulated()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.FinancialAnalysis.Returns.AverageCashOnCash != 0m,
+            "Average cash-on-cash should be populated");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_Returns_TotalProfitPositive()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.FinancialAnalysis.Returns.TotalProfit > 0,
+            "Total profit should be positive for a profitable deal");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_Exit_HasPositiveExitValue()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.FinancialAnalysis.Exit.ExitValue > 0, "Exit value should be positive");
+        Assert.True(report.FinancialAnalysis.Exit.ExitCapRate > 0, "Exit cap rate should be positive");
+        Assert.True(report.FinancialAnalysis.Exit.ExitNoi > 0, "Exit NOI should be positive");
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_Exit_NetProceedsPositive()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var assembler = new ReportAssembler(_db);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.True(report.FinancialAnalysis.Exit.NetProceeds > 0,
+            "Net proceeds should be positive for a profitable deal");
+        Assert.True(report.FinancialAnalysis.Exit.LoanBalance > 0,
+            "Loan balance at exit should be positive");
+    }
 }

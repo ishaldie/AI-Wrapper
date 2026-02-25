@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using ZSR.Underwriting.Application.Calculations;
 using ZSR.Underwriting.Application.Constants;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Formatting;
@@ -11,6 +12,7 @@ namespace ZSR.Underwriting.Infrastructure.Services;
 public class ReportAssembler : IReportAssembler
 {
     private readonly AppDbContext _db;
+    private readonly UnderwritingCalculator _calc = new();
 
     public ReportAssembler(AppDbContext db)
     {
@@ -44,6 +46,13 @@ public class ReportAssembler : IReportAssembler
         var noiMargin = egi > 0 ? noi / egi * 100m : 0m;
         var capRate = deal.PurchasePrice > 0 ? noi / deal.PurchasePrice * 100m : 0m;
 
+        // Debt service calculation
+        var loanRate = deal.LoanRate ?? 0m;
+        var debtService = _calc.CalculateAnnualDebtService(loanAmount, loanRate, deal.IsInterestOnly, effectiveAmort);
+        var reserves = _calc.CalculateAnnualReserves(deal.UnitCount);
+        var acqCosts = _calc.CalculateAcquisitionCosts(deal.PurchasePrice);
+        var totalEquity = _calc.CalculateEquityRequired(deal.PurchasePrice, acqCosts, loanAmount);
+
         return new UnderwritingReportDto
         {
             DealId = deal.Id,
@@ -56,7 +65,8 @@ public class ReportAssembler : IReportAssembler
             PropertyComps = BuildPropertyComps(),
             TenantMarket = BuildTenantMarket(deal, effectiveOccupancy),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
-            FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired),
+            FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
+                debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
             ValueCreation = BuildValueCreation(deal),
             RiskAssessment = BuildRiskAssessment(),
             InvestmentDecision = BuildInvestmentDecision()
@@ -173,9 +183,55 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static FinancialAnalysisSection BuildFinancialAnalysis(
-        Deal deal, decimal loanAmount, decimal equityRequired)
+    private FinancialAnalysisSection BuildFinancialAnalysis(
+        Deal deal, decimal loanAmount, decimal equityRequired, decimal noi, decimal egi, decimal opEx,
+        decimal debtService, decimal reserves, decimal totalEquity, decimal capRate, decimal loanRate,
+        int holdPeriod, int amortYears)
     {
+        // Default 3% annual NOI growth for projection
+        var growthRates = Enumerable.Repeat(3m, holdPeriod).ToArray();
+        var projectedNoi = _calc.ProjectNoi(noi, growthRates);
+        var projectedCashFlows = _calc.ProjectCashFlows(projectedNoi, debtService, reserves);
+
+        // Build year-by-year cash flow rows
+        // EGI and OpEx grow at the same rate as NOI for consistency
+        var opExRatio = egi > 0 ? opEx / egi : 0m;
+        var fiveYearCf = new List<CashFlowYear>();
+        for (int i = 0; i < holdPeriod; i++)
+        {
+            var yearNoi = projectedNoi[i];
+            var yearEgi = opExRatio > 0 ? yearNoi / (1m - opExRatio) : 0m;
+            var yearOpEx = yearEgi - yearNoi;
+            var yearCoc = totalEquity > 0
+                ? Math.Round(projectedCashFlows[i] / totalEquity * 100m, 1)
+                : 0m;
+
+            fiveYearCf.Add(new CashFlowYear
+            {
+                Year = i + 1,
+                Egi = Math.Round(yearEgi, 2),
+                OpEx = Math.Round(yearOpEx, 2),
+                Noi = yearNoi,
+                DebtService = debtService,
+                CashFlow = projectedCashFlows[i],
+                CashOnCash = yearCoc
+            });
+        }
+
+        // Exit analysis
+        var exitCapRate = _calc.CalculateExitCapRate(capRate);
+        var terminalNoi = projectedNoi.Length > 0 ? projectedNoi[^1] : noi;
+        var exitValue = _calc.CalculateExitValue(terminalNoi, exitCapRate);
+        var saleCosts = _calc.CalculateSaleCosts(exitValue);
+        var loanBalance = _calc.CalculateLoanBalance(loanAmount, loanRate, deal.IsInterestOnly, amortYears, holdPeriod);
+        var netProceeds = _calc.CalculateNetSaleProceeds(exitValue, saleCosts, loanBalance);
+
+        // Returns analysis
+        var equityMultiple = _calc.CalculateEquityMultiple(projectedCashFlows, netProceeds, totalEquity);
+        var irr = _calc.CalculateIrr(totalEquity, projectedCashFlows, netProceeds);
+        var avgCoc = fiveYearCf.Count > 0 ? Math.Round(fiveYearCf.Average(y => y.CashOnCash), 1) : 0m;
+        var totalProfit = projectedCashFlows.Sum() + netProceeds - totalEquity;
+
         return new FinancialAnalysisSection
         {
             SourcesAndUses = new SourcesAndUses
@@ -187,9 +243,22 @@ public class ReportAssembler : IReportAssembler
                 TotalUses = deal.PurchasePrice + (deal.CapexBudget ?? 0m),
                 TotalSources = loanAmount + equityRequired + (deal.CapexBudget ?? 0m),
             },
-            FiveYearCashFlow = [],
-            Returns = new ReturnsAnalysis(),
-            Exit = new ExitAnalysis()
+            FiveYearCashFlow = fiveYearCf,
+            Returns = new ReturnsAnalysis
+            {
+                Irr = irr,
+                EquityMultiple = equityMultiple,
+                AverageCashOnCash = avgCoc,
+                TotalProfit = Math.Round(totalProfit, 2)
+            },
+            Exit = new ExitAnalysis
+            {
+                ExitCapRate = exitCapRate,
+                ExitNoi = terminalNoi,
+                ExitValue = exitValue,
+                LoanBalance = loanBalance,
+                NetProceeds = netProceeds
+            }
         };
     }
 
