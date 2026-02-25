@@ -50,47 +50,94 @@ public class SeedDataTests
     }
 
     [Fact]
-    public async Task SeedAsync_Creates_Default_Admin_User()
+    public async Task SeedAsync_Creates_Default_Admin_User_When_EnvVar_Set()
     {
-        using var sp = await CreateServiceProviderAsync();
-        await SeedData.SeedAsync(sp);
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "Test1234!");
+        try
+        {
+            using var sp = await CreateServiceProviderAsync();
+            await SeedData.SeedAsync(sp);
 
-        using var scope = sp.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var admin = await userManager.FindByEmailAsync("admin@zsr.com");
-        Assert.NotNull(admin);
-        Assert.Equal("Admin", admin.FullName);
+            using var scope = sp.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var admin = await userManager.FindByEmailAsync("admin@zsr.com");
+            Assert.NotNull(admin);
+            Assert.Equal("Admin", admin.FullName);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null);
+        }
     }
 
     [Fact]
     public async Task SeedAsync_Assigns_Admin_Role_To_Default_User()
     {
-        using var sp = await CreateServiceProviderAsync();
-        await SeedData.SeedAsync(sp);
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "Test1234!");
+        try
+        {
+            using var sp = await CreateServiceProviderAsync();
+            await SeedData.SeedAsync(sp);
 
-        using var scope = sp.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var admin = await userManager.FindByEmailAsync("admin@zsr.com");
-        Assert.NotNull(admin);
-        var roles = await userManager.GetRolesAsync(admin);
-        Assert.Contains("Admin", roles);
+            using var scope = sp.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var admin = await userManager.FindByEmailAsync("admin@zsr.com");
+            Assert.NotNull(admin);
+            var roles = await userManager.GetRolesAsync(admin);
+            Assert.Contains("Admin", roles);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null);
+        }
     }
 
     [Fact]
     public async Task SeedAsync_Is_Idempotent()
     {
-        using var sp = await CreateServiceProviderAsync();
-        await SeedData.SeedAsync(sp);
-        await SeedData.SeedAsync(sp); // Run twice
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "Test1234!");
+        try
+        {
+            using var sp = await CreateServiceProviderAsync();
+            await SeedData.SeedAsync(sp);
+            await SeedData.SeedAsync(sp); // Run twice
 
-        using var scope = sp.CreateScope();
-        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            using var scope = sp.CreateScope();
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        // Should still have exactly 2 roles and 1 admin user
-        Assert.True(await roleManager.RoleExistsAsync("Admin"));
-        Assert.True(await roleManager.RoleExistsAsync("Analyst"));
-        var admin = await userManager.FindByEmailAsync("admin@zsr.com");
-        Assert.NotNull(admin);
+            Assert.True(await roleManager.RoleExistsAsync("Admin"));
+            Assert.True(await roleManager.RoleExistsAsync("Analyst"));
+            var admin = await userManager.FindByEmailAsync("admin@zsr.com");
+            Assert.NotNull(admin);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null);
+        }
+    }
+
+    [Fact]
+    public async Task SeedAsync_Skips_Admin_When_EnvVar_Missing()
+    {
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null);
+        try
+        {
+            using var sp = await CreateServiceProviderAsync();
+            await SeedData.SeedAsync(sp);
+
+            using var scope = sp.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var admin = await userManager.FindByEmailAsync("admin@zsr.com");
+            Assert.Null(admin);
+
+            // Roles should still be created even without admin user
+            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            Assert.True(await roleManager.RoleExistsAsync("Admin"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null);
+        }
     }
 }
