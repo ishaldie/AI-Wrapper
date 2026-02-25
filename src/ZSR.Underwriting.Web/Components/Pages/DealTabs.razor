@@ -17,6 +17,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
 @inject ISensitivityCalculator SensitivityCalc
+@inject IMarketDataService MarketDataService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -57,6 +58,13 @@ else
         <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_deal.Status.ToString())">
             @_deal.Status
         </MudChip>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Description"
+                   OnClick="@(() => Navigation.NavigateTo($"/deals/{DealId}/report"))"
+                   Class="generate-report-btn"
+                   Style="text-transform: none; font-weight: 500; border-radius: 12px;">
+            Generate Report
+        </MudButton>
         <MudTooltip Text="@(_chatOpen ? "Close Chat" : "Open Chat")">
             <MudIconButton Icon="@Icons.Material.Filled.Chat"
                            Color="@(_chatOpen ? Color.Primary : Color.Default)"
@@ -606,7 +614,7 @@ else
                                Size="Size.Small" Color="Color.Default"
                                OnClick="ToggleChat" />
             </div>
-            <DealChatTab DealId="DealId" OnDealUpdated="RefreshDealData" />
+            <DealChatTab DealId="DealId" OnDealUpdated="RefreshDealData" MarketContext="_marketContext" />
         </div>
     }
     </div>
@@ -630,6 +638,7 @@ else
     private bool _saving;
     private int _activePanelIndex;
     private bool _chatOpen;
+    private MarketContextDto? _marketContext;
     private string _userId = string.Empty;
     private Guid? _uploadingItemId;
 
@@ -791,9 +800,40 @@ else
         _activePanelIndex = index;
     }
 
-    private void ToggleChat()
+    private async Task ToggleChat()
     {
         _chatOpen = !_chatOpen;
+
+        // Lazy-load market context on first chat open
+        if (_chatOpen && _marketContext == null && _deal != null)
+        {
+            try
+            {
+                var (city, state) = ParseCityState(_deal.Address);
+                if (!string.IsNullOrEmpty(city) && !string.IsNullOrEmpty(state))
+                {
+                    _marketContext = await MarketDataService.GetMarketContextForDealAsync(_deal.Id, city, state);
+                }
+            }
+            catch
+            {
+                // Market data is supplementary — don't block chat on failure
+            }
+        }
+    }
+
+    private static (string city, string state) ParseCityState(string? address)
+    {
+        if (string.IsNullOrWhiteSpace(address))
+            return (string.Empty, string.Empty);
+
+        var parts = address.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 3)
+            return (parts[^2], parts[^1]);
+        if (parts.Length == 2)
+            return (parts[0], parts[1]);
+
+        return (string.Empty, string.Empty);
     }
 
     private async Task SaveGeneralAsync()

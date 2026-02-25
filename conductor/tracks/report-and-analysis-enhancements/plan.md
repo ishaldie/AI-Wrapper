@@ -64,8 +64,8 @@
 - [x] 2563cd7 8.8 Unit tests for `AffordabilityCalculator` (14 tests) + mocked `HudApiClient` (9 tests) — all 23 pass
 
 ## Phase 9: UI Integration
-- [ ] 9.1 Add "Generate Report" button to DealTabs header — triggers `ReportAssembler.AssembleReportAsync()` then navigates to `/deals/{id}/report`
-- [ ] 9.2 Add loading state / progress indicator while report generates (prose + market data can take 30-60s)
-- [ ] 9.3 Feed `MarketContextDto` into `DealChatTab`'s `BuildSystemPrompt()` so Claude has market context during conversations
-- [ ] 9.4 Add market data summary to chat welcome message when available
+- [x] 9.1 Add "Generate Report" button to DealTabs header — triggers `ReportAssembler.AssembleReportAsync()` then navigates to `/deals/{id}/report`
+- [x] 9.2 Add loading state / progress indicator while report generates (prose + market data can take 30-60s)
+- [x] 9.3 Feed `MarketContextDto` into `DealChatTab`'s `BuildSystemPrompt()` so Claude has market context during conversations
+- [x] 9.4 Add market data summary to chat welcome message when available
 - [ ] 9.5 End-to-end manual test: search → chat → generate report → view → export PDF

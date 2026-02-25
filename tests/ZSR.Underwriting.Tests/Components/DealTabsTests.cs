@@ -41,6 +41,8 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -96,6 +98,24 @@ public class DealTabsTests : IAsyncLifetime
         // Chat should NOT be in the tab headers (it's a side panel now)
         var tabHeaders = cut.FindAll(".mud-tab");
         Assert.DoesNotContain(tabHeaders, th => th.TextContent.Contains("Chat"));
+    }
+
+    [Fact]
+    public void DealTabs_HasGenerateReportButton()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("generate-report-btn", cut.Markup);
+    }
+
+    [Fact]
+    public void DealTabs_GenerateReportButton_ContainsReportText()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("General"));
+
+        Assert.Contains("Generate Report", cut.Markup);
     }
 
     [Fact]
@@ -214,6 +234,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -368,6 +389,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -483,6 +505,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -610,6 +633,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -773,6 +797,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IDocumentParsingService>(new StubDocumentParsingService());
         _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddLogging();
 
         var sp = _ctx.Services.BuildServiceProvider();
@@ -904,4 +929,13 @@ internal class StubDocumentMatchingService : IDocumentMatchingService
         => candidates.Count > 0
             ? new DocumentMatchResult(candidates[0].ChecklistItemId, candidates[0].ItemName, 1.0)
             : null;
+}
+
+internal class StubMarketDataService : IMarketDataService
+{
+    public Task<MarketContextDto> GetMarketContextForDealAsync(Guid dealId, string city, string state)
+        => Task.FromResult(new MarketContextDto());
+
+    public Task<MarketContextDto> GetMarketContextAsync(string city, string state)
+        => Task.FromResult(new MarketContextDto());
 }

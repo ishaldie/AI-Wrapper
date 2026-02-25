@@ -379,6 +379,7 @@
 @code {
     [Parameter] public Guid DealId { get; set; }
     [Parameter] public EventCallback OnDealUpdated { get; set; }
+    [Parameter] public MarketContextDto? MarketContext { get; set; }
 
     private string? _dealName;
     private List<ChatMessage> _messages = new();
@@ -1046,8 +1047,10 @@
         return $"{bytes / (1024.0 * 1024.0):F1} MB";
     }
 
-    private static string BuildSystemPrompt() =>
-        """
+    private string BuildSystemPrompt()
+    {
+        var sb = new StringBuilder();
+        sb.Append("""
         You are a commercial real estate underwriting analyst. You help investors analyze multifamily and commercial properties for acquisition.
 
         IMPORTANT: When given a property name or address, you MUST use web search to research it before responding.
@@ -1130,7 +1133,25 @@
 
         Format responses in markdown. Be data-informed, conversational, and professional.
         Build on previous messages rather than repeating information already discussed.
-        """;
+        """);
+
+        // Append market context if available
+        if (MarketContext != null)
+        {
+            sb.AppendLine();
+            sb.AppendLine("MARKET CONTEXT (pre-loaded from web search — use this data in your analysis):");
+            if (MarketContext.MajorEmployers?.Count > 0)
+                sb.AppendLine($"Major Employers: {string.Join("; ", MarketContext.MajorEmployers.Select(e => e.Name))}");
+            if (MarketContext.ConstructionPipeline?.Count > 0)
+                sb.AppendLine($"Construction Pipeline: {string.Join("; ", MarketContext.ConstructionPipeline.Select(c => c.Name))}");
+            if (MarketContext.EconomicDrivers?.Count > 0)
+                sb.AppendLine($"Economic Drivers: {string.Join("; ", MarketContext.EconomicDrivers.Select(d => d.Name))}");
+            if (MarketContext.CurrentFannieMaeRate.HasValue)
+                sb.AppendLine($"Current Fannie Mae Rate: {MarketContext.CurrentFannieMaeRate.Value:F2}%");
+        }
+
+        return sb.ToString();
+    }
 
     // --- Raw text extraction (fallback when structured parser fails) ---
 
