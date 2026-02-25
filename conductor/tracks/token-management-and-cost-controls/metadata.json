@@ -1,0 +1,7 @@
+{
+  "id": "token-management-and-cost-controls",
+  "type": "feature",
+  "status": "planned",
+  "created": "2026-02-25",
+  "description": "Token budgeting, cost tracking, conversation truncation, 429 handling, and admin usage dashboard"
+}

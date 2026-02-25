@@ -226,6 +226,154 @@ public class ClaudeClientTests
             }));
     }
 
+    // --- Conversation history ---
+
+    [Fact]
+    public async Task SendMessageAsync_WithConversationHistory_SendsHistoryThenUserMessage()
+    {
+        var apiResponse = new
+        {
+            content = new[] { new { type = "text", text = "OK" } },
+            model = "claude-sonnet-4-5-20250929",
+            stop_reason = "end_turn",
+            usage = new { input_tokens = 100, output_tokens = 20 }
+        };
+        var handler = new MockHttpMessageHandler(
+            JsonSerializer.Serialize(apiResponse), HttpStatusCode.OK);
+        var client = CreateClient(handler);
+
+        var history = new List<ConversationMessage>
+        {
+            new() { Role = "user", Content = "What is the cap rate?" },
+            new() { Role = "assistant", Content = "The cap rate is 6.5%." }
+        };
+
+        await client.SendMessageAsync(new ClaudeRequest
+        {
+            SystemPrompt = "You are an analyst.",
+            UserMessage = "How does that compare to the market?",
+            ConversationHistory = history
+        });
+
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        var json = JsonDocument.Parse(body);
+        var messages = json.RootElement.GetProperty("messages");
+
+        // History (2 messages) + final user message = 3 total
+        Assert.Equal(3, messages.GetArrayLength());
+
+        // First: history user message
+        Assert.Equal("user", messages[0].GetProperty("role").GetString());
+        Assert.Equal("What is the cap rate?", messages[0].GetProperty("content").GetString());
+
+        // Second: history assistant message
+        Assert.Equal("assistant", messages[1].GetProperty("role").GetString());
+        Assert.Equal("The cap rate is 6.5%.", messages[1].GetProperty("content").GetString());
+
+        // Third: current user message (appended last)
+        Assert.Equal("user", messages[2].GetProperty("role").GetString());
+        Assert.Equal("How does that compare to the market?", messages[2].GetProperty("content").GetString());
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_WithEmptyConversationHistory_SendsOnlyUserMessage()
+    {
+        var apiResponse = new
+        {
+            content = new[] { new { type = "text", text = "OK" } },
+            model = "claude-sonnet-4-5-20250929",
+            stop_reason = "end_turn",
+            usage = new { input_tokens = 10, output_tokens = 5 }
+        };
+        var handler = new MockHttpMessageHandler(
+            JsonSerializer.Serialize(apiResponse), HttpStatusCode.OK);
+        var client = CreateClient(handler);
+
+        await client.SendMessageAsync(new ClaudeRequest
+        {
+            SystemPrompt = "System",
+            UserMessage = "Hello",
+            ConversationHistory = new List<ConversationMessage>()
+        });
+
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        var json = JsonDocument.Parse(body);
+        var messages = json.RootElement.GetProperty("messages");
+
+        Assert.Equal(1, messages.GetArrayLength());
+        Assert.Equal("user", messages[0].GetProperty("role").GetString());
+        Assert.Equal("Hello", messages[0].GetProperty("content").GetString());
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_WithNullConversationHistory_SendsOnlyUserMessage()
+    {
+        var apiResponse = new
+        {
+            content = new[] { new { type = "text", text = "OK" } },
+            model = "claude-sonnet-4-5-20250929",
+            stop_reason = "end_turn",
+            usage = new { input_tokens = 10, output_tokens = 5 }
+        };
+        var handler = new MockHttpMessageHandler(
+            JsonSerializer.Serialize(apiResponse), HttpStatusCode.OK);
+        var client = CreateClient(handler);
+
+        await client.SendMessageAsync(new ClaudeRequest
+        {
+            SystemPrompt = "System",
+            UserMessage = "Hello",
+            ConversationHistory = null
+        });
+
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        var json = JsonDocument.Parse(body);
+        var messages = json.RootElement.GetProperty("messages");
+
+        Assert.Equal(1, messages.GetArrayLength());
+        Assert.Equal("user", messages[0].GetProperty("role").GetString());
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_HistoryWithUserMessageAtEnd_DoesNotDuplicateUserMessage()
+    {
+        // When ConversationHistory already contains the current user message as the last entry,
+        // the UserMessage field should still be appended (caller is responsible for not duplicating)
+        var apiResponse = new
+        {
+            content = new[] { new { type = "text", text = "OK" } },
+            model = "claude-sonnet-4-5-20250929",
+            stop_reason = "end_turn",
+            usage = new { input_tokens = 10, output_tokens = 5 }
+        };
+        var handler = new MockHttpMessageHandler(
+            JsonSerializer.Serialize(apiResponse), HttpStatusCode.OK);
+        var client = CreateClient(handler);
+
+        var history = new List<ConversationMessage>
+        {
+            new() { Role = "user", Content = "First question" },
+            new() { Role = "assistant", Content = "First answer" },
+            new() { Role = "user", Content = "Second question" },
+            new() { Role = "assistant", Content = "Second answer" }
+        };
+
+        await client.SendMessageAsync(new ClaudeRequest
+        {
+            SystemPrompt = "System",
+            UserMessage = "Third question",
+            ConversationHistory = history
+        });
+
+        var body = await handler.LastRequest!.Content!.ReadAsStringAsync();
+        var json = JsonDocument.Parse(body);
+        var messages = json.RootElement.GetProperty("messages");
+
+        // 4 history + 1 UserMessage = 5
+        Assert.Equal(5, messages.GetArrayLength());
+        Assert.Equal("Third question", messages[4].GetProperty("content").GetString());
+    }
+
     // --- Multiple text blocks ---
 
     [Fact]

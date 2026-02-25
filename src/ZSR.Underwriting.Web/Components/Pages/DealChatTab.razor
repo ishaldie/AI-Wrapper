@@ -167,7 +167,7 @@
                    @bind="_userInput" @bind:event="oninput" @onkeydown="HandleKeyDown"
                    disabled="@_thinking" />
             <button class="search-bar-btn" type="button" @onclick="SendMessage"
-                    disabled="@(_thinking || (string.IsNullOrWhiteSpace(_userInput) && _pendingFiles.Count == 0))">
+                    disabled="@(_thinking || IsSendOnCooldown || (string.IsNullOrWhiteSpace(_userInput) && _pendingFiles.Count == 0))">
                 @if (_thinking)
                 {
                     <MudProgressCircular Indeterminate="true" Size="Size.Small"
@@ -395,6 +395,11 @@
     private int _dragCounter;
     private string _userId = string.Empty;
 
+    // Chat send cooldown (2-second minimum gap between sends)
+    private DateTime _lastSendTime = DateTime.MinValue;
+    private static readonly TimeSpan SendCooldown = TimeSpan.FromSeconds(2);
+    private bool IsSendOnCooldown => DateTime.UtcNow - _lastSendTime < SendCooldown;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -578,7 +583,9 @@
         var hasText = !string.IsNullOrWhiteSpace(_userInput);
         var hasFiles = _pendingFiles.Count > 0;
 
-        if ((!hasText && !hasFiles) || _thinking) return;
+        if ((!hasText && !hasFiles) || _thinking || IsSendOnCooldown) return;
+
+        _lastSendTime = DateTime.UtcNow;
 
         var input = _userInput.Trim();
         _userInput = "";

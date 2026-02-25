@@ -43,15 +43,26 @@ public class ClaudeClient : IClaudeClient
 
         var maxTokens = request.MaxTokens ?? _options.MaxTokens;
 
+        var messages = new List<ApiMessage>();
+
+        // Map conversation history into alternating user/assistant messages
+        if (request.ConversationHistory is { Count: > 0 })
+        {
+            foreach (var msg in request.ConversationHistory)
+            {
+                messages.Add(new ApiMessage { Role = msg.Role, Content = msg.Content });
+            }
+        }
+
+        // Append current user message as the final entry
+        messages.Add(new ApiMessage { Role = "user", Content = request.UserMessage });
+
         var payload = new ApiRequest
         {
             Model = _options.Model,
             MaxTokens = maxTokens,
             System = request.SystemPrompt,
-            Messages =
-            [
-                new ApiMessage { Role = "user", Content = request.UserMessage }
-            ]
+            Messages = messages
         };
 
         var json = JsonSerializer.Serialize(payload, JsonOptions);
