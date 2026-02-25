@@ -18,20 +18,24 @@ public class ReportAssembler : IReportAssembler
     private readonly ISalesCompExtractor? _salesCompExtractor;
     private readonly IPublicDataService? _publicDataService;
     private readonly IReportProseGenerator? _proseGenerator;
+    private readonly IHudApiClient? _hudApiClient;
     private readonly UnderwritingCalculator _calc = new();
+    private readonly AffordabilityCalculator _affordabilityCalc = new();
 
     public ReportAssembler(
         AppDbContext db,
         IMarketDataService? marketDataService = null,
         ISalesCompExtractor? salesCompExtractor = null,
         IPublicDataService? publicDataService = null,
-        IReportProseGenerator? proseGenerator = null)
+        IReportProseGenerator? proseGenerator = null,
+        IHudApiClient? hudApiClient = null)
     {
         _db = db;
         _marketDataService = marketDataService;
         _salesCompExtractor = salesCompExtractor;
         _publicDataService = publicDataService;
         _proseGenerator = proseGenerator;
+        _hudApiClient = hudApiClient;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -85,6 +89,22 @@ public class ReportAssembler : IReportAssembler
             }
         }
 
+        // Fetch HUD income limits for affordability analysis
+        AffordabilityResultDto? affordability = null;
+        if (_hudApiClient != null && deal.RentRollSummary.HasValue && deal.RentRollSummary > 0)
+        {
+            var (city, state) = ParseCityState(deal.Address);
+            if (!string.IsNullOrEmpty(state))
+            {
+                var incomeLimits = await _hudApiClient.GetIncomeLimitsAsync(state, city, cancellationToken);
+                if (incomeLimits != null)
+                {
+                    affordability = _affordabilityCalc.CalculateAffordability(
+                        deal.RentRollSummary.Value, incomeLimits);
+                }
+            }
+        }
+
         // Debt service calculation — prefer user rate, fall back to market rate
         var loanRate = MarketDataEnricher.GetEffectiveLoanRate(deal.LoanRate, marketContext ?? new MarketContextDto()) ?? 0m;
         var debtService = _calc.CalculateAnnualDebtService(loanAmount, loanRate, deal.IsInterestOnly, effectiveAmort);
@@ -111,7 +131,7 @@ public class ReportAssembler : IReportAssembler
             ExecutiveSummary = BuildExecutiveSummary(prose),
             Assumptions = BuildAssumptions(deal, effectiveLtv, effectiveHold, effectiveOccupancy, effectiveAmort, effectiveTerm),
             PropertyComps = await BuildPropertyCompsAsync(deal, marketContext, pricePerUnit, cancellationToken),
-            TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext, publicData?.TenantDemographics),
+            TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext, publicData?.TenantDemographics, affordability),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
             FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
                 debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
@@ -235,14 +255,27 @@ public class ReportAssembler : IReportAssembler
     }
 
     private static TenantMarketSection BuildTenantMarket(
-        Deal deal, decimal effectiveOccupancy, MarketContextDto? marketContext, TenantDemographicsDto? demographics = null)
+        Deal deal, decimal effectiveOccupancy, MarketContextDto? marketContext,
+        TenantDemographicsDto? demographics = null, AffordabilityResultDto? affordability = null)
     {
         if (marketContext != null || demographics != null)
         {
             var enriched = MarketDataEnricher.EnrichTenantMarket(
                 marketContext ?? new MarketContextDto(), deal.RentRollSummary ?? 0m, effectiveOccupancy, demographics);
             if (!enriched.Narrative.Contains("unavailable", StringComparison.OrdinalIgnoreCase))
-                return enriched;
+            {
+                // Attach affordability data to the enriched section
+                return new TenantMarketSection
+                {
+                    Narrative = enriched.Narrative,
+                    Benchmarks = AppendAffordabilityBenchmarks(enriched.Benchmarks, affordability),
+                    MarketRentPerUnit = enriched.MarketRentPerUnit,
+                    SubjectRentPerUnit = enriched.SubjectRentPerUnit,
+                    MarketOccupancy = enriched.MarketOccupancy,
+                    SubjectOccupancy = enriched.SubjectOccupancy,
+                    Affordability = affordability
+                };
+            }
         }
 
         return new TenantMarketSection
@@ -250,8 +283,27 @@ public class ReportAssembler : IReportAssembler
             Narrative = "[AI-generated market intelligence pending]",
             SubjectRentPerUnit = deal.RentRollSummary ?? 0m,
             SubjectOccupancy = effectiveOccupancy,
-            Benchmarks = []
+            Benchmarks = AppendAffordabilityBenchmarks([], affordability),
+            Affordability = affordability
         };
+    }
+
+    private static List<BenchmarkRow> AppendAffordabilityBenchmarks(
+        List<BenchmarkRow> existing, AffordabilityResultDto? affordability)
+    {
+        if (affordability == null)
+            return existing;
+
+        var benchmarks = new List<BenchmarkRow>(existing);
+        benchmarks.Add(new BenchmarkRow
+        {
+            Metric = "HUD Affordability",
+            Subject = $"{affordability.AffordableAtAmiPercent}% AMI",
+            Market = $"Median Family Income: ${affordability.MedianFamilyIncome:N0}",
+            Variance = affordability.AffordabilityTier
+        });
+
+        return benchmarks;
     }
 
     internal static (string city, string state) ParseCityState(string? address)

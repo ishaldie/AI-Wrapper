@@ -132,6 +132,8 @@
     <Compile Include="Services\SalesCompExtractorTests.cs" />
     <Compile Include="Services\PublicDataServiceTests.cs" />
     <Compile Include="Services\TenantDemographicsTests.cs" />
+    <Compile Include="Calculations\AffordabilityCalculatorTests.cs" />
+    <Compile Include="Services\HudApiClientTests.cs" />
     <!-- Document Management track -->
     <Compile Include="Services\DocumentMatchingServiceTests.cs" />
     <Compile Include="Services\DocumentDownloadTests.cs" />

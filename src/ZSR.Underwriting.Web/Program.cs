@@ -166,6 +166,16 @@ try
         client.BaseAddress = new Uri("https://api.stlouisfed.org/"));
     builder.Services.AddScoped<IPublicDataService, PublicDataService>();
 
+    // Add HUD Income Limits API client (affordability calculator)
+    builder.Services.AddHttpClient<IHudApiClient, HudApiClient>(client =>
+    {
+        client.BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/");
+        var hudToken = builder.Configuration["HudApi:Token"];
+        if (!string.IsNullOrEmpty(hudToken))
+            client.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", hudToken);
+    });
+
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
 

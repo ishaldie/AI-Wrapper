@@ -1,3 +1,5 @@
+using ZSR.Underwriting.Application.DTOs;
+
 namespace ZSR.Underwriting.Application.DTOs.Report;
 
 /// <summary>Base class for all report sections with common metadata.</summary>
@@ -92,6 +94,7 @@ public class TenantMarketSection : ReportSectionBase
     public decimal SubjectRentPerUnit { get; init; }
     public decimal MarketOccupancy { get; init; }
     public decimal SubjectOccupancy { get; init; }
+    public AffordabilityResultDto? Affordability { get; init; }
 }
 
 public class BenchmarkRow

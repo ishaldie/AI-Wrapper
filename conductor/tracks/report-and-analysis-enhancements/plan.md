@@ -53,9 +53,19 @@
 - [x] 051946f 7.5 Handle prose generation failures gracefully — fall back to calculation-only report
 - [x] 051946f 7.6 Unit tests with mocked prose generator
 
-## Phase 8: UI Integration
-- [ ] 8.1 Add "Generate Report" button to DealTabs header — triggers `ReportAssembler.AssembleReportAsync()` then navigates to `/deals/{id}/report`
-- [ ] 8.2 Add loading state / progress indicator while report generates (prose + market data can take 30-60s)
-- [ ] 8.3 Feed `MarketContextDto` into `DealChatTab`'s `BuildSystemPrompt()` so Claude has market context during conversations
-- [ ] 8.4 Add market data summary to chat welcome message when available
-- [ ] 8.5 End-to-end manual test: search → chat → generate report → view → export PDF
+## Phase 8: HUD Affordability Calculator
+- [x] 8.1 Create `IHudApiClient` interface + `HudIncomeLimitsDto` (median income, limits at 30%/50%/80% AMI by household size 1-8)
+- [x] 8.2 Implement `HudApiClient` — calls HUD IL statedata API with Bearer token auth, county/metro name matching, parses income limits response
+- [x] 8.3 Create `AffordabilityCalculator` — pure math: max affordable rent per AMI tier = (tier income × 30%) / 12; determine lowest AMI tier where property rent is affordable
+- [x] 8.4 Create `AffordabilityResultDto` — AMI tiers (30/50/60/80/100/120%) with max affordable rents, subject rent, affordability percentage, tier label
+- [x] 8.5 Wire into `ReportAssembler` — add affordability data to TenantMarket section benchmarks + `Affordability` property on `TenantMarketSection`
+- [x] 8.6 Add affordability fields to `CalculationResult` entity (`AffordabilityPercentAmi`, `AffordabilityTier`, `AffordabilityDataJson`)
+- [x] 8.7 Register `HudApiClient` in DI with named HttpClient + Bearer token from config
+- [x] 8.8 Unit tests for `AffordabilityCalculator` (14 tests) + mocked `HudApiClient` (9 tests) — all 23 pass
+
+## Phase 9: UI Integration
+- [ ] 9.1 Add "Generate Report" button to DealTabs header — triggers `ReportAssembler.AssembleReportAsync()` then navigates to `/deals/{id}/report`
+- [ ] 9.2 Add loading state / progress indicator while report generates (prose + market data can take 30-60s)
+- [ ] 9.3 Feed `MarketContextDto` into `DealChatTab`'s `BuildSystemPrompt()` so Claude has market context during conversations
+- [ ] 9.4 Add market data summary to chat welcome message when available
+- [ ] 9.5 End-to-end manual test: search → chat → generate report → view → export PDF

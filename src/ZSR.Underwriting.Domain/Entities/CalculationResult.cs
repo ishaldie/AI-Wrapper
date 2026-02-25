@@ -46,6 +46,11 @@ public class CalculationResult
     // Sensitivity analysis (stored as JSON)
     public string? SensitivityAnalysisJson { get; set; }
 
+    // HUD Affordability metrics
+    public int? AffordabilityPercentAmi { get; set; }
+    public string? AffordabilityTier { get; set; }
+    public string? AffordabilityDataJson { get; set; }
+
     // EF Core parameterless constructor
     private CalculationResult() { }
 
