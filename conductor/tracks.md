@@ -97,7 +97,12 @@
 
 ---
 
-## [ ] Track: Report & Analysis Enhancements
-*Link: [./conductor/tracks/report-and-analysis-enhancements/](./conductor/tracks/report-and-analysis-enhancements/)*
+## [x] Track: Report & Analysis Enhancements (completed 2026-02-25)
+*Link: [./conductor/archive/report-and-analysis-enhancements_20260225/](./conductor/archive/report-and-analysis-enhancements_20260225/)*
+
+---
+
+## [ ] Track: SOC 2 Remediation
+*Link: [./conductor/tracks/soc2-remediation/](./conductor/tracks/soc2-remediation/)*
 
 ---
