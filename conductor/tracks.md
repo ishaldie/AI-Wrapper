@@ -91,3 +91,8 @@
 *Link: [./conductor/tracks/deal-tabs/](./conductor/tracks/deal-tabs/)*
 
 ---
+
+## [x] Track: Document Management (completed 2026-02-24)
+*Link: [./conductor/tracks/document-management/](./conductor/tracks/document-management/)*
+
+---
