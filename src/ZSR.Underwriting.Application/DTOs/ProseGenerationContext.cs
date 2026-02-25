@@ -10,4 +10,5 @@ public class ProseGenerationContext
     public required Deal Deal { get; init; }
     public CalculationResult? Calculations { get; init; }
     public MarketContextDto? MarketContext { get; init; }
+    public PublicDataDto? PublicData { get; init; }
 }

@@ -39,19 +39,19 @@
 - [x] e774315 5.8 Unit tests with mocked HTTP responses
 
 ## Phase 6: Tenant Demographics
-- [~] 6.1 Extend `CensusApiClient` to pull ACS tenant demographics: median HHI, age distribution, household size, rent burden %
-- [~] 6.2 Create `TenantDemographicsDto` with structured fields
-- [~] 6.3 Wire into `MarketDataEnricher.EnrichTenantMarket()` — add Census benchmarks to `BenchmarkRow[]` (Subject vs Market median)
-- [~] 6.4 Display demographics in TenantMarket report section with source attribution ("U.S. Census Bureau ACS")
-- [~] 6.5 Unit tests for demographics enrichment
+- [x] 2046aec 6.1 Extend `CensusApiClient` to pull ACS tenant demographics: median HHI, age distribution, household size, rent burden %
+- [x] 2046aec 6.2 Create `TenantDemographicsDto` with structured fields
+- [x] 2046aec 6.3 Wire into `MarketDataEnricher.EnrichTenantMarket()` — add Census benchmarks to `BenchmarkRow[]` (Subject vs Market median)
+- [x] 2046aec 6.4 Display demographics in TenantMarket report section with source attribution ("U.S. Census Bureau ACS")
+- [x] 2046aec 6.5 Unit tests for demographics enrichment
 
 ## Phase 7: Report Prose Generation
-- [ ] 7.1 Inject `IReportProseGenerator` into `ReportAssembler`
-- [ ] 7.2 Build `ProseGenerationContext` from deal data, calculations, market context, and public data
-- [ ] 7.3 Call `GenerateAllProseAsync()` and map `GeneratedProse` sections into the 6 placeholder sections (ExecutiveSummary, PropertyComps, TenantMarket, ValueCreation, RiskAssessment, InvestmentDecision)
-- [ ] 7.4 Populate `KeyHighlights[]`, `KeyRisks[]`, `Risks[]`, `Conditions[]`, `NextSteps[]` from prose output (parse or use Claude structured output)
-- [ ] 7.5 Handle prose generation failures gracefully — fall back to calculation-only report
-- [ ] 7.6 Unit tests with mocked prose generator
+- [~] 7.1 Inject `IReportProseGenerator` into `ReportAssembler`
+- [~] 7.2 Build `ProseGenerationContext` from deal data, calculations, market context, and public data
+- [~] 7.3 Call `GenerateAllProseAsync()` and map `GeneratedProse` sections into the 6 placeholder sections (ExecutiveSummary, PropertyComps, TenantMarket, ValueCreation, RiskAssessment, InvestmentDecision)
+- [~] 7.4 Populate `KeyHighlights[]`, `KeyRisks[]`, `Risks[]`, `Conditions[]`, `NextSteps[]` from prose output (parse or use Claude structured output)
+- [~] 7.5 Handle prose generation failures gracefully — fall back to calculation-only report
+- [~] 7.6 Unit tests with mocked prose generator
 
 ## Phase 8: UI Integration
 - [ ] 8.1 Add "Generate Report" button to DealTabs header — triggers `ReportAssembler.AssembleReportAsync()` then navigates to `/deals/{id}/report`

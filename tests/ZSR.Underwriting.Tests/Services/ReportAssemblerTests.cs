@@ -476,6 +476,160 @@ public class ReportAssemblerTests : IDisposable
         Assert.Equal(3.8m, report.PublicData.Bls!.UnemploymentRate);
     }
 
+    // === Phase 7: Report Prose Generation ===
+
+    private static GeneratedProse CreateTestProse()
+    {
+        return new GeneratedProse
+        {
+            ExecutiveSummaryNarrative = "This is an AI-generated executive summary for the deal.",
+            KeyHighlights = ["Strong NOI growth", "Below-market rents", "Value-add opportunity"],
+            KeyRisks = ["Rising interest rates", "Deferred maintenance"],
+
+            MarketContextNarrative = "The Dallas metro market shows strong fundamentals.",
+            ValueCreationNarrative = "Interior renovations will drive rent premiums of $150-200/unit.",
+
+            RiskAssessmentNarrative = "The primary risks relate to market conditions and execution.",
+            Risks =
+            [
+                new RiskItem { Category = "Market", Description = "Rising rates may compress cap rates", Severity = RiskSeverity.Medium, Mitigation = "Lock rate early" },
+                new RiskItem { Category = "Execution", Description = "Renovation timeline risk", Severity = RiskSeverity.Low, Mitigation = "Phased approach" }
+            ],
+
+            Decision = InvestmentDecisionType.Go,
+            InvestmentThesis = "Strong risk-adjusted returns driven by below-market rents and value-add potential.",
+            Conditions = ["Complete Phase I ESA", "Verify rent roll"],
+            NextSteps = ["Submit LOI", "Engage lender", "Order appraisal"],
+
+            PropertyOverviewNarrative = "A well-located 100-unit multifamily property.",
+
+            TotalInputTokens = 5000,
+            TotalOutputTokens = 3000,
+            FailedSections = null
+        };
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithProseGenerator_ExecutiveSummaryHasAINarrative()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var prose = CreateTestProse();
+        var proseGen = new StubProseGenerator(prose);
+        var assembler = new ReportAssembler(_db, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Equal(prose.ExecutiveSummaryNarrative, report.ExecutiveSummary.Narrative);
+        Assert.DoesNotContain("pending", report.ExecutiveSummary.Narrative, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithProseGenerator_ExecutiveSummaryHasHighlightsAndRisks()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var prose = CreateTestProse();
+        var proseGen = new StubProseGenerator(prose);
+        var assembler = new ReportAssembler(_db, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Equal(3, report.ExecutiveSummary.KeyHighlights.Count);
+        Assert.Contains("Strong NOI growth", report.ExecutiveSummary.KeyHighlights);
+        Assert.Equal(2, report.ExecutiveSummary.KeyRisks.Count);
+        Assert.Contains("Rising interest rates", report.ExecutiveSummary.KeyRisks);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithProseGenerator_ValueCreationHasAINarrative()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var prose = CreateTestProse();
+        var proseGen = new StubProseGenerator(prose);
+        var assembler = new ReportAssembler(_db, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Equal(prose.ValueCreationNarrative, report.ValueCreation.Narrative);
+        Assert.DoesNotContain("pending", report.ValueCreation.Narrative, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithProseGenerator_RiskAssessmentHasAINarrativeAndRisks()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var prose = CreateTestProse();
+        var proseGen = new StubProseGenerator(prose);
+        var assembler = new ReportAssembler(_db, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Equal(prose.RiskAssessmentNarrative, report.RiskAssessment.Narrative);
+        Assert.Equal(2, report.RiskAssessment.Risks.Count);
+        Assert.Equal("Market", report.RiskAssessment.Risks[0].Category);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithProseGenerator_InvestmentDecisionMapsCorrectly()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var prose = CreateTestProse();
+        var proseGen = new StubProseGenerator(prose);
+        var assembler = new ReportAssembler(_db, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.Equal(InvestmentDecisionType.Go, report.InvestmentDecision.Decision);
+        Assert.Equal("GO", report.InvestmentDecision.DecisionLabel);
+        Assert.Equal(prose.InvestmentThesis, report.InvestmentDecision.InvestmentThesis);
+        Assert.Equal(3, report.InvestmentDecision.NextSteps.Count);
+        Assert.Equal(2, report.InvestmentDecision.Conditions.Count);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_ProseGeneratorThrows_FallsBackToPlaceholders()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        var proseGen = new StubProseGenerator(new InvalidOperationException("API timeout"));
+        var assembler = new ReportAssembler(_db, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        // Should fall back to placeholder text, not crash
+        Assert.Contains("pending", report.ExecutiveSummary.Narrative, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("pending", report.RiskAssessment.Narrative, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AssembleReportAsync_WithProseGenerator_ProseContextIncludesMarketData()
+    {
+        var deal = CreateTestDeal();
+        _db.Deals.Add(deal);
+        await _db.SaveChangesAsync();
+
+        ProseGenerationContext? capturedContext = null;
+        var prose = CreateTestProse();
+        var proseGen = new CapturingProseGenerator(prose, ctx => capturedContext = ctx);
+        var marketService = new StubMarketDataService(CreateTestMarketContext());
+        var assembler = new ReportAssembler(_db, marketService, proseGenerator: proseGen);
+        var report = await assembler.AssembleReportAsync(deal.Id);
+
+        Assert.NotNull(capturedContext);
+        Assert.NotNull(capturedContext!.MarketContext);
+        Assert.Equal(deal.Id, capturedContext.Deal.Id);
+    }
+
     private static MarketContextDto CreateTestMarketContext()
     {
         return new MarketContextDto
@@ -509,6 +663,47 @@ internal class StubMarketDataService : IMarketDataService
 
     public Task<MarketContextDto> GetMarketContextAsync(string city, string state)
         => Task.FromResult(_context ?? new MarketContextDto());
+}
+
+internal class StubProseGenerator : IReportProseGenerator
+{
+    private readonly GeneratedProse? _prose;
+    private readonly Exception? _exception;
+
+    public StubProseGenerator(GeneratedProse? prose)
+    {
+        _prose = prose;
+    }
+
+    public StubProseGenerator(Exception exception)
+    {
+        _exception = exception;
+    }
+
+    public Task<GeneratedProse> GenerateAllProseAsync(ProseGenerationContext context, CancellationToken ct = default)
+    {
+        if (_exception != null)
+            throw _exception;
+        return Task.FromResult(_prose!);
+    }
+}
+
+internal class CapturingProseGenerator : IReportProseGenerator
+{
+    private readonly GeneratedProse _prose;
+    private readonly Action<ProseGenerationContext> _capture;
+
+    public CapturingProseGenerator(GeneratedProse prose, Action<ProseGenerationContext> capture)
+    {
+        _prose = prose;
+        _capture = capture;
+    }
+
+    public Task<GeneratedProse> GenerateAllProseAsync(ProseGenerationContext context, CancellationToken ct = default)
+    {
+        _capture(context);
+        return Task.FromResult(_prose);
+    }
 }
 
 internal class StubSalesCompExtractor : ISalesCompExtractor

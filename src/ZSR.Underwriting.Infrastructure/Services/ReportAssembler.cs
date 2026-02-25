@@ -17,18 +17,21 @@ public class ReportAssembler : IReportAssembler
     private readonly IMarketDataService? _marketDataService;
     private readonly ISalesCompExtractor? _salesCompExtractor;
     private readonly IPublicDataService? _publicDataService;
+    private readonly IReportProseGenerator? _proseGenerator;
     private readonly UnderwritingCalculator _calc = new();
 
     public ReportAssembler(
         AppDbContext db,
         IMarketDataService? marketDataService = null,
         ISalesCompExtractor? salesCompExtractor = null,
-        IPublicDataService? publicDataService = null)
+        IPublicDataService? publicDataService = null,
+        IReportProseGenerator? proseGenerator = null)
     {
         _db = db;
         _marketDataService = marketDataService;
         _salesCompExtractor = salesCompExtractor;
         _publicDataService = publicDataService;
+        _proseGenerator = proseGenerator;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -89,6 +92,15 @@ public class ReportAssembler : IReportAssembler
         var acqCosts = _calc.CalculateAcquisitionCosts(deal.PurchasePrice);
         var totalEquity = _calc.CalculateEquityRequired(deal.PurchasePrice, acqCosts, loanAmount);
 
+        // Generate AI prose if generator is available
+        GeneratedProse? prose = null;
+        if (_proseGenerator != null)
+        {
+            prose = await GenerateProseAsync(deal, noi, egi, opEx, capRate, debtService,
+                loanAmount, totalEquity, effectiveHold, effectiveAmort, loanRate,
+                marketContext, publicData, cancellationToken);
+        }
+
         return new UnderwritingReportDto
         {
             DealId = deal.Id,
@@ -96,16 +108,16 @@ public class ReportAssembler : IReportAssembler
             Address = deal.Address,
             GeneratedAt = DateTime.UtcNow,
             CoreMetrics = BuildCoreMetrics(deal, loanAmount, effectiveLtv, pricePerUnit, noi, egi, opEx, capRate),
-            ExecutiveSummary = BuildExecutiveSummary(),
+            ExecutiveSummary = BuildExecutiveSummary(prose),
             Assumptions = BuildAssumptions(deal, effectiveLtv, effectiveHold, effectiveOccupancy, effectiveAmort, effectiveTerm),
             PropertyComps = await BuildPropertyCompsAsync(deal, marketContext, pricePerUnit, cancellationToken),
             TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext, publicData?.TenantDemographics),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
             FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
                 debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
-            ValueCreation = BuildValueCreation(deal),
-            RiskAssessment = BuildRiskAssessment(),
-            InvestmentDecision = BuildInvestmentDecision(),
+            ValueCreation = BuildValueCreation(deal, prose),
+            RiskAssessment = BuildRiskAssessment(prose),
+            InvestmentDecision = BuildInvestmentDecision(prose),
             PublicData = publicData
         };
     }
@@ -140,8 +152,27 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static ExecutiveSummarySection BuildExecutiveSummary()
+    private static ExecutiveSummarySection BuildExecutiveSummary(GeneratedProse? prose = null)
     {
+        if (prose != null)
+        {
+            var decisionLabel = prose.Decision switch
+            {
+                InvestmentDecisionType.Go => "GO",
+                InvestmentDecisionType.NoGo => "NO GO",
+                _ => "CONDITIONAL GO"
+            };
+
+            return new ExecutiveSummarySection
+            {
+                Decision = prose.Decision,
+                DecisionLabel = decisionLabel,
+                Narrative = prose.ExecutiveSummaryNarrative,
+                KeyHighlights = prose.KeyHighlights,
+                KeyRisks = prose.KeyRisks
+            };
+        }
+
         return new ExecutiveSummarySection
         {
             Decision = InvestmentDecisionType.ConditionalGo,
@@ -246,6 +277,59 @@ public class ReportAssembler : IReportAssembler
         // Look for a 5-digit zip code pattern at the end of the address
         var match = System.Text.RegularExpressions.Regex.Match(address, @"\b(\d{5})(?:-\d{4})?\s*$");
         return match.Success ? match.Groups[1].Value : string.Empty;
+    }
+
+    private async Task<GeneratedProse?> GenerateProseAsync(
+        Deal deal, decimal noi, decimal egi, decimal opEx, decimal capRate,
+        decimal debtService, decimal loanAmount, decimal totalEquity,
+        int holdPeriod, int amortYears, decimal loanRate,
+        MarketContextDto? marketContext, PublicDataDto? publicData,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Build CalculationResult with key metrics for prose context
+            var calcResult = new CalculationResult(deal.Id)
+            {
+                NetOperatingIncome = noi,
+                EffectiveGrossIncome = egi,
+                OperatingExpenses = opEx,
+                GoingInCapRate = capRate,
+                AnnualDebtService = debtService,
+                LoanAmount = loanAmount,
+                DebtServiceCoverageRatio = debtService > 0 ? noi / debtService : null,
+                PricePerUnit = deal.UnitCount > 0 ? deal.PurchasePrice / deal.UnitCount : 0,
+            };
+
+            // Calculate IRR for decision logic
+            var growthRates = Enumerable.Repeat(3m, holdPeriod).ToArray();
+            var projectedNoi = _calc.ProjectNoi(noi, growthRates);
+            var reserves = _calc.CalculateAnnualReserves(deal.UnitCount);
+            var projectedCashFlows = _calc.ProjectCashFlows(projectedNoi, debtService, reserves);
+            var exitCapRate = _calc.CalculateExitCapRate(capRate);
+            var terminalNoi = projectedNoi.Length > 0 ? projectedNoi[^1] : noi;
+            var exitValue = _calc.CalculateExitValue(terminalNoi, exitCapRate);
+            var saleCosts = _calc.CalculateSaleCosts(exitValue);
+            var loanBalance = _calc.CalculateLoanBalance(loanAmount, loanRate, deal.IsInterestOnly, amortYears, holdPeriod);
+            var netProceeds = _calc.CalculateNetSaleProceeds(exitValue, saleCosts, loanBalance);
+            calcResult.InternalRateOfReturn = _calc.CalculateIrr(totalEquity, projectedCashFlows, netProceeds);
+            calcResult.EquityMultiple = _calc.CalculateEquityMultiple(projectedCashFlows, netProceeds, totalEquity);
+
+            var context = new ProseGenerationContext
+            {
+                Deal = deal,
+                Calculations = calcResult,
+                MarketContext = marketContext,
+                PublicData = publicData
+            };
+
+            return await _proseGenerator!.GenerateAllProseAsync(context, cancellationToken);
+        }
+        catch
+        {
+            // Prose generation failure is non-fatal — fall back to placeholders
+            return null;
+        }
     }
 
     private static OperationsSection BuildOperations(
@@ -355,7 +439,7 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static ValueCreationSection BuildValueCreation(Deal deal)
+    private static ValueCreationSection BuildValueCreation(Deal deal, GeneratedProse? prose = null)
     {
         var strategies = new List<ValueAddItem>();
         if (!string.IsNullOrWhiteSpace(deal.ValueAddPlans))
@@ -369,14 +453,23 @@ public class ReportAssembler : IReportAssembler
 
         return new ValueCreationSection
         {
-            Narrative = "[AI-generated value creation strategy pending]",
+            Narrative = prose?.ValueCreationNarrative ?? "[AI-generated value creation strategy pending]",
             Strategies = strategies,
             TotalValueAdd = deal.CapexBudget ?? 0m
         };
     }
 
-    private static RiskAssessmentSection BuildRiskAssessment()
+    private static RiskAssessmentSection BuildRiskAssessment(GeneratedProse? prose = null)
     {
+        if (prose != null)
+        {
+            return new RiskAssessmentSection
+            {
+                Narrative = prose.RiskAssessmentNarrative,
+                Risks = prose.Risks
+            };
+        }
+
         return new RiskAssessmentSection
         {
             Narrative = "[AI-generated risk narrative pending]",
@@ -384,8 +477,27 @@ public class ReportAssembler : IReportAssembler
         };
     }
 
-    private static InvestmentDecisionSection BuildInvestmentDecision()
+    private static InvestmentDecisionSection BuildInvestmentDecision(GeneratedProse? prose = null)
     {
+        if (prose != null)
+        {
+            var decisionLabel = prose.Decision switch
+            {
+                InvestmentDecisionType.Go => "GO",
+                InvestmentDecisionType.NoGo => "NO GO",
+                _ => "CONDITIONAL GO"
+            };
+
+            return new InvestmentDecisionSection
+            {
+                Decision = prose.Decision,
+                DecisionLabel = decisionLabel,
+                InvestmentThesis = prose.InvestmentThesis,
+                Conditions = prose.Conditions,
+                NextSteps = prose.NextSteps
+            };
+        }
+
         return new InvestmentDecisionSection
         {
             Decision = InvestmentDecisionType.ConditionalGo,
