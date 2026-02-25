@@ -15,6 +15,9 @@ public class EmailCodeService : IEmailCodeService
     private readonly ILogger<EmailCodeService> _logger;
     private readonly SmtpOptions _smtp;
     private static readonly TimeSpan CodeTtl = TimeSpan.FromMinutes(10);
+    private const int MaxAttempts = 5;
+
+    private sealed record CachedCode(string Code, int Attempts);
 
     public EmailCodeService(IMemoryCache cache, ILogger<EmailCodeService> logger, IOptions<SmtpOptions> smtpOptions)
     {
@@ -27,7 +30,7 @@ public class EmailCodeService : IEmailCodeService
     {
         var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
         var key = CacheKey(email);
-        _cache.Set(key, code, CodeTtl);
+        _cache.Set(key, new CachedCode(code, 0), CodeTtl);
 
         if (!string.IsNullOrWhiteSpace(_smtp.Username) && !string.IsNullOrWhiteSpace(_smtp.Host))
         {
@@ -53,11 +56,24 @@ public class EmailCodeService : IEmailCodeService
     public bool ValidateCode(string email, string code)
     {
         var key = CacheKey(email);
-        if (!_cache.TryGetValue(key, out string? stored))
+        if (!_cache.TryGetValue(key, out CachedCode? cached) || cached is null)
             return false;
 
-        if (!string.Equals(stored, code, StringComparison.Ordinal))
+        if (!string.Equals(cached.Code, code, StringComparison.Ordinal))
+        {
+            var newAttempts = cached.Attempts + 1;
+            if (newAttempts >= MaxAttempts)
+            {
+                // Brute-force threshold reached — invalidate the code
+                _cache.Remove(key);
+                _logger.LogWarning("OTP for {Email} invalidated after {MaxAttempts} failed attempts", email, MaxAttempts);
+            }
+            else
+            {
+                _cache.Set(key, cached with { Attempts = newAttempts }, CodeTtl);
+            }
             return false;
+        }
 
         // One-time use: remove after successful validation
         _cache.Remove(key);

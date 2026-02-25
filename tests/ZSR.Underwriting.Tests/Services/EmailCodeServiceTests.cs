@@ -70,4 +70,47 @@ public class EmailCodeServiceTests
         Assert.Equal(6, code.Length);
         Assert.True(_sut.ValidateCode("fallback@test.com", code));
     }
+
+    [Fact]
+    public async Task ValidateCode_Rejects_After_5_Failed_Attempts()
+    {
+        var email = "brute@test.com";
+        var code = await _sut.GenerateCodeAsync(email);
+
+        // 5 wrong attempts
+        for (int i = 0; i < 5; i++)
+            _sut.ValidateCode(email, "000000");
+
+        // 6th attempt with CORRECT code should still fail — code invalidated
+        Assert.False(_sut.ValidateCode(email, code));
+    }
+
+    [Fact]
+    public async Task ValidateCode_Allows_Up_To_4_Wrong_Attempts_Then_Correct()
+    {
+        var email = "retry@test.com";
+        var code = await _sut.GenerateCodeAsync(email);
+
+        // 4 wrong attempts — still under limit
+        for (int i = 0; i < 4; i++)
+            Assert.False(_sut.ValidateCode(email, "000000"));
+
+        // 5th attempt with correct code should succeed
+        Assert.True(_sut.ValidateCode(email, code));
+    }
+
+    [Fact]
+    public async Task ValidateCode_BruteForce_Counter_Resets_On_New_Code()
+    {
+        var email = "reset@test.com";
+        var code1 = await _sut.GenerateCodeAsync(email);
+
+        // Burn 4 attempts on first code
+        for (int i = 0; i < 4; i++)
+            _sut.ValidateCode(email, "000000");
+
+        // Generate new code — counter should reset
+        var code2 = await _sut.GenerateCodeAsync(email);
+        Assert.True(_sut.ValidateCode(email, code2));
+    }
 }
