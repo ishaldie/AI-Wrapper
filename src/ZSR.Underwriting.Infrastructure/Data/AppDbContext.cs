@@ -232,6 +232,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.EventType).HasConversion<string>().HasMaxLength(50);
             entity.Property(e => e.PageUrl).HasMaxLength(2000);
             entity.Property(e => e.Metadata).HasMaxLength(4000);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.EventType);
             entity.HasIndex(e => e.OccurredAt);

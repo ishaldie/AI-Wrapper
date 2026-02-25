@@ -35,6 +35,7 @@ public class ActivityEventTests
         Assert.Null(evt.PageUrl);
         Assert.Null(evt.DealId);
         Assert.Null(evt.Metadata);
+        Assert.Null(evt.IpAddress);
     }
 
     [Fact]

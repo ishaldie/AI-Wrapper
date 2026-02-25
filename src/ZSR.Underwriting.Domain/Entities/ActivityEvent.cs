@@ -11,6 +11,7 @@ public class ActivityEvent
     public string? PageUrl { get; set; }
     public Guid? DealId { get; set; }
     public string? Metadata { get; set; }
+    public string? IpAddress { get; set; }
     public DateTime OccurredAt { get; private set; }
 
     // EF Core parameterless constructor

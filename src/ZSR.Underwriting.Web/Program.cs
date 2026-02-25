@@ -191,7 +191,8 @@ try
     // Add quick analysis service (singleton — uses IServiceScopeFactory internally)
     builder.Services.AddSingleton<IQuickAnalysisService, QuickAnalysisService>();
 
-    // Add activity tracking
+    // Add activity tracking (IHttpContextAccessor required for IP capture in audit events)
+    builder.Services.AddHttpContextAccessor();
     builder.Services.AddScoped<IActivityTracker, ActivityTracker>();
 
     // Add application services
@@ -284,7 +285,13 @@ try
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
     app.UseHttpsRedirection();
     app.UseMiddleware<ZSR.Underwriting.Web.Middleware.SecurityHeadersMiddleware>();
-    app.UseSerilogRequestLogging();
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+        {
+            diagnosticContext.Set("ClientIp", httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+        };
+    });
 
     app.UseAuthentication();
     app.UseAuthorization();

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.Interfaces;
@@ -11,14 +12,19 @@ public class ActivityTracker : IActivityTracker, IAsyncDisposable
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ActivityTracker> _logger;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private Guid _sessionId;
     private string? _userId;
 
-    public ActivityTracker(IServiceScopeFactory scopeFactory, ILogger<ActivityTracker> logger)
+    public ActivityTracker(IServiceScopeFactory scopeFactory, ILogger<ActivityTracker> logger, IHttpContextAccessor httpContextAccessor)
     {
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
     }
+
+    private string? GetClientIp() =>
+        _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
 
     public async Task<Guid> StartSessionAsync(string userId)
     {
@@ -33,7 +39,10 @@ public class ActivityTracker : IActivityTracker, IAsyncDisposable
 
             db.UserSessions.Add(session);
 
-            var startEvent = new ActivityEvent(_sessionId, userId, ActivityEventType.SessionStart);
+            var startEvent = new ActivityEvent(_sessionId, userId, ActivityEventType.SessionStart)
+            {
+                IpAddress = GetClientIp()
+            };
             db.ActivityEvents.Add(startEvent);
 
             await db.SaveChangesAsync();
@@ -57,7 +66,8 @@ public class ActivityTracker : IActivityTracker, IAsyncDisposable
 
             var evt = new ActivityEvent(_sessionId, _userId, ActivityEventType.PageView)
             {
-                PageUrl = pageUrl
+                PageUrl = pageUrl,
+                IpAddress = GetClientIp()
             };
             db.ActivityEvents.Add(evt);
             await db.SaveChangesAsync();
@@ -80,7 +90,8 @@ public class ActivityTracker : IActivityTracker, IAsyncDisposable
             var evt = new ActivityEvent(_sessionId, _userId, eventType)
             {
                 DealId = dealId,
-                Metadata = metadata
+                Metadata = metadata,
+                IpAddress = GetClientIp()
             };
             db.ActivityEvents.Add(evt);
             await db.SaveChangesAsync();
@@ -106,7 +117,10 @@ public class ActivityTracker : IActivityTracker, IAsyncDisposable
                 session.MarkDisconnected();
             }
 
-            var endEvent = new ActivityEvent(_sessionId, _userId, ActivityEventType.SessionEnd);
+            var endEvent = new ActivityEvent(_sessionId, _userId, ActivityEventType.SessionEnd)
+            {
+                IpAddress = GetClientIp()
+            };
             db.ActivityEvents.Add(endEvent);
 
             await db.SaveChangesAsync();

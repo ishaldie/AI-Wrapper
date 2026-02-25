@@ -1,3 +1,5 @@
+using System.Net;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -28,11 +30,27 @@ public class ActivityTrackerTests : IDisposable
 
     public void Dispose() => _provider.Dispose();
 
-    private ActivityTracker CreateTracker()
+    private ActivityTracker CreateTracker(IPAddress? remoteIp = null)
     {
         var scopeFactory = _provider.GetRequiredService<IServiceScopeFactory>();
         var logger = _provider.GetRequiredService<ILogger<ActivityTracker>>();
-        return new ActivityTracker(scopeFactory, logger);
+        var httpContextAccessor = new FakeHttpContextAccessor(remoteIp);
+        return new ActivityTracker(scopeFactory, logger, httpContextAccessor);
+    }
+
+    private sealed class FakeHttpContextAccessor : IHttpContextAccessor
+    {
+        public HttpContext? HttpContext { get; set; }
+
+        public FakeHttpContextAccessor(IPAddress? remoteIp)
+        {
+            if (remoteIp is not null)
+            {
+                var context = new DefaultHttpContext();
+                context.Connection.RemoteIpAddress = remoteIp;
+                HttpContext = context;
+            }
+        }
     }
 
     [Fact]
@@ -146,5 +164,45 @@ public class ActivityTrackerTests : IDisposable
         // Should not throw
         await using var tracker = CreateTracker();
         // No StartSession, just dispose — should be safe
+    }
+
+    [Fact]
+    public async Task StartSession_Captures_IpAddress()
+    {
+        var ip = IPAddress.Parse("192.168.1.42");
+        await using var tracker = CreateTracker(remoteIp: ip);
+        var sessionId = await tracker.StartSessionAsync("user-ip");
+
+        using var scope = _provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var evt = await db.ActivityEvents.FirstAsync(e => e.SessionId == sessionId);
+        Assert.Equal("192.168.1.42", evt.IpAddress);
+    }
+
+    [Fact]
+    public async Task TrackEvent_Captures_IpAddress()
+    {
+        var ip = IPAddress.Parse("10.0.0.1");
+        await using var tracker = CreateTracker(remoteIp: ip);
+        await tracker.StartSessionAsync("user-ip2");
+        await tracker.TrackEventAsync(ActivityEventType.SearchPerformed);
+
+        using var scope = _provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var evt = await db.ActivityEvents.FirstAsync(e => e.EventType == ActivityEventType.SearchPerformed);
+        Assert.Equal("10.0.0.1", evt.IpAddress);
+    }
+
+    [Fact]
+    public async Task TrackEvent_Handles_Null_HttpContext_Gracefully()
+    {
+        // No remote IP (simulates background job)
+        await using var tracker = CreateTracker(remoteIp: null);
+        var sessionId = await tracker.StartSessionAsync("bg-user");
+
+        using var scope = _provider.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var evt = await db.ActivityEvents.FirstAsync(e => e.SessionId == sessionId);
+        Assert.Null(evt.IpAddress);
     }
 }
