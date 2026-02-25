@@ -16,11 +16,11 @@
 - [x] 2763742 2.5 Unit tests: seed skips when env var missing, seed creates admin when env var present
 
 ## Phase 3: Security Headers Middleware
-- [ ] 3.1 Create `SecurityHeadersMiddleware` — adds CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy to every response
-- [ ] 3.2 Configure CSP for Blazor Server compatibility — allow `'self'`, `'unsafe-inline'` for styles (MudBlazor), WebSocket for `_blazor`, and script hashes as needed
-- [ ] 3.3 Register middleware in `Program.cs` pipeline before `UseRouting()`
-- [ ] 3.4 Extend HSTS max-age to 1 year (`31536000` seconds) with `includeSubDomains`
-- [ ] 3.5 Integration tests: verify all 5 headers present on responses, verify CSP does not break Blazor WebSocket
+- [x] 8f33060 3.1 Create `SecurityHeadersMiddleware` — adds CSP, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy to every response
+- [x] 8f33060 3.2 Configure CSP for Blazor Server compatibility — allow `'self'`, `'unsafe-inline'` for styles (MudBlazor), WebSocket for `_blazor`, and script hashes as needed
+- [x] 8f33060 3.3 Register middleware in `Program.cs` pipeline before `UseRouting()`
+- [x] 8f33060 3.4 Extend HSTS max-age to 1 year (`31536000` seconds) with `includeSubDomains`
+- [x] 8f33060 3.5 Integration tests: verify all 5 headers present on responses, verify CSP does not break Blazor WebSocket
 
 ## Phase 4: Cookie & Session Hardening
 - [ ] 4.1 Add `options.Cookie.SecurePolicy = CookieSecurePolicy.Always` to `ConfigureApplicationCookie`
