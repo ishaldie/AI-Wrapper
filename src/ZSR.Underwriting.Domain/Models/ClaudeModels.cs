@@ -23,6 +23,12 @@ public class ClaudeRequest
     /// When set, UserMessage is ignored and these messages are sent instead.
     /// </summary>
     public List<ConversationMessage>? ConversationHistory { get; init; }
+
+    /// <summary>
+    /// Optional user ID for BYOK key resolution. When set, the ClaudeClient
+    /// will attempt to use the user's own API key instead of the shared key.
+    /// </summary>
+    public string? UserId { get; init; }
 }
 
 /// <summary>

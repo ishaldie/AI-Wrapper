@@ -4,8 +4,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Domain.Models;
+using ZSR.Underwriting.Domain.Exceptions;
 using ZSR.Underwriting.Infrastructure.Configuration;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -15,6 +17,7 @@ public class ClaudeClient : IClaudeClient
     private readonly HttpClient _httpClient;
     private readonly ClaudeOptions _options;
     private readonly ILogger<ClaudeClient> _logger;
+    private readonly IApiKeyResolver? _apiKeyResolver;
 
     private const string ApiVersion = "2023-06-01";
 
@@ -27,16 +30,32 @@ public class ClaudeClient : IClaudeClient
     public ClaudeClient(
         HttpClient httpClient,
         IOptions<ClaudeOptions> options,
-        ILogger<ClaudeClient> logger)
+        ILogger<ClaudeClient> logger,
+        IApiKeyResolver? apiKeyResolver = null)
     {
         _httpClient = httpClient;
         _options = options.Value;
         _logger = logger;
+        _apiKeyResolver = apiKeyResolver;
     }
 
     public async Task<ClaudeResponse> SendMessageAsync(ClaudeRequest request, CancellationToken ct = default)
     {
-        var apiKey = _options.ResolvedApiKey;
+        // Resolve API key: BYOK per-request if resolver available, else shared key
+        string apiKey;
+        string model;
+        if (_apiKeyResolver is not null && request.UserId is not null)
+        {
+            var resolution = await _apiKeyResolver.ResolveAsync(request.UserId);
+            apiKey = resolution.ApiKey;
+            model = resolution.Model ?? _options.Model;
+        }
+        else
+        {
+            apiKey = _options.ResolvedApiKey;
+            model = _options.Model;
+        }
+
         if (string.IsNullOrWhiteSpace(apiKey))
             throw new InvalidOperationException(
                 "Claude API key is not configured. Set Claude:ApiKey in appsettings, user secrets, or the ANTHROPIC_API_KEY environment variable.");
@@ -59,7 +78,7 @@ public class ClaudeClient : IClaudeClient
 
         var payload = new ApiRequest
         {
-            Model = _options.Model,
+            Model = model,
             MaxTokens = maxTokens,
             System = request.SystemPrompt,
             Messages = messages
@@ -76,9 +95,22 @@ public class ClaudeClient : IClaudeClient
         httpRequest.Headers.Add("anthropic-version", ApiVersion);
 
         _logger.LogInformation("Claude API call: POST v1/messages (model={Model}, max_tokens={MaxTokens})",
-            _options.Model, maxTokens);
+            model, maxTokens);
 
         var response = await _httpClient.SendAsync(httpRequest, ct);
+
+        if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        {
+            int? retryAfter = null;
+            if (response.Headers.RetryAfter?.Delta is { } delta)
+                retryAfter = (int)delta.TotalSeconds;
+            else if (response.Headers.TryGetValues("retry-after", out var values) &&
+                     int.TryParse(values.FirstOrDefault(), out var seconds))
+                retryAfter = seconds;
+
+            throw new ClaudeRateLimitException(retryAfter);
+        }
+
         response.EnsureSuccessStatusCode();
 
         var responseBody = await response.Content.ReadAsStringAsync(ct);

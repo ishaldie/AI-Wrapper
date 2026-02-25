@@ -11,4 +11,5 @@ public class ProseGenerationContext
     public CalculationResult? Calculations { get; init; }
     public MarketContextDto? MarketContext { get; init; }
     public PublicDataDto? PublicData { get; init; }
+    public string? UserId { get; init; }
 }

@@ -15,7 +15,7 @@ public class ClaudeOptionsTests
     {
         var options = new ClaudeOptions();
 
-        Assert.Equal("claude-sonnet-4-5-20250929", options.Model);
+        Assert.Equal("claude-opus-4-6-20250918", options.Model);
         Assert.Equal(4096, options.MaxTokens);
         Assert.Equal("https://api.anthropic.com", options.BaseUrl);
         Assert.Equal(120, options.TimeoutSeconds);

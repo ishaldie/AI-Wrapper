@@ -7,4 +7,6 @@ public class ApplicationUser : IdentityUser
     public string FullName { get; set; } = string.Empty;
     public DateTime? TosAcceptedAt { get; set; }
     public string? TosVersion { get; set; }
+    public string? EncryptedAnthropicApiKey { get; set; }
+    public string? PreferredModel { get; set; }
 }

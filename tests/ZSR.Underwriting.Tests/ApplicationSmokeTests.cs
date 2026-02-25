@@ -17,6 +17,8 @@ public class ApplicationSmokeTests
     [Fact]
     public void Application_Starts_Without_Errors()
     {
+        Assert.True(string.IsNullOrEmpty(_fixture.StartupError),
+            $"WebApplicationFactory startup failed: {_fixture.StartupError}");
         var client = _fixture.Factory.CreateClient();
         Assert.NotNull(client);
     }

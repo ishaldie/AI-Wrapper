@@ -27,6 +27,7 @@ public class SalesCompExtractor : ISalesCompExtractor
         string subjectAddress,
         decimal subjectPricePerUnit,
         int subjectUnits,
+        string? userId = null,
         CancellationToken cancellationToken = default)
     {
         if (marketContext.ComparableTransactions == null || marketContext.ComparableTransactions.Count == 0)
@@ -40,7 +41,8 @@ public class SalesCompExtractor : ISalesCompExtractor
             {
                 SystemPrompt = "You are a commercial real estate analyst. Extract structured data from comparable transaction descriptions. Always respond with valid JSON only, no markdown formatting.",
                 UserMessage = prompt,
-                MaxTokens = 2000
+                MaxTokens = 2000,
+                UserId = userId
             }, cancellationToken);
 
             var result = ParseResponse(response.Content);

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Data;
@@ -10,15 +11,24 @@ public class TokenBudgetService : ITokenBudgetService
 {
     private readonly AppDbContext _db;
     private readonly TokenManagementOptions _options;
+    private readonly IApiKeyService? _apiKeyService;
 
-    public TokenBudgetService(AppDbContext db, IOptions<TokenManagementOptions> options)
+    public TokenBudgetService(
+        AppDbContext db,
+        IOptions<TokenManagementOptions> options,
+        IApiKeyService? apiKeyService = null)
     {
         _db = db;
         _options = options.Value;
+        _apiKeyService = apiKeyService;
     }
 
     public async Task<(bool Allowed, int Used, int Limit)> CheckUserBudgetAsync(string userId)
     {
+        // BYOK users bypass daily budget — they pay with their own key
+        if (_apiKeyService is not null && await _apiKeyService.HasKeyAsync(userId))
+            return (true, 0, int.MaxValue);
+
         var todayUtc = DateTime.UtcNow.Date;
 
         var used = await _db.TokenUsageRecords

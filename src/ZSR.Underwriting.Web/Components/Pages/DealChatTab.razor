@@ -29,8 +29,15 @@
 @inject IOptions<TokenManagementOptions> TokenConfig
 @inject ITokenUsageTracker TokenTracker
 @inject ITokenBudgetService BudgetService
+@inject IApiKeyService ApiKeyService
 
 <div class="deal-chat-tab-container">
+    @if (_isByok)
+    {
+        <MudChip T="string" Color="Color.Success" Size="Size.Small" Style="position: absolute; top: 0.5rem; right: 0.5rem; z-index: 1;">
+            Using your API key
+        </MudChip>
+    }
     @* Messages area with drag-and-drop *@
     <div class="deal-chat-messages" id="chat-messages-container"
          @ondragenter="HandleDragEnter"
@@ -415,11 +422,13 @@
 
     // Budget warning state
     private bool _dealBudgetWarning;
+    private bool _isByok;
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
         _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+        _isByok = !string.IsNullOrEmpty(_userId) && await ApiKeyService.HasKeyAsync(_userId);
 
         var deal = await Db.Deals.AsNoTracking().FirstOrDefaultAsync(d => d.Id == DealId);
         if (deal == null)
@@ -573,7 +582,8 @@
             {
                 SystemPrompt = BuildSystemPrompt(),
                 UserMessage = $"Analyze this property for commercial real estate underwriting: {userContent}",
-                MaxTokens = 4000
+                MaxTokens = 4000,
+                UserId = _userId
             };
 
             var response = await ClaudeClient.SendMessageAsync(request);
@@ -585,6 +595,13 @@
                 response.InputTokens, response.OutputTokens, response.Model);
 
             await ProcessAiResponse(response);
+        }
+        catch (Domain.Exceptions.ClaudeRateLimitException ex)
+        {
+            Logger.LogWarning(ex, "Rate limited during initial analysis for deal {DealId}", DealId);
+            _errorMessage = ex.RetryAfterSeconds.HasValue
+                ? $"Service is busy. Please try again in {ex.RetryAfterSeconds} seconds."
+                : "Service is busy. Please try again in a few moments.";
         }
         catch (Exception ex)
         {
@@ -723,7 +740,8 @@
             {
                 SystemPrompt = BuildSystemPrompt(),
                 ConversationHistory = truncatedHistory,
-                MaxTokens = 4000
+                MaxTokens = 4000,
+                UserId = _userId
             };
 
             var response = await ClaudeClient.SendMessageAsync(request);
@@ -735,6 +753,13 @@
                 response.InputTokens, response.OutputTokens, response.Model);
 
             await ProcessAiResponse(response);
+        }
+        catch (Domain.Exceptions.ClaudeRateLimitException ex)
+        {
+            Logger.LogWarning(ex, "Rate limited for deal {DealId}", DealId);
+            _errorMessage = ex.RetryAfterSeconds.HasValue
+                ? $"Service is busy. Please try again in {ex.RetryAfterSeconds} seconds."
+                : "Service is busy. Please try again in a few moments.";
         }
         catch (Exception ex)
         {

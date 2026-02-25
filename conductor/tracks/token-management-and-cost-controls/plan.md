@@ -23,7 +23,7 @@
 - [x] 3.7 Wire into `ReportAssembler` — record ReportProse tokens from GeneratedProse totals
 - [x] 3.8 Unit tests: usage recorded with correct fields, fire-and-forget doesn't throw on failure, all operation types covered
 
-## Phase 4: Budget Enforcement
+## Phase 4: Budget Enforcement [checkpoint: 8a8967d]
 - [x] 4.1 Create `ITokenBudgetService` interface with `CheckUserBudgetAsync(userId)` returning `(bool allowed, int used, int limit)` and `CheckDealBudgetAsync(dealId)` returning `(bool allowed, int used, int limit, bool warning)`
 - [x] 4.2 Implement `TokenBudgetService` — queries `TokenUsageRecords` for daily user totals and lifetime deal totals against configured limits
 - [x] 4.3 Wire budget check into `DealChatTab.razor` — check before sending, show "daily limit reached" or "deal token limit reached" message
@@ -33,11 +33,11 @@
 - [x] 4.7 Unit tests: budget allows when under limit, blocks when over, admin exempt, 80% warning triggers, daily reset works
 
 ## Phase 5: Proper 429 Handling
-- [ ] 5.1 Update Polly retry policy in `ClaudeClient` — do NOT retry on HTTP 429, only retry on 5xx and transient network errors
-- [ ] 5.2 Create a `ClaudeRateLimitException` that surfaces the Anthropic `retry-after` header value
-- [ ] 5.3 Catch `ClaudeRateLimitException` in `DealChatTab.razor` and show "Service is busy, please try again in X seconds" message
-- [ ] 5.4 Catch in `ReportProseGenerator.GenerateSectionAsync` — add to `failedSections` with rate-limit context instead of generic failure
-- [ ] 5.5 Unit tests: 429 not retried, retry-after header parsed, 500 still retried, user-facing message shown
+- [x] 5.1 Verify Polly retry policy does NOT retry on HTTP 429 — confirmed `HandleTransientHttpError()` only retries 5xx/408, and our 429→ClaudeRateLimitException preempts `EnsureSuccessStatusCode()`
+- [x] 5.2 Create a `ClaudeRateLimitException` that surfaces the Anthropic `retry-after` header value
+- [x] 5.3 Catch `ClaudeRateLimitException` in `DealChatTab.razor` (both SendMessage and SendInitialAnalysis) and show "Service is busy, please try again in X seconds" message
+- [x] 5.4 Catch in `ReportProseGenerator.GenerateSectionAsync` — add to `failedSections` with rate-limit context instead of generic failure
+- [x] 5.5 Unit tests: 429 throws ClaudeRateLimitException, retry-after header parsed, null when no header, 500 still throws HttpRequestException, exception message format
 
 ## Phase 6: Admin Token Dashboard
 - [ ] 6.1 Create `/admin/tokens` page (`AdminTokenUsage.razor`) with `[Authorize(Roles = "Admin")]`

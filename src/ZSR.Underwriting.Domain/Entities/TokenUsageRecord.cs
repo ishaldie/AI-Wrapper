@@ -12,6 +12,7 @@ public class TokenUsageRecord
     public int OutputTokens { get; private set; }
     public string Model { get; private set; }
     public DateTime CreatedAt { get; private set; }
+    public bool IsByok { get; private set; }
 
     private TokenUsageRecord()
     {
@@ -25,7 +26,8 @@ public class TokenUsageRecord
         OperationType operationType,
         int inputTokens,
         int outputTokens,
-        string model)
+        string model,
+        bool isByok = false)
     {
         Id = Guid.NewGuid();
         UserId = userId ?? throw new ArgumentNullException(nameof(userId));
@@ -35,5 +37,6 @@ public class TokenUsageRecord
         OutputTokens = outputTokens;
         Model = model ?? string.Empty;
         CreatedAt = DateTime.UtcNow;
+        IsByok = isByok;
     }
 }

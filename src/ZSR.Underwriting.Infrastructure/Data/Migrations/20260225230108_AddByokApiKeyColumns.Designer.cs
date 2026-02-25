@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ZSR.Underwriting.Infrastructure.Data;
 
@@ -10,9 +11,11 @@ using ZSR.Underwriting.Infrastructure.Data;
 namespace ZSR.Underwriting.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260225230108_AddByokApiKeyColumns")]
+    partial class AddByokApiKeyColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.3");
@@ -881,9 +884,6 @@ namespace ZSR.Underwriting.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("InputTokens")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsByok")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Model")

@@ -1,6 +1,7 @@
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Infrastructure.Configuration;
@@ -134,6 +135,72 @@ public class TokenBudgetServiceTests : IDisposable
         Assert.False(warning);
     }
 
+    // --- BYOK budget bypass ---
+
+    [Fact]
+    public async Task CheckUserBudget_ByokUser_BypassesDailyBudget()
+    {
+        await SeedUsage("byok-user", null, 300_000, 250_000);
+
+        var byokService = new TokenBudgetService(
+            _db, Options.Create(_options), new StubApiKeyService(hasKey: true));
+
+        var (allowed, used, limit) = await byokService.CheckUserBudgetAsync("byok-user");
+
+        Assert.True(allowed);
+        Assert.Equal(0, used);
+        Assert.Equal(int.MaxValue, limit);
+    }
+
+    [Fact]
+    public async Task CheckUserBudget_NonByokUser_StillEnforcesBudget()
+    {
+        await SeedUsage("regular-user", null, 300_000, 250_000);
+
+        var byokService = new TokenBudgetService(
+            _db, Options.Create(_options), new StubApiKeyService(hasKey: false));
+
+        var (allowed, used, _) = await byokService.CheckUserBudgetAsync("regular-user");
+
+        Assert.False(allowed);
+        Assert.Equal(550_000, used);
+    }
+
+    [Fact]
+    public async Task CheckDealBudget_ByokUsage_StillEnforcesDealBudget()
+    {
+        var dealId = Guid.NewGuid();
+        _db.TokenUsageRecords.Add(
+            new TokenUsageRecord("byok-user", dealId, OperationType.Chat, 600_000, 500_000, "model", isByok: true));
+        await _db.SaveChangesAsync();
+
+        var byokService = new TokenBudgetService(
+            _db, Options.Create(_options), new StubApiKeyService(hasKey: true));
+
+        var (allowed, used, _, _) = await byokService.CheckDealBudgetAsync(dealId);
+
+        Assert.False(allowed);
+        Assert.Equal(1_100_000, used);
+    }
+
+    // --- IsByok flag on TokenUsageRecord ---
+
+    [Fact]
+    public void TokenUsageRecord_WithIsByokTrue_StoresFlag()
+    {
+        var record = new TokenUsageRecord("user-1", null, OperationType.Chat, 100, 50, "model", isByok: true);
+
+        Assert.True(record.IsByok);
+    }
+
+    [Fact]
+    public void TokenUsageRecord_WithoutIsByok_DefaultsFalse()
+    {
+        var record = new TokenUsageRecord("user-1", null, OperationType.Chat, 100, 50, "model");
+
+        Assert.False(record.IsByok);
+    }
+
     // --- Helper ---
 
     private async Task SeedUsage(string userId, Guid? dealId, int inputTokens, int outputTokens)
@@ -146,5 +213,20 @@ public class TokenBudgetServiceTests : IDisposable
     public void Dispose()
     {
         _db.Dispose();
+    }
+
+    private class StubApiKeyService : IApiKeyService
+    {
+        private readonly bool _hasKey;
+
+        public StubApiKeyService(bool hasKey) => _hasKey = hasKey;
+
+        public Task<bool> HasKeyAsync(string userId) => Task.FromResult(_hasKey);
+        public Task SaveKeyAsync(string userId, string apiKey, string? model = null) => Task.CompletedTask;
+        public Task<(string ApiKey, string? Model)?> GetDecryptedKeyAsync(string userId) =>
+            Task.FromResult<(string, string?)?>(null);
+        public Task RemoveKeyAsync(string userId) => Task.CompletedTask;
+        public Task<(bool Success, string? ErrorMessage)> ValidateKeyAsync(string apiKey) =>
+            Task.FromResult<(bool, string?)>((true, null));
     }
 }

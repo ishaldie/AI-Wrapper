@@ -717,6 +717,6 @@ internal class StubSalesCompExtractor : ISalesCompExtractor
 
     public Task<SalesCompResult> ExtractCompsAsync(
         MarketContextDto marketContext, string subjectAddress, decimal subjectPricePerUnit,
-        int subjectUnits, CancellationToken cancellationToken = default)
+        int subjectUnits, string? userId = null, CancellationToken cancellationToken = default)
         => Task.FromResult(_result);
 }

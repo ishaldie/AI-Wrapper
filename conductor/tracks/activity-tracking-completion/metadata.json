@@ -1,0 +1,8 @@
+{
+  "id": "activity-tracking-completion",
+  "type": "feature",
+  "status": "completed",
+  "created": "2026-02-25",
+  "description": "Wire all 17+ activity event types to call sites and build admin activity dashboard",
+  "updatedAt": "2026-02-25T23:34:06.610Z"
+}

@@ -1,0 +1,255 @@
+@page "/account/settings"
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Security.Claims
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Application.Services
+@inject IApiKeyService ApiKeyService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ILogger<AccountSettings> Logger
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Account Settings - Underwriting Analyst</PageTitle>
+
+<div class="animate-in" style="max-width: 720px; margin: 0 auto;">
+    <MudText Typo="Typo.h4" Style="color: #1A1D23; font-weight: 700; margin-bottom: 1.5rem;">
+        Account Settings
+    </MudText>
+
+    <MudPaper Class="pa-6 mb-4" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 12px;">
+        <MudText Typo="Typo.h6" Style="font-weight: 600; margin-bottom: 0.5rem;">
+            AI Configuration
+        </MudText>
+        <MudText Typo="Typo.body2" Style="color: #6B7280; margin-bottom: 1.5rem;">
+            Connect your own Anthropic API key to use your own billing. Without a key, the shared platform key is used.
+        </MudText>
+
+        @if (_loading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+        else
+        {
+            @if (_hasKey)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-4" Dense="true">
+                    Your API key is connected: @_maskedKey
+                </MudAlert>
+            }
+
+            @* API Key input *@
+            <MudTextField @bind-Value="_apiKeyInput"
+                          Label="Anthropic API Key"
+                          Placeholder="sk-ant-api03-..."
+                          Variant="Variant.Outlined"
+                          InputType="InputType.Password"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Key"
+                          Class="mb-3" />
+
+            @* Optional model *@
+            <MudSelect @bind-Value="_modelInput"
+                       Label="Preferred Model (optional)"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Class="mb-3">
+                <MudSelectItem Value="@((string?)null)">Use platform default</MudSelectItem>
+                <MudSelectItem Value="@("claude-opus-4-6-20250918")">Claude Opus 4.6</MudSelectItem>
+                <MudSelectItem Value="@("claude-sonnet-4-5-20250514")">Claude Sonnet 4.5</MudSelectItem>
+                <MudSelectItem Value="@("claude-haiku-4-5-20251001")">Claude Haiku 4.5</MudSelectItem>
+            </MudSelect>
+
+            @* JSON file upload *@
+            <MudText Typo="Typo.body2" Style="color: #6B7280; margin-bottom: 0.5rem;">
+                Or upload a credentials JSON file:
+            </MudText>
+            <MudFileUpload T="IBrowserFile" Accept=".json" FilesChanged="OnFileUploaded" Class="mb-4">
+                <ActivatorContent>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               StartIcon="@Icons.Material.Filled.UploadFile"
+                               Size="Size.Small">
+                        Upload JSON
+                    </MudButton>
+                </ActivatorContent>
+            </MudFileUpload>
+
+            @* Action buttons *@
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Info"
+                           StartIcon="@Icons.Material.Filled.NetworkCheck"
+                           Disabled="@(string.IsNullOrWhiteSpace(_apiKeyInput) || _saving)"
+                           OnClick="TestConnection">
+                    Test Connection
+                </MudButton>
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Disabled="@(string.IsNullOrWhiteSpace(_apiKeyInput) || _saving)"
+                           OnClick="SaveKey">
+                    @(_saving ? "Saving..." : "Save Key")
+                </MudButton>
+
+                @if (_hasKey)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               Disabled="_saving"
+                               OnClick="@(() => _showRemoveConfirm = true)">
+                        Remove Key
+                    </MudButton>
+                }
+            </div>
+        }
+    </MudPaper>
+</div>
+
+@* Remove confirmation dialog *@
+<MudDialog @bind-Visible="_showRemoveConfirm">
+    <TitleContent>Remove API Key?</TitleContent>
+    <DialogContent>
+        <MudText>This will remove your API key. You'll use the shared platform key for all future AI calls.</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="@(() => _showRemoveConfirm = false)">Cancel</MudButton>
+        <MudButton Color="Color.Error" Variant="Variant.Filled" OnClick="RemoveKey">Remove</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private string? _userId;
+    private string? _apiKeyInput;
+    private string? _modelInput;
+    private string? _maskedKey;
+    private bool _hasKey;
+    private bool _loading = true;
+    private bool _saving;
+    private bool _showRemoveConfirm;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (_userId is not null)
+        {
+            _hasKey = await ApiKeyService.HasKeyAsync(_userId);
+            if (_hasKey)
+            {
+                var result = await ApiKeyService.GetDecryptedKeyAsync(_userId);
+                if (result.HasValue)
+                {
+                    _maskedKey = MaskApiKey(result.Value.ApiKey);
+                    _modelInput = result.Value.Model;
+                }
+            }
+        }
+
+        _loading = false;
+    }
+
+    private async Task OnFileUploaded(IBrowserFile file)
+    {
+        try
+        {
+            using var stream = file.OpenReadStream(maxAllowedSize: 10240); // 10KB max
+            var credentials = await CredentialsFileParser.ParseAsync(stream);
+            _apiKeyInput = credentials.ApiKey;
+            if (credentials.Model is not null)
+                _modelInput = credentials.Model;
+            Snackbar.Add("Credentials loaded from file.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to parse file: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task TestConnection()
+    {
+        if (string.IsNullOrWhiteSpace(_apiKeyInput)) return;
+        _saving = true;
+        try
+        {
+            var (success, error) = await ApiKeyService.ValidateKeyAsync(_apiKeyInput);
+            if (success)
+                Snackbar.Add("Connection successful! Key is valid.", Severity.Success);
+            else
+                Snackbar.Add($"Validation failed: {error}", Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error testing key: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task SaveKey()
+    {
+        if (string.IsNullOrWhiteSpace(_apiKeyInput) || _userId is null) return;
+        _saving = true;
+        try
+        {
+            var (success, error) = await ApiKeyService.ValidateKeyAsync(_apiKeyInput);
+            if (!success)
+            {
+                Snackbar.Add($"Key validation failed: {error}", Severity.Error);
+                return;
+            }
+
+            await ApiKeyService.SaveKeyAsync(_userId, _apiKeyInput, _modelInput);
+            _hasKey = true;
+            _maskedKey = MaskApiKey(_apiKeyInput);
+            _apiKeyInput = null;
+            Snackbar.Add("API key saved successfully.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save API key");
+            Snackbar.Add("Failed to save key. Please try again.", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task RemoveKey()
+    {
+        if (_userId is null) return;
+        _showRemoveConfirm = false;
+        _saving = true;
+        try
+        {
+            await ApiKeyService.RemoveKeyAsync(_userId);
+            _hasKey = false;
+            _maskedKey = null;
+            _modelInput = null;
+            Snackbar.Add("API key removed.", Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to remove API key");
+            Snackbar.Add("Failed to remove key.", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private static string MaskApiKey(string key)
+    {
+        if (key.Length <= 8)
+            return "****";
+        return $"{key[..7]}****{key[^4..]}";
+    }
+}

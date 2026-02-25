@@ -166,6 +166,9 @@ try
     builder.Services.AddScoped<IReportProseGenerator, ZSR.Underwriting.Application.Services.ReportProseGenerator>();
     builder.Services.AddSingleton<ISensitivityCalculator, ZSR.Underwriting.Application.Calculations.SensitivityCalculatorService>();
 
+    // Add web search service (used by MarketDataService for comparable data)
+    builder.Services.AddHttpClient<IWebSearchService, WebSearchService>();
+
     // Add market data service
     builder.Services.AddScoped<IMarketDataService, MarketDataService>();
 
@@ -201,6 +204,10 @@ try
     // Add token usage tracking and budget enforcement
     builder.Services.AddScoped<ITokenUsageTracker, TokenUsageTracker>();
     builder.Services.AddScoped<ITokenBudgetService, TokenBudgetService>();
+
+    // Add BYOK API key services
+    builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+    builder.Services.AddScoped<IApiKeyResolver, ApiKeyResolver>();
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
@@ -328,7 +335,8 @@ try
 
     app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex.GetType().Name != "StopTheHostException"
+    && ex is not HostAbortedException)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
 }

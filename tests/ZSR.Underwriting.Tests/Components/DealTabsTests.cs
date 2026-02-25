@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
+using Microsoft.Extensions.Options;
 using ZSR.Underwriting.Application.Calculations;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
@@ -13,6 +14,7 @@ using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Domain.Models;
+using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Data;
 using ZSR.Underwriting.Web.Components.Pages;
 
@@ -804,6 +806,10 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
+        _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
+        _ctx.Services.AddSingleton<IOptions<TokenManagementOptions>>(
+            Options.Create(new TokenManagementOptions()));
         _ctx.Services.AddLogging();
 
         var sp = _ctx.Services.BuildServiceProvider();
@@ -951,4 +957,18 @@ internal class NoOpActivityTracker : IActivityTracker
     public Task<Guid> StartSessionAsync(string userId) => Task.FromResult(Guid.NewGuid());
     public Task TrackPageViewAsync(string pageUrl) => Task.CompletedTask;
     public Task TrackEventAsync(ActivityEventType eventType, Guid? dealId = null, string? metadata = null) => Task.CompletedTask;
+}
+
+internal class NoOpTokenUsageTracker : ITokenUsageTracker
+{
+    public Task RecordUsageAsync(string userId, Guid? dealId, OperationType operationType,
+        int inputTokens, int outputTokens, string model) => Task.CompletedTask;
+}
+
+internal class NoOpTokenBudgetService : ITokenBudgetService
+{
+    public Task<(bool Allowed, int Used, int Limit)> CheckUserBudgetAsync(string userId)
+        => Task.FromResult((true, 0, 500_000));
+    public Task<(bool Allowed, int Used, int Limit, bool Warning)> CheckDealBudgetAsync(Guid dealId)
+        => Task.FromResult((true, 0, 1_000_000, false));
 }

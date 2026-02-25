@@ -19,7 +19,7 @@ public class ClaudeOptions
         ? ApiKey
         : Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") ?? string.Empty;
 
-    public string Model { get; set; } = "claude-sonnet-4-5-20250929";
+    public string Model { get; set; } = "claude-opus-4-6-20250918";
     public int MaxTokens { get; set; } = 4096;
     public string BaseUrl { get; set; } = "https://api.anthropic.com";
     public int TimeoutSeconds { get; set; } = 120;

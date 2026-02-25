@@ -261,7 +261,7 @@ public class ReportAssembler : IReportAssembler
         if (_salesCompExtractor != null && marketContext != null && marketContext.ComparableTransactions.Count > 0)
         {
             var result = await _salesCompExtractor.ExtractCompsAsync(
-                marketContext, deal.Address, pricePerUnit, deal.UnitCount, cancellationToken);
+                marketContext, deal.Address, pricePerUnit, deal.UnitCount, deal.UserId, cancellationToken);
 
             if (_tokenTracker != null && (result.InputTokens > 0 || result.OutputTokens > 0))
             {
@@ -402,7 +402,8 @@ public class ReportAssembler : IReportAssembler
                 Deal = deal,
                 Calculations = calcResult,
                 MarketContext = marketContext,
-                PublicData = publicData
+                PublicData = publicData,
+                UserId = deal.UserId
             };
 
             return await _proseGenerator!.GenerateAllProseAsync(context, cancellationToken);

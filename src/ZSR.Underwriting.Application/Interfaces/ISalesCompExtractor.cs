@@ -10,6 +10,7 @@ public interface ISalesCompExtractor
         string subjectAddress,
         decimal subjectPricePerUnit,
         int subjectUnits,
+        string? userId = null,
         CancellationToken cancellationToken = default);
 }
 

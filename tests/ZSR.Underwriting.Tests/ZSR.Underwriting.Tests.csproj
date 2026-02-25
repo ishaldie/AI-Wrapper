@@ -149,6 +149,14 @@
     <Compile Include="Services\ConversationTruncatorTests.cs" />
     <Compile Include="Services\TokenUsageTrackerTests.cs" />
     <Compile Include="Services\TokenBudgetServiceTests.cs" />
+    <Compile Include="Claude\ClaudeRateLimitTests.cs" />
+    <!-- BYOK API Key Support track -->
+    <Compile Include="Services\ApiKeyServiceTests.cs" />
+    <Compile Include="Services\CredentialsFileParserTests.cs" />
+    <Compile Include="Services\ApiKeyResolverTests.cs" />
+    <Compile Include="Claude\ClaudeClientByokTests.cs" />
+    <Compile Include="Components\AccountSettingsTests.cs" />
+    <Compile Include="Components\AdminTokenDashboardTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

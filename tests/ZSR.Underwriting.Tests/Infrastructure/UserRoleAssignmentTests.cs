@@ -79,16 +79,25 @@ public class UserRoleAssignmentTests
     [Fact]
     public async Task Can_Check_If_User_Is_In_Role()
     {
-        using var sp = CreateServiceProvider();
-        await SeedData.SeedAsync(sp);
+        // SeedData only creates the admin user when ADMIN_SEED_PASSWORD is set
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "TestAdmin123!");
+        try
+        {
+            using var sp = CreateServiceProvider();
+            await SeedData.SeedAsync(sp);
 
-        using var scope = sp.CreateScope();
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            using var scope = sp.CreateScope();
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-        var admin = await userManager.FindByEmailAsync("admin@zsr.com");
-        Assert.NotNull(admin);
-        Assert.True(await userManager.IsInRoleAsync(admin, "Admin"));
-        Assert.False(await userManager.IsInRoleAsync(admin, "Analyst"));
+            var admin = await userManager.FindByEmailAsync("admin@zsr.com");
+            Assert.NotNull(admin);
+            Assert.True(await userManager.IsInRoleAsync(admin, "Admin"));
+            Assert.False(await userManager.IsInRoleAsync(admin, "Analyst"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null);
+        }
     }
 
     [Fact]

@@ -106,3 +106,18 @@
 *Link: [./conductor/archive/soc2-remediation_20260225/](./conductor/archive/soc2-remediation_20260225/)*
 
 ---
+
+## [x] Track: Activity Tracking Completion
+*Link: [./conductor/tracks/activity-tracking-completion/](./conductor/tracks/activity-tracking-completion/)*
+
+---
+
+## [ ] Track: Token Management & Cost Controls
+*Link: [./conductor/tracks/token-management-and-cost-controls/](./conductor/tracks/token-management-and-cost-controls/)*
+
+---
+
+## [ ] Track: BYOK API Key Support
+*Link: [./conductor/tracks/byok-api-key-support/](./conductor/tracks/byok-api-key-support/)*
+
+---

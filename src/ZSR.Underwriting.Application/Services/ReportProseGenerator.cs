@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Exceptions;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Domain.Models;
 
@@ -30,46 +31,48 @@ public class ReportProseGenerator : IReportProseGenerator
         var totalInput = 0;
         var totalOutput = 0;
 
+        var userId = context.UserId;
+
         // Generate all 6 sections sequentially (to stay within rate limits)
         var execSummary = await GenerateSectionAsync(
             "Executive Summary",
             () => _promptBuilder.BuildExecutiveSummaryPrompt(context),
-            failedSections, ct);
+            userId, failedSections, ct);
         totalInput += execSummary.InputTokens;
         totalOutput += execSummary.OutputTokens;
 
         var marketContext = await GenerateSectionAsync(
             "Market Context",
             () => _promptBuilder.BuildMarketContextPrompt(context),
-            failedSections, ct);
+            userId, failedSections, ct);
         totalInput += marketContext.InputTokens;
         totalOutput += marketContext.OutputTokens;
 
         var valueCreation = await GenerateSectionAsync(
             "Value Creation",
             () => _promptBuilder.BuildValueCreationPrompt(context),
-            failedSections, ct);
+            userId, failedSections, ct);
         totalInput += valueCreation.InputTokens;
         totalOutput += valueCreation.OutputTokens;
 
         var riskAssessment = await GenerateSectionAsync(
             "Risk Assessment",
             () => _promptBuilder.BuildRiskAssessmentPrompt(context),
-            failedSections, ct);
+            userId, failedSections, ct);
         totalInput += riskAssessment.InputTokens;
         totalOutput += riskAssessment.OutputTokens;
 
         var investmentDecision = await GenerateSectionAsync(
             "Investment Decision",
             () => _promptBuilder.BuildInvestmentDecisionPrompt(context),
-            failedSections, ct);
+            userId, failedSections, ct);
         totalInput += investmentDecision.InputTokens;
         totalOutput += investmentDecision.OutputTokens;
 
         var propertyOverview = await GenerateSectionAsync(
             "Property Overview",
             () => _promptBuilder.BuildPropertyOverviewPrompt(context),
-            failedSections, ct);
+            userId, failedSections, ct);
         totalInput += propertyOverview.InputTokens;
         totalOutput += propertyOverview.OutputTokens;
 
@@ -108,17 +111,38 @@ public class ReportProseGenerator : IReportProseGenerator
     private async Task<ClaudeResponse> GenerateSectionAsync(
         string sectionName,
         Func<ClaudeRequest> buildPrompt,
+        string? userId,
         List<string> failedSections,
         CancellationToken ct)
     {
         try
         {
-            var request = buildPrompt();
+            var built = buildPrompt();
+            var request = new ClaudeRequest
+            {
+                SystemPrompt = built.SystemPrompt,
+                UserMessage = built.UserMessage,
+                MaxTokens = built.MaxTokens,
+                ConversationHistory = built.ConversationHistory,
+                UserId = userId
+            };
             _logger.LogInformation("Generating prose section: {Section}", sectionName);
             var response = await _claude.SendMessageAsync(request, ct);
             _logger.LogInformation("Section {Section} generated: {OutputTokens} tokens",
                 sectionName, response.OutputTokens);
             return response;
+        }
+        catch (ClaudeRateLimitException ex)
+        {
+            _logger.LogWarning("Rate limited generating section: {Section}. Retry after: {RetryAfter}s",
+                sectionName, ex.RetryAfterSeconds);
+            failedSections.Add($"{sectionName} (rate limited)");
+            return new ClaudeResponse
+            {
+                Content = $"[{sectionName} skipped — API rate limit reached]",
+                InputTokens = 0,
+                OutputTokens = 0
+            };
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
