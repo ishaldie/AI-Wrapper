@@ -43,12 +43,20 @@ else
                       Immediate="true"
                       Class="mb-4" />
 
-        <MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedStatuses" Class="mb-4">
-            <MudChip T="string" Value="@("Draft")" Color="Color.Default" Variant="Variant.Outlined">Draft</MudChip>
-            <MudChip T="string" Value="@("InProgress")" Color="Color.Warning" Variant="Variant.Outlined">In Progress</MudChip>
-            <MudChip T="string" Value="@("Complete")" Color="Color.Success" Variant="Variant.Outlined">Complete</MudChip>
-            <MudChip T="string" Value="@("Archived")" Color="Color.Dark" Variant="Variant.Outlined">Archived</MudChip>
-        </MudChipSet>
+        <MudStack Spacing="2" Class="mb-4">
+            <MudText Typo="Typo.caption" Style="color: #6B7280; font-weight: 600;">ACQUISITION</MudText>
+            <MudChipSet T="string" SelectionMode="SelectionMode.MultiSelection" @bind-SelectedValues="_selectedStatuses">
+                <MudChip T="string" Value="@("Draft")" Color="Color.Default" Variant="Variant.Outlined">Draft</MudChip>
+                <MudChip T="string" Value="@("Screening")" Color="Color.Warning" Variant="Variant.Outlined">Screening</MudChip>
+                <MudChip T="string" Value="@("Complete")" Color="Color.Success" Variant="Variant.Outlined">Complete</MudChip>
+                <MudChip T="string" Value="@("UnderContract")" Color="Color.Info" Variant="Variant.Outlined">Under Contract</MudChip>
+                <MudChip T="string" Value="@("Closed")" Color="Color.Tertiary" Variant="Variant.Outlined">Closed</MudChip>
+                <MudChip T="string" Value="@("Active")" Color="Color.Success" Variant="Variant.Outlined">Active</MudChip>
+                <MudChip T="string" Value="@("Disposition")" Color="Color.Warning" Variant="Variant.Outlined">Disposition</MudChip>
+                <MudChip T="string" Value="@("Sold")" Color="Color.Dark" Variant="Variant.Outlined">Sold</MudChip>
+                <MudChip T="string" Value="@("Archived")" Color="Color.Dark" Variant="Variant.Outlined">Archived</MudChip>
+            </MudChipSet>
+        </MudStack>
 
         <MudButton Variant="Variant.Outlined"
                    Color="Color.Primary"
@@ -80,8 +88,13 @@ else
                     <TemplateColumn Title="Status" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Status))">
                         <CellTemplate>
                             <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(context.Item.Status)">
-                                @context.Item.Status
+                                @GetStatusDisplayName(context.Item.Status)
                             </MudChip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Phase" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Phase))">
+                        <CellTemplate>
+                            <MudText Typo="Typo.body2" Style="color: #6B7280;">@context.Item.Phase</MudText>
                         </CellTemplate>
                     </TemplateColumn>
                     <PropertyColumn Property="x => x.UpdatedAt" Title="Date" Format="MM/dd/yyyy" Sortable="true" />
@@ -132,7 +145,9 @@ else
     private string _userId = string.Empty;
 
     private IEnumerable<DealSummaryDto> FilteredDeals => _deals
-        .Where(d => _selectedStatuses.Count == 0 || _selectedStatuses.Contains(d.Status))
+        .Where(d => _selectedStatuses.Count == 0 || _selectedStatuses.Contains(d.Status)
+            // Treat InProgress as Screening for filter purposes
+            || (d.Status == "InProgress" && _selectedStatuses.Contains("Screening")))
         .Where(d => string.IsNullOrWhiteSpace(_searchText)
             || d.PropertyName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
             || d.Address.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
@@ -183,9 +198,21 @@ else
     private static Color GetStatusColor(string status) => status switch
     {
         "Draft" => Color.Default,
-        "InProgress" => Color.Warning,
+        "InProgress" or "Screening" => Color.Warning,
         "Complete" => Color.Success,
         "Archived" => Color.Dark,
+        "UnderContract" => Color.Info,
+        "Closed" => Color.Tertiary,
+        "Active" => Color.Success,
+        "Disposition" => Color.Warning,
+        "Sold" => Color.Dark,
         _ => Color.Default
+    };
+
+    private static string GetStatusDisplayName(string status) => status switch
+    {
+        "InProgress" => "Screening",
+        "UnderContract" => "Under Contract",
+        _ => status
     };
 }

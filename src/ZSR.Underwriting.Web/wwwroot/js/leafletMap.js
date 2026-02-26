@@ -71,9 +71,20 @@ window.leafletMapInterop = {
 
     _statusColor: function (status) {
         switch (status) {
-            case 'Draft': return '#888';
-            case 'InProgress': return '#f59e0b';
-            case 'Complete': return '#10b981';
+            // Acquisition phase (blue tones)
+            case 'Draft': return '#94a3b8';
+            case 'InProgress': return '#3b82f6';
+            case 'Screening': return '#3b82f6';
+            case 'Complete': return '#2563eb';
+            // Contract phase (purple)
+            case 'UnderContract': return '#7c3aed';
+            // Ownership phase (green tones)
+            case 'Closed': return '#059669';
+            case 'Active': return '#10b981';
+            // Exit phase (orange tones)
+            case 'Disposition': return '#f59e0b';
+            case 'Sold': return '#ea580c';
+            // Archived
             case 'Archived': return '#6b7280';
             default: return '#3b82f6';
         }

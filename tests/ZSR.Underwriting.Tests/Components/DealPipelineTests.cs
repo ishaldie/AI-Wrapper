@@ -77,7 +77,7 @@ public class DealPipelineTests : IAsyncLifetime
         var cut = _ctx.Render(WrapWithProviders<DealPipeline>());
         cut.WaitForState(() => cut.Markup.Contains("Draft"));
         Assert.Contains("Draft", cut.Markup);
-        Assert.Contains("InProgress", cut.Markup);
+        Assert.Contains("Screening", cut.Markup);
         Assert.Contains("Complete", cut.Markup);
     }
 
@@ -158,10 +158,10 @@ public class DealPipelineTests : IAsyncLifetime
         {
             var deals = new List<DealSummaryDto>
             {
-                new() { Id = Guid.NewGuid(), PropertyName = "Sunset Apts", Address = "123 Main St", Status = "Draft", PurchasePrice = 5_000_000m, CapRate = 0.065m, Irr = 0.142m, UpdatedAt = DateTime.UtcNow },
-                new() { Id = Guid.NewGuid(), PropertyName = "Oak Manor", Address = "456 Oak Ave", Status = "InProgress", PurchasePrice = 3_000_000m, CapRate = 0.072m, Irr = 0.118m, UpdatedAt = DateTime.UtcNow.AddHours(-1) },
-                new() { Id = Guid.NewGuid(), PropertyName = "Pine Ridge", Address = "789 Pine Rd", Status = "Complete", PurchasePrice = 7_000_000m, CapRate = 0.058m, Irr = 0.165m, UpdatedAt = DateTime.UtcNow.AddHours(-2) },
-                new() { Id = Guid.NewGuid(), PropertyName = "Elm Court", Address = "321 Elm Blvd", Status = "Archived", PurchasePrice = 4_000_000m, UpdatedAt = DateTime.UtcNow.AddHours(-3) },
+                new() { Id = Guid.NewGuid(), PropertyName = "Sunset Apts", Address = "123 Main St", Status = "Draft", Phase = "Acquisition", PurchasePrice = 5_000_000m, CapRate = 0.065m, Irr = 0.142m, UpdatedAt = DateTime.UtcNow },
+                new() { Id = Guid.NewGuid(), PropertyName = "Oak Manor", Address = "456 Oak Ave", Status = "InProgress", Phase = "Acquisition", PurchasePrice = 3_000_000m, CapRate = 0.072m, Irr = 0.118m, UpdatedAt = DateTime.UtcNow.AddHours(-1) },
+                new() { Id = Guid.NewGuid(), PropertyName = "Pine Ridge", Address = "789 Pine Rd", Status = "Complete", Phase = "Acquisition", PurchasePrice = 7_000_000m, CapRate = 0.058m, Irr = 0.165m, UpdatedAt = DateTime.UtcNow.AddHours(-2) },
+                new() { Id = Guid.NewGuid(), PropertyName = "Elm Court", Address = "321 Elm Blvd", Status = "Archived", Phase = "Acquisition", PurchasePrice = 4_000_000m, UpdatedAt = DateTime.UtcNow.AddHours(-3) },
             };
             return Task.FromResult<IReadOnlyList<DealSummaryDto>>(deals);
         }

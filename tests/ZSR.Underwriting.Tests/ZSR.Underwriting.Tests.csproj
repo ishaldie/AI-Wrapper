@@ -166,6 +166,7 @@
     <!-- Lifecycle & Navigation Foundation track (Track 1) -->
     <Compile Include="Domain\DealLifecycleTests.cs" />
     <Compile Include="Components\DealTabsPhaseTests.cs" />
+    <Compile Include="Components\PipelineLifecycleTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
