@@ -1,22 +1,22 @@
 ---
 name: skill-creator
-description: This skill should be used when the user asks to "create a skill", "write a new skill", "add a custom skill", "make a skill for my project", or needs guidance on skill structure, SKILL.md format, frontmatter metadata, or progressive disclosure for Conductor project skills.
+description: This skill should be used when the user asks to "create a skill", "write a new skill", "add a custom skill", "make a skill for my project", or needs guidance on skill structure, SKILL.md format, frontmatter metadata, or progressive disclosure for Forge project skills.
 ---
 
-# Skill Creator for Conductor Projects
+# Skill Creator for Forge Projects
 
 ## Overview
 
-Skills are modular, self-contained packages that extend AI agent capabilities by providing specialized knowledge, workflows, and tools. This skill guides the creation of custom skills for Conductor projects.
+Skills are modular, self-contained packages that extend AI agent capabilities by providing specialized knowledge, workflows, and tools. This skill guides the creation of custom skills for Forge projects.
 
-Skills are stored in `.conductor/skills/<skill-name>/SKILL.md` and automatically synced to all TUI engine directories (`.claude/skills/`, `.gemini/skills/`, `.codex/skills/`, `.cursor/skills/`).
+Skills are stored in `.forge/skills/<skill-name>/SKILL.md` and automatically synced to all TUI engine directories (`.claude/skills/`, `.gemini/skills/`, `.codex/skills/`, `.cursor/skills/`).
 
 ## Skill Structure
 
 Every skill consists of a required SKILL.md file and optional bundled resources:
 
 ```
-.conductor/skills/<skill-name>/
+.forge/skills/<skill-name>/
 ├── SKILL.md (required)
 │   ├── YAML frontmatter metadata (required)
 │   │   ├── name: (required)
@@ -93,7 +93,7 @@ For each use case, identify:
 ### Step 3: Create the Structure
 
 ```bash
-mkdir -p .conductor/skills/<skill-name>/{references,scripts}
+mkdir -p .forge/skills/<skill-name>/{references,scripts}
 ```
 
 ### Step 4: Write SKILL.md
@@ -143,11 +143,11 @@ Parse the configuration file. Validate inputs before processing.
 You should parse the configuration file. You need to validate inputs.
 ```
 
-## Conductor Integration
+## Forge Integration
 
 After creating a skill:
 
-1. **Sync to engines** — Skills in `.conductor/skills/` are automatically synced to `.claude/skills/`, `.gemini/skills/`, `.codex/skills/`, and `.cursor/skills/`
+1. **Sync to engines** — Skills in `.forge/skills/` are automatically synced to `.claude/skills/`, `.gemini/skills/`, `.codex/skills/`, and `.cursor/skills/`
 2. **Add to template shortcuts** — If the skill should appear as a quick-action button, add it to `template-config.json` shortcuts
 3. **Schedule reminders** — Skills can be scheduled to run at intervals (daily, weekly, monthly) via the persistent track schedule UI
 4. **Reference in other skills** — Skills can suggest running other skills (e.g., "Use `/mcp-integration` to connect your data source")

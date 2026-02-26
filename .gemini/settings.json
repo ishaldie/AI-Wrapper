@@ -2,6 +2,9 @@
   "mcpServers": {
     "conductor": {
       "url": "http://localhost:5280/mcp/sse"
+    },
+    "forge": {
+      "url": "http://localhost:5280/mcp/sse"
     }
   }
 }

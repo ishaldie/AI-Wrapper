@@ -3,6 +3,10 @@
     "conductor": {
       "type": "sse",
       "url": "http://localhost:5280/mcp/sse"
+    },
+    "forge": {
+      "type": "sse",
+      "url": "http://localhost:5280/mcp/sse"
     }
   }
 }

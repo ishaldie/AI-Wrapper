@@ -1,13 +1,13 @@
 ---
 name: mcp-integration
-description: This skill should be used when the user asks to "add MCP server", "integrate MCP", "configure MCP", "connect external service", "set up Model Context Protocol", or wants to connect tools like Google Sheets, Substack, QuickBooks, or other services via MCP. Provides guidance for configuring MCP servers in Conductor projects.
+description: This skill should be used when the user asks to "add MCP server", "integrate MCP", "configure MCP", "connect external service", "set up Model Context Protocol", or wants to connect tools like Google Sheets, Substack, QuickBooks, or other services via MCP. Provides guidance for configuring MCP servers in Forge projects.
 ---
 
-# MCP Integration for Conductor Projects
+# MCP Integration for Forge Projects
 
 ## Overview
 
-Model Context Protocol (MCP) enables Conductor projects to connect with external services and APIs by providing structured tool access. Use MCP integration to connect services like Google Sheets, Substack, QuickBooks, CRMs, calendars, and other tools to your project.
+Model Context Protocol (MCP) enables Forge projects to connect with external services and APIs by providing structured tool access. Use MCP integration to connect services like Google Sheets, Substack, QuickBooks, CRMs, calendars, and other tools to your project.
 
 **Key capabilities:**
 - Connect to external services (databases, APIs, file systems)
@@ -136,7 +136,7 @@ Document all required environment variables in `conductor/tech-stack.md`.
 
 ## Integration Workflow
 
-To add an MCP server to a Conductor project:
+To add an MCP server to a Forge project:
 
 1. **Identify the service** the user wants to connect
 2. **Find the MCP server package** (check npm, GitHub, or the MCP registry)
@@ -191,13 +191,13 @@ User authenticates in browser on first use.
 - Document required env vars in `conductor/tech-stack.md`
 - Use the most restrictive tool permissions possible
 
-## Conductor Integration
+## Forge Integration
 
 After configuring an MCP server:
 
 1. **Update tech-stack.md** with the service connection details
 2. **Reference in skills** — skills can check tech-stack.md to know which MCPs are available
-3. **Use in Conductor workflows** — skills like `/business:finances` can use MCP tools for data access
+3. **Use in Forge workflows** — skills like `/business:finances` can use MCP tools for data access
 4. **Track configuration** — MCP changes are tracked in git alongside the project
 
 ## Quick Reference

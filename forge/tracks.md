@@ -112,8 +112,8 @@
 
 ---
 
-## [ ] Track: Token Management & Cost Controls
-*Link: [./conductor/tracks/token-management-and-cost-controls/](./conductor/tracks/token-management-and-cost-controls/)*
+## [x] Track: Token Management & Cost Controls (completed 2026-02-25)
+*Link: [./conductor/archive/token-management-and-cost-controls_20260225/](./conductor/archive/token-management-and-cost-controls_20260225/)*
 
 ---
 
