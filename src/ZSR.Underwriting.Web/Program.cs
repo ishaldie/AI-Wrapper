@@ -211,15 +211,9 @@ try
     builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
     builder.Services.AddScoped<IApiKeyResolver, ApiKeyResolver>();
 
-    // Add Google Maps geocoding service
-    builder.Services.Configure<GoogleMapsOptions>(
-        builder.Configuration.GetSection(GoogleMapsOptions.SectionName));
-    var googleMapsApiKey = builder.Configuration["GoogleMaps:ApiKey"];
-    if (!string.IsNullOrWhiteSpace(googleMapsApiKey))
-    {
-        builder.Services.AddHttpClient<IGeocodingService, GoogleGeocodingService>();
-        builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();
-    }
+    // Add geocoding service (Nominatim/OpenStreetMap — free, no API key needed)
+    builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
+    builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();

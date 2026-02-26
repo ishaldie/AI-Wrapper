@@ -6,7 +6,6 @@
 @inject IDealService DealService
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JS
-@inject IConfiguration Configuration
 @inject ILogger<DealMap> Logger
 @inject ISnackbar Snackbar
 @rendermode InteractiveServer
@@ -83,28 +82,19 @@
     {
         try
         {
-            var apiKey = Configuration["GoogleMaps:ApiKey"] ?? string.Empty;
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                Logger.LogWarning("Google Maps API key not configured");
-                Snackbar.Add("Google Maps API key not configured. Set it in user secrets.", Severity.Warning);
-                return;
-            }
-
-            await JS.InvokeVoidAsync("googleMapsInterop.loadGoogleMaps", apiKey);
             var dotNetRef = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("googleMapsInterop.initMap", "deal-map-container", _pins, dotNetRef);
+            await JS.InvokeVoidAsync("leafletMapInterop.initMap", "deal-map-container", _pins, dotNetRef);
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to initialize Google Map");
+            Logger.LogWarning(ex, "Failed to initialize Leaflet map");
         }
     }
 
     [JSInvokable]
     public void OnMarkerClicked(string dealId)
     {
-        // Info window is rendered in JS — no server action needed
+        // Popup is rendered in JS — no server action needed
     }
 
     private async Task BackfillDeals()

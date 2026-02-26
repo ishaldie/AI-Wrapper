@@ -1,6 +1,5 @@
 using Bunit;
 using Bunit.TestDoubles;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -23,14 +22,6 @@ public class DealMapTests : IAsyncLifetime
         authCtx.SetAuthorized("Test User");
         authCtx.SetClaims(
             new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "test-user-id"));
-
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["GoogleMaps:ApiKey"] = "test-key"
-            })
-            .Build();
-        _ctx.Services.AddSingleton<IConfiguration>(config);
     }
 
     public Task InitializeAsync() => Task.CompletedTask;

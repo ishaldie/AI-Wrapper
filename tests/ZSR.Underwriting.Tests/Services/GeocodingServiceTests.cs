@@ -1,7 +1,5 @@
 using System.Net;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
-using ZSR.Underwriting.Infrastructure.Configuration;
 using ZSR.Underwriting.Infrastructure.Services;
 using ZSR.Underwriting.Tests.Helpers;
 
@@ -9,26 +7,21 @@ namespace ZSR.Underwriting.Tests.Services;
 
 public class GeocodingServiceTests
 {
-    private static GoogleGeocodingService CreateService(MockHttpMessageHandler handler)
+    private static NominatimGeocodingService CreateService(MockHttpMessageHandler handler)
     {
         var client = new HttpClient(handler);
-        var options = Options.Create(new GoogleMapsOptions { ApiKey = "test-key" });
-        return new GoogleGeocodingService(client, options, NullLogger<GoogleGeocodingService>.Instance);
+        return new NominatimGeocodingService(client, NullLogger<NominatimGeocodingService>.Instance);
     }
 
     [Fact]
     public async Task GeocodeAsync_Returns_Coordinates_On_Success()
     {
         var json = """
-        {
-            "status": "OK",
-            "results": [{
-                "formatted_address": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA",
-                "geometry": {
-                    "location": { "lat": 37.4224764, "lng": -122.0842499 }
-                }
-            }]
-        }
+        [{
+            "lat": "37.4224764",
+            "lon": "-122.0842499",
+            "display_name": "1600 Amphitheatre Parkway, Mountain View, CA 94043, USA"
+        }]
         """;
         var handler = new MockHttpMessageHandler(json, HttpStatusCode.OK);
         var service = CreateService(handler);
@@ -47,7 +40,7 @@ public class GeocodingServiceTests
     [InlineData("   ")]
     public async Task GeocodeAsync_Returns_Null_For_Empty_Address(string? address)
     {
-        var handler = new MockHttpMessageHandler("{}", HttpStatusCode.OK);
+        var handler = new MockHttpMessageHandler("[]", HttpStatusCode.OK);
         var service = CreateService(handler);
 
         var result = await service.GeocodeAsync(address!);
@@ -69,13 +62,7 @@ public class GeocodingServiceTests
     [Fact]
     public async Task GeocodeAsync_Returns_Null_When_No_Results()
     {
-        var json = """
-        {
-            "status": "ZERO_RESULTS",
-            "results": []
-        }
-        """;
-        var handler = new MockHttpMessageHandler(json, HttpStatusCode.OK);
+        var handler = new MockHttpMessageHandler("[]", HttpStatusCode.OK);
         var service = CreateService(handler);
 
         var result = await service.GeocodeAsync("zzzzz nonexistent");
@@ -95,15 +82,15 @@ public class GeocodingServiceTests
     }
 
     [Fact]
-    public async Task GeocodeAsync_Includes_Api_Key_In_Request()
+    public async Task GeocodeAsync_Sends_UserAgent_Header()
     {
-        var json = """{"status": "ZERO_RESULTS", "results": []}""";
+        var json = """[{"lat": "40.7", "lon": "-74.0", "display_name": "NYC"}]""";
         var handler = new MockHttpMessageHandler(json, HttpStatusCode.OK);
         var service = CreateService(handler);
 
-        await service.GeocodeAsync("123 Main St");
+        await service.GeocodeAsync("New York");
 
         Assert.NotNull(handler.LastRequest);
-        Assert.Contains("key=test-key", handler.LastRequest.RequestUri!.ToString());
+        Assert.Contains("ZSR-Underwriting", handler.LastRequest.Headers.UserAgent.ToString());
     }
 }

@@ -18,18 +18,18 @@ public class SecurityHeadersMiddleware
         headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
         headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
 
-        // CSP compatible with Blazor Server + MudBlazor + Google Maps:
+        // CSP compatible with Blazor Server + MudBlazor + Leaflet/OpenStreetMap:
         // - 'unsafe-inline' for styles (MudBlazor injects inline styles)
         // - 'unsafe-eval' for Blazor's JS interop
         // - ws:/wss: for Blazor SignalR WebSocket connection
-        // - maps.googleapis.com / maps.gstatic.com for Google Maps API
+        // - unpkg.com for Leaflet CDN, tile.openstreetmap.org for map tiles
         headers["Content-Security-Policy"] = string.Join("; ",
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com",
-            "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: https://maps.gstatic.com https://maps.googleapis.com https://*.ggpht.com https://*.google.com https://*.googleusercontent.com",
-            "font-src 'self' data: https://fonts.gstatic.com",
-            "connect-src 'self' ws: wss: https://maps.googleapis.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com",
+            "style-src 'self' 'unsafe-inline' https://unpkg.com",
+            "img-src 'self' data: https://*.tile.openstreetmap.org https://unpkg.com",
+            "font-src 'self' data:",
+            "connect-src 'self' ws: wss:",
             "frame-ancestors 'none'");
 
         await _next(context);
