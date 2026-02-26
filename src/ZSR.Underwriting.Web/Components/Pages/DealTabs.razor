@@ -19,6 +19,7 @@
 @inject IJSRuntime JS
 @inject ISensitivityCalculator SensitivityCalc
 @inject IMarketDataService MarketDataService
+@inject IDealService DealService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -57,8 +58,18 @@ else
             </MudText>
         </div>
         <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_deal.Status.ToString())">
-            @_deal.Status
+            @GetStatusDisplayName(_deal.Status)
         </MudChip>
+        @if (GetNextTransition(_deal.Status) is var (label, target) && label is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.ArrowForward"
+                       OnClick="@(() => TransitionStatus(target))"
+                       Style="text-transform: none; font-weight: 500; border-radius: 12px;">
+                @label
+            </MudButton>
+        }
         <MudButton Variant="Variant.Filled" Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Description"
                    OnClick="@(() => Navigation.NavigateTo($"/deals/{DealId}/report"))"
@@ -603,6 +614,89 @@ else
                 }
             </div>
         </MudTabPanel>
+
+        @* === Phase-gated tabs === *@
+
+        @if (_deal.Phase >= DealPhase.Contract)
+        {
+            <MudTabPanel Text="Contract" Icon="@Icons.Material.Filled.Gavel">
+                <div class="deal-tab-content">
+                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.Gavel" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Contract & Closing Timeline</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                            Track PSA milestones, due diligence deadlines, and closing costs. Coming in Track 6.
+                        </MudText>
+                    </MudStack>
+                </div>
+            </MudTabPanel>
+        }
+
+        @if (_deal.Phase >= DealPhase.Ownership)
+        {
+            <MudTabPanel Text="Rent Roll" Icon="@Icons.Material.Filled.Apartment">
+                <div class="deal-tab-content">
+                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.Apartment" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Unit-Level Rent Roll</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                            Individual units, tenants, lease terms, and rent amounts. Coming in Track 3.
+                        </MudText>
+                    </MudStack>
+                </div>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Actuals" Icon="@Icons.Material.Filled.ReceiptLong">
+                <div class="deal-tab-content">
+                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Monthly Actuals</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                            Track actual monthly revenue, expenses, and NOI vs. projections. Coming in Track 4.
+                        </MudText>
+                    </MudStack>
+                </div>
+            </MudTabPanel>
+
+            <MudTabPanel Text="Performance" Icon="@Icons.Material.Filled.TrendingUp">
+                <div class="deal-tab-content">
+                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Variance & Performance</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                            Compare underwriting projections to actual performance. Coming in Track 5.
+                        </MudText>
+                    </MudStack>
+                </div>
+            </MudTabPanel>
+
+            <MudTabPanel Text="CapEx" Icon="@Icons.Material.Filled.Construction">
+                <div class="deal-tab-content">
+                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.Construction" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Capital Expenditures</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                            Track renovation projects, budgets vs. actuals, and ROI. Coming in Track 7.
+                        </MudText>
+                    </MudStack>
+                </div>
+            </MudTabPanel>
+        }
+
+        @if (_deal.Phase >= DealPhase.Exit)
+        {
+            <MudTabPanel Text="Disposition" Icon="@Icons.Material.Filled.Sell">
+                <div class="deal-tab-content">
+                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                        <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Large" Style="color: #D1D5DB;" />
+                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Disposition Analysis</MudText>
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                            Hold/sell/refinance scenarios with realized returns. Coming in Track 9.
+                        </MudText>
+                    </MudStack>
+                </div>
+            </MudTabPanel>
+        }
 
     </MudTabs>
 
@@ -1180,9 +1274,55 @@ else
     private static Color GetStatusColor(string status) => status switch
     {
         "Draft" => Color.Default,
-        "InProgress" => Color.Warning,
+        "InProgress" or "Screening" => Color.Warning,
         "Complete" => Color.Success,
         "Archived" => Color.Dark,
+        "UnderContract" => Color.Info,
+        "Closed" => Color.Tertiary,
+        "Active" => Color.Success,
+        "Disposition" => Color.Warning,
+        "Sold" => Color.Dark,
         _ => Color.Default
     };
+
+    private static string GetStatusDisplayName(DealStatus status) => status switch
+    {
+        DealStatus.InProgress => "Screening",
+        DealStatus.UnderContract => "Under Contract",
+        _ => status.ToString()
+    };
+
+    /// <summary>
+    /// Returns the next logical status transition label and target, or (null, default) if none.
+    /// </summary>
+    private static (string? Label, DealStatus Target) GetNextTransition(DealStatus current) => current switch
+    {
+        DealStatus.Draft => ("Start Screening", DealStatus.Screening),
+        DealStatus.InProgress => ("Mark Complete", DealStatus.Complete),
+        DealStatus.Screening => ("Mark Complete", DealStatus.Complete),
+        DealStatus.Complete => ("Move to Under Contract", DealStatus.UnderContract),
+        DealStatus.UnderContract => ("Mark Closed", DealStatus.Closed),
+        DealStatus.Closed => ("Activate Asset", DealStatus.Active),
+        DealStatus.Active => ("Begin Disposition", DealStatus.Disposition),
+        DealStatus.Disposition => ("Mark Sold", DealStatus.Sold),
+        _ => (null, default)
+    };
+
+    private async Task TransitionStatus(DealStatus target)
+    {
+        if (_deal is null) return;
+        try
+        {
+            await DealService.SetStatusAsync(_deal.Id, target.ToString(), _userId);
+            _deal.UpdateStatus(target);
+            await ActivityTracker.TrackEventAsync(ActivityEventType.StatusChanged, dealId: _deal.Id,
+                metadata: $"{{\"from\":\"{_deal.Status}\",\"to\":\"{target}\"}}");
+            Snackbar.Add($"Status updated to {GetStatusDisplayName(target)}.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (InvalidOperationException ex)
+        {
+            Snackbar.Add(ex.Message, Severity.Error);
+        }
+    }
 }

@@ -165,6 +165,7 @@
     <Compile Include="Services\GeocodingBackfillServiceTests.cs" />
     <!-- Lifecycle & Navigation Foundation track (Track 1) -->
     <Compile Include="Domain\DealLifecycleTests.cs" />
+    <Compile Include="Components\DealTabsPhaseTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

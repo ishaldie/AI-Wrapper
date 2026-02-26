@@ -45,7 +45,7 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
-        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -239,6 +239,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -395,6 +396,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -512,6 +514,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -641,6 +644,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -806,6 +810,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -981,4 +986,15 @@ internal class NoOpApiKeyService : IApiKeyService
     public Task RemoveKeyAsync(string userId) => Task.CompletedTask;
     public Task<bool> HasKeyAsync(string userId) => Task.FromResult(false);
     public Task<(bool Success, string? ErrorMessage)> ValidateKeyAsync(string apiKey) => Task.FromResult((true, (string?)null));
+}
+
+internal class NoOpDealService : IDealService
+{
+    public Task<Guid> CreateDealAsync(DealInputDto input, string userId) => Task.FromResult(Guid.NewGuid());
+    public Task UpdateDealAsync(Guid id, DealInputDto input, string userId) => Task.CompletedTask;
+    public Task<DealInputDto?> GetDealAsync(Guid id, string userId) => Task.FromResult<DealInputDto?>(null);
+    public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId) => Task.FromResult<IReadOnlyList<DealSummaryDto>>(new List<DealSummaryDto>());
+    public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
+    public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
+    public Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId) => Task.FromResult<IReadOnlyList<DealMapPinDto>>(new List<DealMapPinDto>());
 }
