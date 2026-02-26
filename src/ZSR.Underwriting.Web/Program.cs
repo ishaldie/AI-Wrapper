@@ -218,6 +218,12 @@ try
     // Add variance calculator
     builder.Services.AddSingleton<IVarianceCalculator, ZSR.Underwriting.Application.Calculations.VarianceCalculator>();
 
+    // Add asset report service (Track 8)
+    builder.Services.AddScoped<IAssetReportService, AssetReportService>();
+
+    // Add disposition analysis service (Track 9)
+    builder.Services.AddScoped<IDispositionService, DispositionService>();
+
     // Add geocoding service (Nominatim/OpenStreetMap — free, no API key needed)
     builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
     builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();

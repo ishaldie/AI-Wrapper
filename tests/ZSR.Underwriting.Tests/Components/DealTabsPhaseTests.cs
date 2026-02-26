@@ -43,6 +43,8 @@ public class DealTabsPhaseTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();

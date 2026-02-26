@@ -33,6 +33,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<MonthlyActual> MonthlyActuals => Set<MonthlyActual>();
     public DbSet<CapExProject> CapExProjects => Set<CapExProject>();
     public DbSet<CapExLineItem> CapExLineItems => Set<CapExLineItem>();
+    public DbSet<AssetReport> AssetReports => Set<AssetReport>();
+    public DbSet<DispositionAnalysis> DispositionAnalyses => Set<DispositionAnalysis>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -496,6 +498,35 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Project)
                 .WithMany(p => p.LineItems)
                 .HasForeignKey(e => e.CapExProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- AssetReport (Track 8) ---
+        modelBuilder.Entity<AssetReport>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(20);
+            entity.HasIndex(e => e.DealId);
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- DispositionAnalysis (Track 9) ---
+        modelBuilder.Entity<DispositionAnalysis>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.BrokerOpinionOfValue).HasPrecision(18, 2);
+            entity.Property(e => e.CurrentMarketCapRate).HasPrecision(8, 4);
+            entity.Property(e => e.TrailingTwelveMonthNoi).HasPrecision(18, 2);
+            entity.Property(e => e.ImpliedValue).HasPrecision(18, 2);
+            entity.HasIndex(e => e.DealId).IsUnique();
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

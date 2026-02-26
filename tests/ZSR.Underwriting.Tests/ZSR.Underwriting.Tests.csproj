@@ -180,6 +180,10 @@
     <Compile Include="Services\CapExServiceTests.cs" />
     <!-- Variance Analysis & Performance track (Track 5) -->
     <Compile Include="Calculations\VarianceCalculatorTests.cs" />
+    <!-- Asset Performance Reports track (Track 8) -->
+    <Compile Include="Services\AssetReportServiceTests.cs" />
+    <!-- Disposition Modeling track (Track 9) -->
+    <Compile Include="Services\DispositionServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

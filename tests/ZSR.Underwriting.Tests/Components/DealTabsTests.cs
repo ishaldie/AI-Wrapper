@@ -52,6 +52,8 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -252,6 +254,8 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -415,6 +419,8 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -539,6 +545,8 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -675,6 +683,8 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -847,6 +857,8 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -1094,4 +1106,24 @@ internal class NoOpPortfolioService : IPortfolioService
 internal class NoOpVarianceCalculator : IVarianceCalculator
 {
     public VarianceReport CalculateVariance(CalculationResult projections, IReadOnlyList<MonthlyActual> actuals) => new();
+}
+
+internal class NoOpAssetReportService : IAssetReportService
+{
+    public Task<IReadOnlyList<AssetReport>> GetReportsAsync(Guid dealId) => Task.FromResult<IReadOnlyList<AssetReport>>(new List<AssetReport>());
+    public Task<AssetReport?> GetReportAsync(Guid reportId) => Task.FromResult<AssetReport?>(null);
+    public Task<AssetReport> GenerateMonthlyReportAsync(Guid dealId, int year, int month) => Task.FromResult(new AssetReport(dealId, AssetReportType.Monthly, year) { Month = month });
+    public Task<AssetReport> GenerateQuarterlyReportAsync(Guid dealId, int year, int quarter) => Task.FromResult(new AssetReport(dealId, AssetReportType.Quarterly, year) { Quarter = quarter });
+    public Task<AssetReport> GenerateAnnualReportAsync(Guid dealId, int year) => Task.FromResult(new AssetReport(dealId, AssetReportType.Annual, year));
+    public Task DeleteReportAsync(Guid reportId) => Task.CompletedTask;
+}
+
+internal class NoOpDispositionService : IDispositionService
+{
+    public Task<DispositionAnalysis?> GetAnalysisAsync(Guid dealId) => Task.FromResult<DispositionAnalysis?>(null);
+    public Task<DispositionAnalysis> CreateOrUpdateAsync(Guid dealId, decimal? bov = null, decimal? marketCapRate = null) => Task.FromResult(new DispositionAnalysis(dealId));
+    public Task<SellScenario> CalculateSellScenarioAsync(Guid dealId, decimal salePrice, decimal sellingCostPercent = 3m) => Task.FromResult(new SellScenario());
+    public Task<HoldScenario> CalculateHoldScenarioAsync(Guid dealId, int additionalYears = 5, decimal noiGrowthRate = 2m) => Task.FromResult(new HoldScenario());
+    public Task<RefinanceScenario> CalculateRefinanceScenarioAsync(Guid dealId, decimal newLoanAmount, decimal newRate) => Task.FromResult(new RefinanceScenario());
+    public Task DeleteAnalysisAsync(Guid dealId) => Task.CompletedTask;
 }

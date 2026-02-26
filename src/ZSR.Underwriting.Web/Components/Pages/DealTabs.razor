@@ -27,6 +27,8 @@
 @inject IActualsService ActualsService
 @inject ICapExService CapExService
 @inject IVarianceCalculator VarianceCalculator
+@inject IAssetReportService AssetReportService
+@inject IDispositionService DispositionService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -1324,17 +1326,202 @@ else
             </MudTabPanel>
         }
 
-        @if (_deal.Phase >= DealPhase.Exit)
+        @if (_deal.Phase >= DealPhase.Exit || _deal.Phase >= DealPhase.Ownership)
         {
             <MudTabPanel Text="Disposition" Icon="@Icons.Material.Filled.Sell">
                 <div class="deal-tab-content">
-                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Large" Style="color: #D1D5DB;" />
-                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Disposition Analysis</MudText>
-                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
-                            Hold/sell/refinance scenarios with realized returns. Coming in Track 9.
-                        </MudText>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Disposition Analysis</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Refresh"
+                                   OnClick="RefreshDispositionAsync"
+                                   Style="text-transform: none;">
+                            Refresh Analysis
+                        </MudButton>
                     </MudStack>
+
+                    @if (_dispositionAnalysis is not null)
+                    {
+                        @* Valuation KPIs *@
+                        <MudGrid Class="mb-4">
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">T12 NOI</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_dispositionAnalysis.TrailingTwelveMonthNoi.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Implied Value</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_dispositionAnalysis.ImpliedValue.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Market Cap Rate</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@((_dispositionAnalysis.CurrentMarketCapRate ?? 0).ToString("F2"))%</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">BOV</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@((_dispositionAnalysis.BrokerOpinionOfValue ?? 0).ToString("C0"))</MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+
+                        @* Inputs *@
+                        <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border: 1px solid #E5E7EB; border-radius: 12px;">
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600;" Class="mb-2">Assumptions</MudText>
+                            <MudGrid>
+                                <MudItem xs="6" md="3">
+                                    <MudNumericField T="decimal" Label="Market Cap Rate %" @bind-Value="_dispoCapRate" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudNumericField T="decimal" Label="Broker Opinion of Value" @bind-Value="_dispoBov" Format="C0" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudNumericField T="decimal" Label="Sale Price (for sell)" @bind-Value="_dispoSalePrice" Format="C0" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="mt-2"
+                                               OnClick="RunDispositionScenariosAsync"
+                                               Style="text-transform: none;">
+                                        Run Scenarios
+                                    </MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+
+                        @* Scenario Results *@
+                        @if (_sellScenario is not null || _holdScenario is not null || _refiScenario is not null)
+                        {
+                            <MudGrid>
+                                @if (_sellScenario is not null)
+                                {
+                                    <MudItem xs="12" md="4">
+                                        <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; height: 100%;">
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #DC2626;" Class="mb-2">Sell Now</MudText>
+                                            <MudStack Spacing="1">
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Net Proceeds</MudText><MudText Style="font-weight: 600;">@_sellScenario.NetProceeds.ToString("C0")</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Total Profit</MudText><MudText Style="font-weight: 600;">@_sellScenario.TotalProfit.ToString("C0")</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Equity Multiple</MudText><MudText Style="font-weight: 600;">@_sellScenario.EquityMultiple.ToString("F2")x</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Hold Period</MudText><MudText Style="font-weight: 600;">@_sellScenario.HoldPeriodMonths months</MudText></div>
+                                            </MudStack>
+                                        </MudPaper>
+                                    </MudItem>
+                                }
+                                @if (_holdScenario is not null)
+                                {
+                                    <MudItem xs="12" md="4">
+                                        <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; height: 100%;">
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #16A34A;" Class="mb-2">Hold @_holdScenario.AdditionalYears More Years</MudText>
+                                            <MudStack Spacing="1">
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Projected Exit Value</MudText><MudText Style="font-weight: 600;">@_holdScenario.ProjectedExitValue.ToString("C0")</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Future NOI</MudText><MudText Style="font-weight: 600;">@_holdScenario.ProjectedAnnualNoi.ToString("C0")</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Cash-on-Cash</MudText><MudText Style="font-weight: 600;">@_holdScenario.ProjectedCashOnCash.ToString("F1")%</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Equity Multiple</MudText><MudText Style="font-weight: 600;">@_holdScenario.ProjectedEquityMultiple.ToString("F2")x</MudText></div>
+                                            </MudStack>
+                                        </MudPaper>
+                                    </MudItem>
+                                }
+                                @if (_refiScenario is not null)
+                                {
+                                    <MudItem xs="12" md="4">
+                                        <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; height: 100%;">
+                                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #2563EB;" Class="mb-2">Refinance</MudText>
+                                            <MudStack Spacing="1">
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Cash Out</MudText><MudText Style="font-weight: 600;">@_refiScenario.CashOutAmount.ToString("C0")</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">New Debt Service</MudText><MudText Style="font-weight: 600;">@_refiScenario.NewAnnualDebtService.ToString("C0")/yr</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Go-Forward CoC</MudText><MudText Style="font-weight: 600;">@_refiScenario.GoForwardCashOnCash.ToString("F1")%</MudText></div>
+                                                <div><MudText Typo="Typo.caption" Style="color: #6B7280;">Remaining Equity</MudText><MudText Style="font-weight: 600;">@_refiScenario.RemainingEquity.ToString("C0")</MudText></div>
+                                            </MudStack>
+                                        </MudPaper>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                        }
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.Sell" Size="Size.Large" Style="color: #D1D5DB;" />
+                            <MudText Typo="Typo.h6" Style="color: #6B7280;">No Disposition Analysis</MudText>
+                            <MudText Typo="Typo.body2" Style="color: #9CA3AF;">Click "Refresh Analysis" to generate.</MudText>
+                        </MudStack>
+                    }
+
+                    @* Asset Reports Section *@
+                    <MudDivider Class="my-4" />
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                        <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #1A2332;">Performance Reports</MudText>
+                        <MudStack Row="true" Spacing="1">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="@(() => GenerateAssetReportAsync(AssetReportType.Monthly))"
+                                       Style="text-transform: none;">Monthly</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="@(() => GenerateAssetReportAsync(AssetReportType.Quarterly))"
+                                       Style="text-transform: none;">Quarterly</MudButton>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       OnClick="@(() => GenerateAssetReportAsync(AssetReportType.Annual))"
+                                       Style="text-transform: none;">Annual</MudButton>
+                        </MudStack>
+                    </MudStack>
+
+                    @if (_assetReports.Count > 0)
+                    {
+                        <MudSimpleTable Dense="true" Bordered="true" Style="border-radius: 8px;">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Type</th>
+                                    <th>Generated</th>
+                                    <th style="text-align: center;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var report in _assetReports)
+                                {
+                                    <tr>
+                                        <td>@report.PeriodLabel</td>
+                                        <td><MudChip T="string" Size="Size.Small" Color="Color.Info">@report.Type</MudChip></td>
+                                        <td>@report.GeneratedAt.ToString("g")</td>
+                                        <td style="text-align: center;">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                                                           OnClick="@(() => _selectedReport = report)" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                                           OnClick="@(() => DeleteAssetReportAsync(report.Id))" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">No reports generated yet.</MudText>
+                    }
+
+                    @if (_selectedReport is not null)
+                    {
+                        <MudPaper Elevation="0" Class="pa-4 mt-4" Style="border: 1px solid #E5E7EB; border-radius: 12px;">
+                            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                                <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@_selectedReport.Type Report — @_selectedReport.PeriodLabel</MudText>
+                                <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                               OnClick="@(() => _selectedReport = null)" />
+                            </MudStack>
+                            @if (!string.IsNullOrEmpty(_selectedReport.PerformanceSummary))
+                            {
+                                <MudText Typo="Typo.subtitle2" Style="font-weight: 600; color: #1A2332;" Class="mb-1">Performance Summary</MudText>
+                                <MudText Typo="Typo.body2" Class="mb-3">@_selectedReport.PerformanceSummary</MudText>
+                            }
+                            @if (!string.IsNullOrEmpty(_selectedReport.VarianceAnalysis))
+                            {
+                                <MudText Typo="Typo.subtitle2" Style="font-weight: 600; color: #1A2332;" Class="mb-1">Variance Analysis</MudText>
+                                <MudText Typo="Typo.body2">@_selectedReport.VarianceAnalysis</MudText>
+                            }
+                        </MudPaper>
+                    }
                 </div>
             </MudTabPanel>
         }
@@ -1430,6 +1617,19 @@ else
 
     // Performance tab (Track 5)
     private VarianceReport? _varianceReport;
+
+    // Disposition tab (Track 9)
+    private DispositionAnalysis? _dispositionAnalysis;
+    private decimal _dispoCapRate = 6m;
+    private decimal _dispoBov;
+    private decimal _dispoSalePrice;
+    private SellScenario? _sellScenario;
+    private HoldScenario? _holdScenario;
+    private RefinanceScenario? _refiScenario;
+
+    // Asset reports (Track 8)
+    private List<AssetReport> _assetReports = new();
+    private AssetReport? _selectedReport;
 
     private string DealIngestEmail => $"deal-{_deal?.ShortCode}@ingest.zsrunderwriting.com";
 
@@ -1536,6 +1736,8 @@ else
                 await RefreshActualsData();
                 _capExProjects = (await CapExService.GetProjectsAsync(_deal.Id)).ToList();
                 await RefreshVarianceData();
+                _dispositionAnalysis = await DispositionService.GetAnalysisAsync(_deal.Id);
+                _assetReports = (await AssetReportService.GetReportsAsync(_deal.Id)).ToList();
             }
         }
 
@@ -1763,6 +1965,55 @@ else
             VarianceSeverity.Critical => Color.Error,
             _ => Color.Default
         };
+    }
+
+    // === Disposition methods (Track 9) ===
+
+    private async Task RefreshDispositionAsync()
+    {
+        _dispositionAnalysis = await DispositionService.CreateOrUpdateAsync(
+            DealId, _dispoBov > 0 ? _dispoBov : null, _dispoCapRate > 0 ? _dispoCapRate : null);
+        if (_dispositionAnalysis is not null)
+        {
+            _dispoCapRate = _dispositionAnalysis.CurrentMarketCapRate ?? _dispoCapRate;
+            _dispoBov = _dispositionAnalysis.BrokerOpinionOfValue ?? 0;
+            if (_dispoSalePrice == 0)
+                _dispoSalePrice = _dispositionAnalysis.ImpliedValue;
+        }
+    }
+
+    private async Task RunDispositionScenariosAsync()
+    {
+        if (_dispoSalePrice > 0)
+            _sellScenario = await DispositionService.CalculateSellScenarioAsync(DealId, _dispoSalePrice);
+        _holdScenario = await DispositionService.CalculateHoldScenarioAsync(DealId);
+        var loanBalance = _deal?.CalculationResult?.LoanAmount ?? 0;
+        if (loanBalance > 0)
+            _refiScenario = await DispositionService.CalculateRefinanceScenarioAsync(DealId, loanBalance * 1.2m, 6.5m);
+    }
+
+    // === Asset Report methods (Track 8) ===
+
+    private async Task GenerateAssetReportAsync(AssetReportType type)
+    {
+        var now = DateTime.UtcNow;
+        AssetReport report = type switch
+        {
+            AssetReportType.Monthly => await AssetReportService.GenerateMonthlyReportAsync(DealId, now.Year, now.Month),
+            AssetReportType.Quarterly => await AssetReportService.GenerateQuarterlyReportAsync(DealId, now.Year, (now.Month - 1) / 3 + 1),
+            _ => await AssetReportService.GenerateAnnualReportAsync(DealId, now.Year)
+        };
+        _assetReports = (await AssetReportService.GetReportsAsync(DealId)).ToList();
+        _selectedReport = report;
+        Snackbar.Add($"{type} report generated for {report.PeriodLabel}.", Severity.Success);
+    }
+
+    private async Task DeleteAssetReportAsync(Guid reportId)
+    {
+        await AssetReportService.DeleteReportAsync(reportId);
+        _assetReports = (await AssetReportService.GetReportsAsync(DealId)).ToList();
+        if (_selectedReport?.Id == reportId)
+            _selectedReport = null;
     }
 
     private async Task RefreshDealData()
