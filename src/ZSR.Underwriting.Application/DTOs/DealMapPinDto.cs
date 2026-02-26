@@ -6,6 +6,7 @@ public class DealMapPinDto
     public string PropertyName { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public string Phase { get; set; } = string.Empty;
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public int UnitCount { get; set; }

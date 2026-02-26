@@ -8,6 +8,7 @@ public class DealSummaryDto
     public int UnitCount { get; set; }
     public decimal PurchasePrice { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string Phase { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public decimal? CapRate { get; set; }

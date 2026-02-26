@@ -19,5 +19,6 @@ public enum ActivityEventType
     DocumentRateLimited,
     DocumentDeleted,
     DocumentDownloaded,
-    OAuthLoginCompleted
+    OAuthLoginCompleted,
+    StatusChanged
 }

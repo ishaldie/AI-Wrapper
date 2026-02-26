@@ -163,6 +163,8 @@
     <Compile Include="Services\DealMapQueryTests.cs" />
     <Compile Include="Components\DealMapTests.cs" />
     <Compile Include="Services\GeocodingBackfillServiceTests.cs" />
+    <!-- Lifecycle & Navigation Foundation track (Track 1) -->
+    <Compile Include="Domain\DealLifecycleTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

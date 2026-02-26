@@ -37,6 +37,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            entity.Ignore(e => e.Phase); // Computed from Status, not stored
+
+            // Closing snapshot
+            entity.Property(e => e.ActualPurchasePrice).HasPrecision(18, 2);
 
             // Temporary flat fields (backward compat with DealService)
             entity.Property(e => e.PropertyName).HasMaxLength(200);

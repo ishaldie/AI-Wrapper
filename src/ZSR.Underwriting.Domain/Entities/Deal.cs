@@ -15,9 +15,23 @@ public class Deal
     public string UserId { get; private set; } = string.Empty;
     public ApplicationUser? Owner { get; set; }
 
+    // Computed lifecycle phase
+    public DealPhase Phase => Status switch
+    {
+        DealStatus.Draft or DealStatus.InProgress or DealStatus.Screening or DealStatus.Complete => DealPhase.Acquisition,
+        DealStatus.UnderContract => DealPhase.Contract,
+        DealStatus.Closed or DealStatus.Active => DealPhase.Ownership,
+        DealStatus.Disposition or DealStatus.Sold => DealPhase.Exit,
+        _ => DealPhase.Acquisition
+    };
+
     // Deal classification (for checklist filtering)
     public ExecutionType ExecutionType { get; set; } = ExecutionType.All;
     public string TransactionType { get; set; } = "All";
+
+    // Closing snapshot
+    public DateTime? ClosedDate { get; set; }
+    public decimal? ActualPurchasePrice { get; set; }
 
     // Navigation properties (populated in later tasks)
     public Property? Property { get; set; }

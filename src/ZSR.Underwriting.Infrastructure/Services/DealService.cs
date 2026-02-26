@@ -72,6 +72,7 @@ public class DealService : IDealService
                 UnitCount = d.UnitCount,
                 PurchasePrice = d.PurchasePrice,
                 Status = d.Status.ToString(),
+                Phase = d.Phase.ToString(),
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
                 CapRate = d.CalculationResult != null ? d.CalculationResult.GoingInCapRate : null,
@@ -91,6 +92,7 @@ public class DealService : IDealService
                 PropertyName = d.PropertyName,
                 Address = d.Address,
                 Status = d.Status.ToString(),
+                Phase = d.Phase.ToString(),
                 Latitude = d.Latitude!.Value,
                 Longitude = d.Longitude!.Value,
                 UnitCount = d.UnitCount,
@@ -106,9 +108,51 @@ public class DealService : IDealService
         var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException($"Deal {id} not found.");
 
-        deal.UpdateStatus(Enum.Parse<DealStatus>(status));
+        var newStatus = Enum.Parse<DealStatus>(status);
+
+        if (!IsValidTransition(deal.Status, newStatus))
+            throw new InvalidOperationException($"Cannot transition from {deal.Status} to {newStatus}.");
+
+        deal.UpdateStatus(newStatus);
 
         await _db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Defines legal status transitions. Archived can be reached from any status.
+    /// </summary>
+    public static bool IsValidTransition(DealStatus from, DealStatus to)
+    {
+        // Archived is always a valid target (passing on a deal)
+        if (to == DealStatus.Archived) return true;
+
+        return (from, to) switch
+        {
+            // Acquisition phase transitions
+            (DealStatus.Draft, DealStatus.Screening) => true,
+            (DealStatus.Draft, DealStatus.InProgress) => true,  // backward compat alias
+            (DealStatus.InProgress, DealStatus.Screening) => true,
+            (DealStatus.InProgress, DealStatus.Complete) => true,
+            (DealStatus.Screening, DealStatus.Complete) => true,
+
+            // Contract phase transitions
+            (DealStatus.Complete, DealStatus.UnderContract) => true,
+
+            // Closing transitions
+            (DealStatus.UnderContract, DealStatus.Closed) => true,
+
+            // Ownership phase transitions
+            (DealStatus.Closed, DealStatus.Active) => true,
+
+            // Exit phase transitions
+            (DealStatus.Active, DealStatus.Disposition) => true,
+            (DealStatus.Disposition, DealStatus.Sold) => true,
+
+            // Re-activate from archived
+            (DealStatus.Archived, DealStatus.Draft) => true,
+
+            _ => false
+        };
     }
 
     public async Task DeleteDealAsync(Guid id, string userId)
