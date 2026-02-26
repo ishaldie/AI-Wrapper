@@ -21,6 +21,9 @@
 @inject IMarketDataService MarketDataService
 @inject IDealService DealService
 @inject IDialogService DialogService
+@inject IContractService ContractService
+@inject IRentRollService RentRollService
+@inject IPortfolioService PortfolioService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -622,13 +625,150 @@ else
         {
             <MudTabPanel Text="Contract" Icon="@Icons.Material.Filled.Gavel">
                 <div class="deal-tab-content">
-                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.Gavel" Size="Size.Large" Style="color: #D1D5DB;" />
-                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Contract & Closing Timeline</MudText>
-                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
-                            Track PSA milestones, due diligence deadlines, and closing costs. Coming in Track 6.
-                        </MudText>
-                    </MudStack>
+                    @if (_contractTimeline is null)
+                    {
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight: 600; color: #1A2332;">Contract Timeline</MudText>
+                        @if (GetNextContractDeadline() is var (dlName, dlDate, dlDays))
+                        {
+                            <MudAlert Severity="@(dlDays <= 7 ? Severity.Warning : Severity.Info)" Class="mb-4">
+                                Next deadline: <strong>@dlName</strong> in @dlDays days (@dlDate.ToString("MMM d, yyyy"))
+                            </MudAlert>
+                        }
+                        <MudGrid>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="_contractLoiDate" Label="LOI Date" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="6">
+                                <MudDatePicker @bind-Date="_contractPsaDate" Label="PSA Executed" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="_contractInspectionDate" Label="Inspection Deadline" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="_contractFinancingDate" Label="Financing Contingency" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="_contractAppraisalDate" Label="Appraisal Deadline" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="_contractTitleDate" Label="Title Deadline" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="_contractClosingDate" Label="Target Closing" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudDatePicker @bind-Date="_contractActualClosingDate" Label="Actual Closing" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudNumericField @bind-Value="_contractEarnestMoney" Label="Earnest Money" Variant="Variant.Outlined"
+                                                 Format="N0" Adornment="Adornment.Start" AdornmentText="$" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_contractLenderName" Label="Lender" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudTextField @bind-Value="_contractTitleCompany" Label="Title Company" Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.Save"
+                                       OnClick="SaveContractTimelineAsync"
+                                       Style="text-transform: none; font-weight: 500;">
+                                Save Timeline
+                            </MudButton>
+                        </MudStack>
+
+                        <MudDivider Class="my-6" />
+
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                            <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Closing Costs</MudText>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="@(() => _showClosingCostForm = true)"
+                                       Style="text-transform: none;">
+                                Add Cost
+                            </MudButton>
+                        </MudStack>
+
+                        @if (_showClosingCostForm)
+                        {
+                            <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <MudGrid>
+                                    <MudItem xs="12" md="3">
+                                        <MudSelect @bind-Value="_newCostCategory" Label="Category" Variant="Variant.Outlined">
+                                            @foreach (var cat in new[] { "Title", "Legal", "Lender", "Survey", "Insurance", "Escrow", "Other" })
+                                            {
+                                                <MudSelectItem Value="@cat">@cat</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    </MudItem>
+                                    <MudItem xs="12" md="4">
+                                        <MudTextField @bind-Value="_newCostDescription" Label="Description" Variant="Variant.Outlined" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="3">
+                                        <MudNumericField @bind-Value="_newCostEstimated" Label="Estimated" Variant="Variant.Outlined"
+                                                         Format="N0" Adornment="Adornment.Start" AdornmentText="$" />
+                                    </MudItem>
+                                    <MudItem xs="12" md="2" Class="d-flex align-end">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                                   OnClick="AddClosingCostAsync"
+                                                   Style="text-transform: none;">Add</MudButton>
+                                    </MudItem>
+                                </MudGrid>
+                            </MudPaper>
+                        }
+
+                        @if (_closingCosts.Count > 0)
+                        {
+                            <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Description</th>
+                                        <th style="text-align: right;">Estimated</th>
+                                        <th style="text-align: right;">Actual</th>
+                                        <th style="text-align: center;">Paid</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var cost in _closingCosts)
+                                    {
+                                        <tr>
+                                            <td>@cost.Category</td>
+                                            <td>@cost.Description</td>
+                                            <td style="text-align: right;">@cost.EstimatedAmount.ToString("C0")</td>
+                                            <td style="text-align: right;">@(cost.ActualAmount?.ToString("C0") ?? "—")</td>
+                                            <td style="text-align: center;">
+                                                <MudCheckBox T="bool" Value="@cost.IsPaid"
+                                                             ValueChanged="@(v => ToggleClosingCostPaidAsync(cost, v))" />
+                                            </td>
+                                            <td>
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                               OnClick="@(() => DeleteClosingCostAsync(cost.Id))" />
+                                            </td>
+                                        </tr>
+                                    }
+                                    <tr style="font-weight: 600; border-top: 2px solid #E5E7EB;">
+                                        <td colspan="2">Total</td>
+                                        <td style="text-align: right;">@_closingCosts.Sum(c => c.EstimatedAmount).ToString("C0")</td>
+                                        <td style="text-align: right;">@_closingCosts.Where(c => c.ActualAmount.HasValue).Sum(c => c.ActualAmount!.Value).ToString("C0")</td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.body2" Style="color: #9CA3AF;" Class="mt-2">No closing costs added yet.</MudText>
+                        }
+                    }
                 </div>
             </MudTabPanel>
         }
@@ -637,13 +777,139 @@ else
         {
             <MudTabPanel Text="Rent Roll" Icon="@Icons.Material.Filled.Apartment">
                 <div class="deal-tab-content">
-                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.Apartment" Size="Size.Large" Style="color: #D1D5DB;" />
-                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Unit-Level Rent Roll</MudText>
-                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
-                            Individual units, tenants, lease terms, and rent amounts. Coming in Track 3.
-                        </MudText>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Unit-Level Rent Roll</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="@(() => _showUnitForm = true)"
+                                   Style="text-transform: none;">
+                            Add Unit
+                        </MudButton>
                     </MudStack>
+
+                    @if (_rentRollSummary is not null && _rentRollUnits.Count > 0)
+                    {
+                        <MudGrid Class="mb-4">
+                            <MudItem xs="6" md="2">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Units</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_rentRollSummary.TotalUnits</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="2">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Occupancy</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_rentRollSummary.OccupancyPercent.ToString("F1")%</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="2">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Avg Market Rent</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_rentRollSummary.AverageMarketRent.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Gross Potential Rent</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_rentRollSummary.TotalGrossPotentialRent.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Actual Rent</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_rentRollSummary.TotalActualRent.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    }
+
+                    @if (_showUnitForm)
+                    {
+                        <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <MudGrid>
+                                <MudItem xs="6" md="2">
+                                    <MudTextField @bind-Value="_newUnitNumber" Label="Unit #" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="1">
+                                    <MudNumericField @bind-Value="_newUnitBeds" Label="Beds" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="1">
+                                    <MudNumericField @bind-Value="_newUnitBaths" Label="Baths" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="1">
+                                    <MudNumericField @bind-Value="_newUnitSqFt" Label="SqFt" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newUnitMarketRent" Label="Market Rent" Variant="Variant.Outlined"
+                                                     Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudSelect @bind-Value="_newUnitStatus" Label="Status" Variant="Variant.Outlined">
+                                        @foreach (var s in Enum.GetValues<UnitStatus>())
+                                        {
+                                            <MudSelectItem Value="@s">@s</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudTextField @bind-Value="_newUnitTenant" Label="Tenant" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" Class="d-flex justify-end gap-2">
+                                    <MudButton Variant="Variant.Text" OnClick="@(() => _showUnitForm = false)"
+                                               Style="text-transform: none;">Cancel</MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                               OnClick="AddRentRollUnitAsync"
+                                               Style="text-transform: none;">Add Unit</MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+
+                    @if (_rentRollUnits.Count > 0)
+                    {
+                        <MudDataGrid Items="@_rentRollUnits" Dense="true" Hover="true" Elevation="0"
+                                     Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <Columns>
+                                <PropertyColumn Property="x => x.UnitNumber" Title="Unit" />
+                                <PropertyColumn Property="x => x.Bedrooms" Title="Beds" />
+                                <PropertyColumn Property="x => x.Bathrooms" Title="Baths" />
+                                <PropertyColumn Property="x => x.SquareFeet" Title="SqFt" />
+                                <TemplateColumn Title="Status">
+                                    <CellTemplate>
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(context.Item.Status == UnitStatus.Occupied ? Color.Success :
+                                                           context.Item.Status == UnitStatus.Vacant ? Color.Error : Color.Default)">
+                                            @context.Item.Status
+                                        </MudChip>
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <PropertyColumn Property="x => x.MarketRent" Title="Market Rent" Format="C0" />
+                                <PropertyColumn Property="x => x.ActualRent" Title="Actual Rent" Format="C0" />
+                                <PropertyColumn Property="x => x.TenantName" Title="Tenant" />
+                                <TemplateColumn Title="Lease End">
+                                    <CellTemplate>
+                                        @(context.Item.LeaseEnd?.ToString("MM/dd/yy") ?? "—")
+                                    </CellTemplate>
+                                </TemplateColumn>
+                                <TemplateColumn>
+                                    <CellTemplate>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                       OnClick="@(() => DeleteRentRollUnitAsync(context.Item.Id))" />
+                                    </CellTemplate>
+                                </TemplateColumn>
+                            </Columns>
+                        </MudDataGrid>
+                    }
+                    else if (!_showUnitForm)
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.Apartment" Size="Size.Large" Style="color: #D1D5DB;" />
+                            <MudText Typo="Typo.body1" Style="color: #6B7280;">No units added yet</MudText>
+                            <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                                Add individual units to track tenants, rents, and lease terms.
+                            </MudText>
+                        </MudStack>
+                    }
                 </div>
             </MudTabPanel>
 
@@ -738,6 +1004,37 @@ else
     private string _userId = string.Empty;
     private Guid? _uploadingItemId;
 
+    // Contract tab (Track 6)
+    private ContractTimeline? _contractTimeline;
+    private List<ClosingCostItem> _closingCosts = new();
+    private DateTime? _contractLoiDate;
+    private DateTime? _contractPsaDate;
+    private DateTime? _contractInspectionDate;
+    private DateTime? _contractFinancingDate;
+    private DateTime? _contractAppraisalDate;
+    private DateTime? _contractTitleDate;
+    private DateTime? _contractClosingDate;
+    private DateTime? _contractActualClosingDate;
+    private decimal? _contractEarnestMoney;
+    private string? _contractLenderName;
+    private string? _contractTitleCompany;
+    private bool _showClosingCostForm;
+    private string _newCostCategory = "Title";
+    private string _newCostDescription = "";
+    private decimal _newCostEstimated;
+
+    // Rent Roll tab (Track 3)
+    private List<RentRollUnit> _rentRollUnits = new();
+    private RentRollSummaryDto? _rentRollSummary;
+    private bool _showUnitForm;
+    private string _newUnitNumber = "";
+    private int _newUnitBeds;
+    private int _newUnitBaths;
+    private int? _newUnitSqFt;
+    private decimal _newUnitMarketRent;
+    private UnitStatus _newUnitStatus = UnitStatus.Vacant;
+    private string? _newUnitTenant;
+
     private string DealIngestEmail => $"deal-{_deal?.ShortCode}@ingest.zsrunderwriting.com";
 
     // New capital stack item form
@@ -827,7 +1124,129 @@ else
             }
         }
 
+        // Load phase-gated data
+        if (_deal is not null)
+        {
+            if (_deal.Phase >= DealPhase.Contract)
+            {
+                _contractTimeline = await ContractService.GetOrCreateTimelineAsync(_deal.Id);
+                _closingCosts = (await ContractService.GetClosingCostsAsync(_deal.Id)).ToList();
+                BindContractFields();
+            }
+            if (_deal.Phase >= DealPhase.Ownership)
+            {
+                _rentRollUnits = (await RentRollService.GetUnitsForDealAsync(_deal.Id)).ToList();
+                _rentRollSummary = await RentRollService.GetSummaryAsync(_deal.Id);
+            }
+        }
+
         _loading = false;
+    }
+
+    private void BindContractFields()
+    {
+        if (_contractTimeline is null) return;
+        _contractLoiDate = _contractTimeline.LoiDate;
+        _contractPsaDate = _contractTimeline.PsaExecutedDate;
+        _contractInspectionDate = _contractTimeline.InspectionDeadline;
+        _contractFinancingDate = _contractTimeline.FinancingContingencyDate;
+        _contractAppraisalDate = _contractTimeline.AppraisalDeadline;
+        _contractTitleDate = _contractTimeline.TitleDeadline;
+        _contractClosingDate = _contractTimeline.ClosingDate;
+        _contractActualClosingDate = _contractTimeline.ActualClosingDate;
+        _contractEarnestMoney = _contractTimeline.EarnestMoneyDeposit;
+        _contractLenderName = _contractTimeline.LenderName;
+        _contractTitleCompany = _contractTimeline.TitleCompany;
+    }
+
+    private (string Name, DateTime Date, int Days)? GetNextContractDeadline()
+    {
+        var next = _contractTimeline?.GetNextDeadline();
+        if (next is null) return null;
+        return (next.Value.Name, next.Value.Date, (next.Value.Date - DateTime.UtcNow).Days);
+    }
+
+    private async Task SaveContractTimelineAsync()
+    {
+        if (_contractTimeline is null) return;
+        _contractTimeline.LoiDate = _contractLoiDate;
+        _contractTimeline.PsaExecutedDate = _contractPsaDate;
+        _contractTimeline.InspectionDeadline = _contractInspectionDate;
+        _contractTimeline.FinancingContingencyDate = _contractFinancingDate;
+        _contractTimeline.AppraisalDeadline = _contractAppraisalDate;
+        _contractTimeline.TitleDeadline = _contractTitleDate;
+        _contractTimeline.ClosingDate = _contractClosingDate;
+        _contractTimeline.ActualClosingDate = _contractActualClosingDate;
+        _contractTimeline.EarnestMoneyDeposit = _contractEarnestMoney;
+        _contractTimeline.LenderName = _contractLenderName;
+        _contractTimeline.TitleCompany = _contractTitleCompany;
+        await ContractService.UpdateTimelineAsync(_contractTimeline);
+        Snackbar.Add("Contract timeline saved.", Severity.Success);
+    }
+
+    private async Task AddClosingCostAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newCostDescription) || _newCostEstimated <= 0) return;
+        var item = new ClosingCostItem(DealId, _newCostCategory, _newCostDescription, _newCostEstimated);
+        await ContractService.AddClosingCostAsync(item);
+        _closingCosts = (await ContractService.GetClosingCostsAsync(DealId)).ToList();
+        _newCostDescription = "";
+        _newCostEstimated = 0;
+        _showClosingCostForm = false;
+    }
+
+    private async Task ToggleClosingCostPaidAsync(ClosingCostItem cost, bool paid)
+    {
+        cost.IsPaid = paid;
+        await ContractService.UpdateClosingCostAsync(cost);
+    }
+
+    private async Task DeleteClosingCostAsync(Guid itemId)
+    {
+        await ContractService.DeleteClosingCostAsync(itemId);
+        _closingCosts = (await ContractService.GetClosingCostsAsync(DealId)).ToList();
+    }
+
+    // === Rent Roll methods ===
+
+    private async Task AddRentRollUnitAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newUnitNumber) || _newUnitMarketRent <= 0) return;
+        var unit = new RentRollUnit(DealId, _newUnitNumber, _newUnitMarketRent)
+        {
+            Bedrooms = _newUnitBeds,
+            Bathrooms = _newUnitBaths,
+            SquareFeet = _newUnitSqFt,
+            Status = _newUnitStatus,
+            TenantName = _newUnitTenant
+        };
+        await RentRollService.AddUnitAsync(unit);
+        await RefreshRentRollData();
+        ResetUnitForm();
+    }
+
+    private async Task DeleteRentRollUnitAsync(Guid unitId)
+    {
+        await RentRollService.DeleteUnitAsync(unitId);
+        await RefreshRentRollData();
+    }
+
+    private async Task RefreshRentRollData()
+    {
+        _rentRollUnits = (await RentRollService.GetUnitsForDealAsync(DealId)).ToList();
+        _rentRollSummary = await RentRollService.GetSummaryAsync(DealId);
+    }
+
+    private void ResetUnitForm()
+    {
+        _newUnitNumber = "";
+        _newUnitBeds = 0;
+        _newUnitBaths = 0;
+        _newUnitSqFt = null;
+        _newUnitMarketRent = 0;
+        _newUnitStatus = UnitStatus.Vacant;
+        _newUnitTenant = null;
+        _showUnitForm = false;
     }
 
     private async Task RefreshDealData()

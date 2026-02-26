@@ -29,6 +29,10 @@ public class Deal
     public ExecutionType ExecutionType { get; set; } = ExecutionType.All;
     public string TransactionType { get; set; } = "All";
 
+    // Portfolio assignment
+    public Guid? PortfolioId { get; set; }
+    public Portfolio? Portfolio { get; set; }
+
     // Closing snapshot
     public DateTime? ClosedDate { get; set; }
     public decimal? ActualPurchasePrice { get; set; }

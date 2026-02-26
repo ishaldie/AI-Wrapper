@@ -73,9 +73,9 @@ public class RentRollParser : IDocumentParser
         return result;
     }
 
-    private static Task<List<RentRollUnit>> ParseCsvAsync(Stream stream, CancellationToken ct)
+    private static Task<List<ParsedRentRollUnit>> ParseCsvAsync(Stream stream, CancellationToken ct)
     {
-        var units = new List<RentRollUnit>();
+        var units = new List<ParsedRentRollUnit>();
         using var reader = new StreamReader(stream, leaveOpen: true);
         using var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
         {
@@ -95,7 +95,7 @@ public class RentRollParser : IDocumentParser
             string Field(string canonical) =>
                 headerMap.TryGetValue(canonical, out var csvHeader) ? csv.GetField(csvHeader) ?? "" : "";
 
-            var unit = new RentRollUnit
+            var unit = new ParsedRentRollUnit
             {
                 UnitNumber = CellSanitizer.SanitizeCellValue(Field("Unit")),
                 UnitType = CellSanitizer.SanitizeCellValue(Field("Type")),
@@ -118,9 +118,9 @@ public class RentRollParser : IDocumentParser
         return Task.FromResult(units);
     }
 
-    private static List<RentRollUnit> ParseXlsx(Stream stream)
+    private static List<ParsedRentRollUnit> ParseXlsx(Stream stream)
     {
-        var units = new List<RentRollUnit>();
+        var units = new List<ParsedRentRollUnit>();
         using var doc = SpreadsheetDocument.Open(stream, false);
         var wbPart = doc.WorkbookPart ?? throw new InvalidOperationException("No workbook found.");
         var wsPart = wbPart.WorksheetParts.First();
@@ -149,7 +149,7 @@ public class RentRollParser : IDocumentParser
             string CellVal(string canonical) =>
                 colMap.TryGetValue(canonical, out var colIdx) && cellsByCol.TryGetValue(colIdx, out var val) ? val : "";
 
-            var unit = new RentRollUnit
+            var unit = new ParsedRentRollUnit
             {
                 UnitNumber = CellSanitizer.SanitizeCellValue(CellVal("Unit")),
                 UnitType = colMap.ContainsKey("Type") ? CellSanitizer.SanitizeCellValue(CellVal("Type")) : null,

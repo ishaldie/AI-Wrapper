@@ -1,0 +1,129 @@
+@page "/portfolios"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IPortfolioService PortfolioService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Portfolios - Underwriting Analyst</PageTitle>
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-6">
+    <MudStack Spacing="0">
+        <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">Portfolios</MudText>
+        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+            Group deals into funds for aggregated tracking and reporting.
+        </MudText>
+    </MudStack>
+    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add"
+               OnClick="ShowCreateDialog"
+               Style="text-transform: none; font-weight: 500;">
+        New Portfolio
+    </MudButton>
+</MudStack>
+
+@if (_loading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
+}
+else if (_portfolios.Count == 0)
+{
+    <MudStack AlignItems="AlignItems.Center" Spacing="4" Class="pa-12">
+        <MudIcon Icon="@Icons.Material.Outlined.FolderSpecial" Size="Size.Large" Style="color: #D1D5DB; font-size: 4rem;" />
+        <MudText Typo="Typo.h6" Style="color: #6B7280;">No portfolios yet</MudText>
+        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+            Create a portfolio to group deals into funds and track aggregated performance.
+        </MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="ShowCreateDialog"
+                   Style="text-transform: none;">
+            Create First Portfolio
+        </MudButton>
+    </MudStack>
+}
+else
+{
+    <MudGrid>
+        @foreach (var p in _portfolios)
+        {
+            <MudItem xs="12" md="6" lg="4">
+                <MudCard Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 12px; cursor: pointer;"
+                         @onclick="@(() => Navigation.NavigateTo($"/portfolios/{p.Id}"))">
+                    <MudCardContent>
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">@p.Name</MudText>
+                                @if (!string.IsNullOrEmpty(p.Strategy))
+                                {
+                                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="mt-1">@p.Strategy</MudChip>
+                                }
+                            </MudStack>
+                            @if (p.VintageYear.HasValue)
+                            {
+                                <MudText Typo="Typo.caption" Style="color: #9CA3AF;">@p.VintageYear</MudText>
+                            }
+                        </MudStack>
+                        <MudDivider Class="my-3" />
+                        <MudGrid Spacing="2">
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Deals</MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight: 600;">@p.DealCount</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Active Assets</MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight: 600;">@p.ActiveAssetCount</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Units</MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight: 600;">@p.TotalUnits.ToString("N0")</MudText>
+                            </MudItem>
+                            <MudItem xs="6">
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Total AUM</MudText>
+                                <MudText Typo="Typo.body1" Style="font-weight: 600;">@p.TotalAum.ToString("C0")</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<PortfolioSummaryDto> _portfolios = new();
+    private bool _loading = true;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        _portfolios = (await PortfolioService.GetAllAsync(_userId)).ToList();
+        _loading = false;
+    }
+
+    private async Task ShowCreateDialog()
+    {
+        var parameters = new DialogParameters<PortfolioFormDialog>
+        {
+            { x => x.Title, "Create Portfolio" }
+        };
+        var dialog = await DialogService.ShowAsync<PortfolioFormDialog>("Create Portfolio", parameters);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled && result.Data is PortfolioFormResult formResult)
+        {
+            await PortfolioService.CreateAsync(formResult.Name, _userId, formResult.Strategy, formResult.VintageYear);
+            _portfolios = (await PortfolioService.GetAllAsync(_userId)).ToList();
+            Snackbar.Add("Portfolio created.", Severity.Success);
+        }
+    }
+}

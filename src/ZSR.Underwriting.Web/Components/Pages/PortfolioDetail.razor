@@ -1,0 +1,201 @@
+@page "/portfolios/{PortfolioId:guid}"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Domain.Enums
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IPortfolioService PortfolioService
+@inject IDealService DealService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>@(_portfolio?.Name ?? "Portfolio") - Underwriting Analyst</PageTitle>
+
+@if (_loading)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+        <MudProgressCircular Indeterminate="true" Color="Color.Primary" />
+    </MudStack>
+}
+else if (_portfolio is null)
+{
+    <MudStack AlignItems="AlignItems.Center" Spacing="4" Class="pa-8">
+        <MudIcon Icon="@Icons.Material.Outlined.SearchOff" Size="Size.Large" Style="color: #D1D5DB;" />
+        <MudText Typo="Typo.h6" Style="color: #6B7280;">Portfolio not found</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   OnClick="@(() => Navigation.NavigateTo("/portfolios"))"
+                   Style="text-transform: none;">
+            Back to Portfolios
+        </MudButton>
+    </MudStack>
+}
+else
+{
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           OnClick="@(() => Navigation.NavigateTo("/portfolios"))"
+                           Style="color: #6B7280;" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h5" Style="font-weight: 700; color: #1A2332;">@_portfolio.Name</MudText>
+                @if (!string.IsNullOrEmpty(_portfolio.Strategy))
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info">@_portfolio.Strategy</MudChip>
+                }
+            </MudStack>
+        </MudStack>
+        <MudStack Row="true" Spacing="2">
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Edit"
+                       OnClick="EditPortfolio"
+                       Style="text-transform: none;">Edit</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                       OnClick="DeletePortfolio"
+                       Style="text-transform: none;">Delete</MudButton>
+        </MudStack>
+    </MudStack>
+
+    <MudGrid Class="mb-6">
+        <MudItem xs="6" md="2">
+            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; text-align: center;">
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Deals</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;">@_portfolio.DealCount</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; text-align: center;">
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Active Assets</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;">@_portfolio.ActiveAssetCount</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="2">
+            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; text-align: center;">
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Units</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;">@_portfolio.TotalUnits.ToString("N0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; text-align: center;">
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Total AUM</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;">@_portfolio.TotalAum.ToString("C0")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="6" md="3">
+            <MudPaper Elevation="0" Class="pa-4" Style="border: 1px solid #E5E7EB; border-radius: 12px; text-align: center;">
+                <MudText Typo="Typo.caption" Style="color: #6B7280;">Aggregate NOI</MudText>
+                <MudText Typo="Typo.h5" Style="font-weight: 700;">@(_portfolio.AggregateNoi?.ToString("C0") ?? "—")</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Deals in Portfolio</MudText>
+
+    @if (_deals.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info">No deals assigned to this portfolio yet. Assign deals from the deal pipeline.</MudAlert>
+    }
+    else
+    {
+        <MudDataGrid T="DealSummaryDto" Items="@_deals" Dense="true" Hover="true" Elevation="0"
+                     Style="border: 1px solid #E5E7EB; border-radius: 8px;"
+                     RowClick="@((DataGridRowClickEventArgs<DealSummaryDto> args) => Navigation.NavigateTo($"/deals/{args.Item.Id}"))">
+            <Columns>
+                <PropertyColumn Property="x => x.PropertyName" Title="Property" />
+                <PropertyColumn Property="x => x.Address" Title="Address" />
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small">@context.Item.Status</MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.UnitCount" Title="Units" />
+                <PropertyColumn Property="x => x.PurchasePrice" Title="Price" Format="C0" />
+                <TemplateColumn Title="Phase">
+                    <CellTemplate>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Info">@context.Item.Phase</MudChip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn>
+                    <CellTemplate>
+                        <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" Size="Size.Small"
+                                       OnClick="@(() => RemoveDealAsync(context.Item.Id))"
+                                       Title="Remove from portfolio" />
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+}
+
+@code {
+    [Parameter] public Guid PortfolioId { get; set; }
+
+    private PortfolioSummaryDto? _portfolio;
+    private List<DealSummaryDto> _deals = new();
+    private bool _loading = true;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        await LoadData();
+        _loading = false;
+    }
+
+    private async Task LoadData()
+    {
+        _portfolio = await PortfolioService.GetByIdAsync(PortfolioId, _userId);
+        if (_portfolio is not null)
+        {
+            var allDeals = await DealService.GetAllDealsAsync(_userId);
+            _deals = allDeals.Where(d => d.PortfolioId == PortfolioId).ToList();
+        }
+    }
+
+    private async Task EditPortfolio()
+    {
+        if (_portfolio is null) return;
+        var parameters = new DialogParameters<PortfolioFormDialog>
+        {
+            { x => x.Title, "Edit Portfolio" },
+            { x => x.InitialName, _portfolio.Name },
+            { x => x.InitialStrategy, _portfolio.Strategy },
+            { x => x.InitialVintageYear, _portfolio.VintageYear }
+        };
+        var dialog = await DialogService.ShowAsync<PortfolioFormDialog>("Edit Portfolio", parameters);
+        var result = await dialog.Result;
+        if (result is not null && !result.Canceled && result.Data is PortfolioFormResult formResult)
+        {
+            await PortfolioService.UpdateAsync(PortfolioId, formResult.Name, _userId, strategy: formResult.Strategy, vintageYear: formResult.VintageYear);
+            await LoadData();
+            Snackbar.Add("Portfolio updated.", Severity.Success);
+        }
+    }
+
+    private async Task DeletePortfolio()
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Delete Portfolio",
+            "Are you sure? Deals will be unassigned but not deleted.",
+            yesText: "Delete", cancelText: "Cancel");
+        if (confirmed == true)
+        {
+            await PortfolioService.DeleteAsync(PortfolioId, _userId);
+            Snackbar.Add("Portfolio deleted.", Severity.Success);
+            Navigation.NavigateTo("/portfolios");
+        }
+    }
+
+    private async Task RemoveDealAsync(Guid dealId)
+    {
+        await PortfolioService.RemoveDealAsync(dealId, _userId);
+        await LoadData();
+        Snackbar.Add("Deal removed from portfolio.", Severity.Info);
+    }
+}

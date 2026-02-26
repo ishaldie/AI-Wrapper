@@ -18,7 +18,7 @@ public class ParsedDocumentResult
     public decimal? AverageRent { get; set; }
     public decimal? TotalMonthlyRent { get; set; }
     public decimal? OccupancyRate { get; set; }
-    public List<RentRollUnit> Units { get; set; } = new();
+    public List<ParsedRentRollUnit> Units { get; set; } = new();
 
     // T12 P&L fields
     public decimal? GrossRevenue { get; set; }
@@ -39,7 +39,7 @@ public class ParsedDocumentResult
     public string? PrepaymentTerms { get; set; }
 }
 
-public class RentRollUnit
+public class ParsedRentRollUnit
 {
     public string UnitNumber { get; set; } = string.Empty;
     public string? UnitType { get; set; }

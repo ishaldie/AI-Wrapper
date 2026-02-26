@@ -46,6 +46,9 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -240,6 +243,9 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -397,6 +403,9 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -515,6 +524,9 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -645,6 +657,9 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -811,6 +826,9 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
         _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
         _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -997,4 +1015,37 @@ internal class NoOpDealService : IDealService
     public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
     public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
     public Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId) => Task.FromResult<IReadOnlyList<DealMapPinDto>>(new List<DealMapPinDto>());
+}
+
+internal class NoOpContractService : IContractService
+{
+    public Task<ContractTimeline> GetOrCreateTimelineAsync(Guid dealId) => Task.FromResult(new ContractTimeline(dealId));
+    public Task UpdateTimelineAsync(ContractTimeline timeline) => Task.CompletedTask;
+    public Task<IReadOnlyList<ClosingCostItem>> GetClosingCostsAsync(Guid dealId) => Task.FromResult<IReadOnlyList<ClosingCostItem>>(new List<ClosingCostItem>());
+    public Task<Guid> AddClosingCostAsync(ClosingCostItem item) => Task.FromResult(Guid.NewGuid());
+    public Task UpdateClosingCostAsync(ClosingCostItem item) => Task.CompletedTask;
+    public Task DeleteClosingCostAsync(Guid itemId) => Task.CompletedTask;
+    public Task<decimal> GetTotalEstimatedClosingCostsAsync(Guid dealId) => Task.FromResult(0m);
+    public Task<decimal> GetTotalActualClosingCostsAsync(Guid dealId) => Task.FromResult(0m);
+}
+
+internal class NoOpRentRollService : IRentRollService
+{
+    public Task<Guid> AddUnitAsync(RentRollUnit unit) => Task.FromResult(Guid.NewGuid());
+    public Task UpdateUnitAsync(RentRollUnit unit) => Task.CompletedTask;
+    public Task DeleteUnitAsync(Guid unitId) => Task.CompletedTask;
+    public Task<IReadOnlyList<RentRollUnit>> GetUnitsForDealAsync(Guid dealId) => Task.FromResult<IReadOnlyList<RentRollUnit>>(new List<RentRollUnit>());
+    public Task<RentRollSummaryDto> GetSummaryAsync(Guid dealId) => Task.FromResult(new RentRollSummaryDto());
+    public Task BulkAddUnitsAsync(IEnumerable<RentRollUnit> units) => Task.CompletedTask;
+}
+
+internal class NoOpPortfolioService : IPortfolioService
+{
+    public Task<Guid> CreateAsync(string name, string userId, string? strategy = null, int? vintageYear = null) => Task.FromResult(Guid.NewGuid());
+    public Task UpdateAsync(Guid id, string name, string userId, string? description = null, string? strategy = null, int? vintageYear = null) => Task.CompletedTask;
+    public Task DeleteAsync(Guid id, string userId) => Task.CompletedTask;
+    public Task<IReadOnlyList<PortfolioSummaryDto>> GetAllAsync(string userId) => Task.FromResult<IReadOnlyList<PortfolioSummaryDto>>(new List<PortfolioSummaryDto>());
+    public Task<PortfolioSummaryDto?> GetByIdAsync(Guid id, string userId) => Task.FromResult<PortfolioSummaryDto?>(null);
+    public Task AssignDealAsync(Guid portfolioId, Guid dealId, string userId) => Task.CompletedTask;
+    public Task RemoveDealAsync(Guid dealId, string userId) => Task.CompletedTask;
 }

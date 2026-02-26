@@ -168,6 +168,12 @@
     <Compile Include="Components\DealTabsPhaseTests.cs" />
     <Compile Include="Components\PipelineLifecycleTests.cs" />
     <Compile Include="Services\DealStatusTransitionTests.cs" />
+    <!-- Portfolio Layer track (Track 2) -->
+    <Compile Include="Services\PortfolioServiceTests.cs" />
+    <!-- Unit-Level Rent Roll track (Track 3) -->
+    <Compile Include="Services\RentRollServiceTests.cs" />
+    <!-- Contract & Closing Management track (Track 6) -->
+    <Compile Include="Services\ContractServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

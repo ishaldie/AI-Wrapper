@@ -26,6 +26,10 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<AuthorizedSender> AuthorizedSenders => Set<AuthorizedSender>();
     public DbSet<EmailIngestionLog> EmailIngestionLogs => Set<EmailIngestionLog>();
     public DbSet<TokenUsageRecord> TokenUsageRecords => Set<TokenUsageRecord>();
+    public DbSet<Portfolio> Portfolios => Set<Portfolio>();
+    public DbSet<RentRollUnit> RentRollUnits => Set<RentRollUnit>();
+    public DbSet<ContractTimeline> ContractTimelines => Set<ContractTimeline>();
+    public DbSet<ClosingCostItem> ClosingCostItems => Set<ClosingCostItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -354,6 +358,74 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.DealId);
             entity.HasIndex(e => e.CreatedAt);
+        });
+
+        // --- Portfolio (Track 2) ---
+        modelBuilder.Entity<Portfolio>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.Strategy).HasMaxLength(50);
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasMany(e => e.Deals)
+                .WithOne(d => d.Portfolio)
+                .HasForeignKey(d => d.PortfolioId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        // --- RentRollUnit (Track 3) ---
+        modelBuilder.Entity<RentRollUnit>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UnitNumber).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.MarketRent).HasPrecision(18, 2);
+            entity.Property(e => e.ActualRent).HasPrecision(18, 2);
+            entity.Property(e => e.SecurityDeposit).HasPrecision(18, 2);
+            entity.Property(e => e.MonthlyCharges).HasPrecision(18, 2);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.TenantName).HasMaxLength(200);
+            entity.HasIndex(e => e.DealId);
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- ContractTimeline (Track 6) ---
+        modelBuilder.Entity<ContractTimeline>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.EarnestMoneyDeposit).HasPrecision(18, 2);
+            entity.Property(e => e.AdditionalDeposit).HasPrecision(18, 2);
+            entity.Property(e => e.LenderName).HasMaxLength(200);
+            entity.Property(e => e.TitleCompany).HasMaxLength(200);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+            entity.HasIndex(e => e.DealId).IsUnique();
+
+            entity.HasOne(e => e.Deal)
+                .WithOne()
+                .HasForeignKey<ContractTimeline>(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- ClosingCostItem (Track 6) ---
+        modelBuilder.Entity<ClosingCostItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.EstimatedAmount).HasPrecision(18, 2);
+            entity.Property(e => e.ActualAmount).HasPrecision(18, 2);
+            entity.HasIndex(e => e.DealId);
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -73,6 +73,7 @@ public class DealService : IDealService
                 PurchasePrice = d.PurchasePrice,
                 Status = d.Status.ToString(),
                 Phase = d.Phase.ToString(),
+                PortfolioId = d.PortfolioId,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
                 CapRate = d.CalculationResult != null ? d.CalculationResult.GoingInCapRate : null,
