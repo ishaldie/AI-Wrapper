@@ -20,6 +20,7 @@
 @inject ISensitivityCalculator SensitivityCalc
 @inject IMarketDataService MarketDataService
 @inject IDealService DealService
+@inject IDialogService DialogService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -1311,12 +1312,25 @@ else
     private async Task TransitionStatus(DealStatus target)
     {
         if (_deal is null) return;
+
+        // Confirmation for significant transitions
+        var confirmed = target switch
+        {
+            DealStatus.Closed => await ConfirmClosingTransition(),
+            DealStatus.Sold => await ConfirmSimpleTransition("Mark as Sold", "This will mark the deal as sold and complete the lifecycle. Continue?"),
+            DealStatus.UnderContract => await ConfirmSimpleTransition("Move to Under Contract", "This deal will enter the contract phase. Continue?"),
+            _ => true
+        };
+
+        if (!confirmed) return;
+
+        var previousStatus = _deal.Status;
         try
         {
             await DealService.SetStatusAsync(_deal.Id, target.ToString(), _userId);
             _deal.UpdateStatus(target);
             await ActivityTracker.TrackEventAsync(ActivityEventType.StatusChanged, dealId: _deal.Id,
-                metadata: $"{{\"from\":\"{_deal.Status}\",\"to\":\"{target}\"}}");
+                metadata: $"{{\"from\":\"{previousStatus}\",\"to\":\"{target}\"}}");
             Snackbar.Add($"Status updated to {GetStatusDisplayName(target)}.", Severity.Success);
             StateHasChanged();
         }
@@ -1324,5 +1338,28 @@ else
         {
             Snackbar.Add(ex.Message, Severity.Error);
         }
+    }
+
+    private async Task<bool> ConfirmSimpleTransition(string title, string message)
+    {
+        var result = await DialogService.ShowMessageBox(title, message, yesText: "Confirm", cancelText: "Cancel");
+        return result == true;
+    }
+
+    private async Task<bool> ConfirmClosingTransition()
+    {
+        var result = await DialogService.ShowMessageBox(
+            "Mark as Closed",
+            "Enter closing details. The deal will move to the Ownership phase.",
+            yesText: "Mark Closed",
+            cancelText: "Cancel");
+
+        if (result != true || _deal is null) return false;
+
+        // Set closing fields
+        _deal.ClosedDate = DateTime.UtcNow;
+        _deal.ActualPurchasePrice ??= _deal.PurchasePrice;
+        await Db.SaveChangesAsync();
+        return true;
     }
 }

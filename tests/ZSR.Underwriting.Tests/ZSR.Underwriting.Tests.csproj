@@ -167,6 +167,7 @@
     <Compile Include="Domain\DealLifecycleTests.cs" />
     <Compile Include="Components\DealTabsPhaseTests.cs" />
     <Compile Include="Components\PipelineLifecycleTests.cs" />
+    <Compile Include="Services\DealStatusTransitionTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
