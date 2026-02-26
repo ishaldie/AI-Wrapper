@@ -51,6 +51,7 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -250,6 +251,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -412,6 +414,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -535,6 +538,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -670,6 +674,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -841,6 +846,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
         _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
         _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -1083,4 +1089,9 @@ internal class NoOpPortfolioService : IPortfolioService
     public Task<PortfolioSummaryDto?> GetByIdAsync(Guid id, string userId) => Task.FromResult<PortfolioSummaryDto?>(null);
     public Task AssignDealAsync(Guid portfolioId, Guid dealId, string userId) => Task.CompletedTask;
     public Task RemoveDealAsync(Guid dealId, string userId) => Task.CompletedTask;
+}
+
+internal class NoOpVarianceCalculator : IVarianceCalculator
+{
+    public VarianceReport CalculateVariance(CalculationResult projections, IReadOnlyList<MonthlyActual> actuals) => new();
 }

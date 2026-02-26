@@ -215,6 +215,9 @@ try
     builder.Services.AddScoped<IActualsService, ActualsService>();
     builder.Services.AddScoped<ICapExService, CapExService>();
 
+    // Add variance calculator
+    builder.Services.AddSingleton<IVarianceCalculator, ZSR.Underwriting.Application.Calculations.VarianceCalculator>();
+
     // Add geocoding service (Nominatim/OpenStreetMap — free, no API key needed)
     builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
     builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();

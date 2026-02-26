@@ -26,6 +26,7 @@
 @inject IPortfolioService PortfolioService
 @inject IActualsService ActualsService
 @inject ICapExService CapExService
+@inject IVarianceCalculator VarianceCalculator
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -1052,13 +1053,161 @@ else
 
             <MudTabPanel Text="Performance" Icon="@Icons.Material.Filled.TrendingUp">
                 <div class="deal-tab-content">
-                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Style="color: #D1D5DB;" />
-                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Variance & Performance</MudText>
-                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
-                            Compare underwriting projections to actual performance. Coming in Track 5.
-                        </MudText>
-                    </MudStack>
+                    @if (_varianceReport is null || (_varianceReport.ProjectedNoi == 0 && _varianceReport.ActualNoi == 0))
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Large" Style="color: #D1D5DB;" />
+                            <MudText Typo="Typo.h6" Style="color: #6B7280;">No Performance Data Yet</MudText>
+                            <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                                Enter monthly actuals in the Actuals tab to see projected vs. actual performance.
+                            </MudText>
+                        </MudStack>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;" Class="mb-4">Projected vs. Actual Performance</MudText>
+
+                        @* KPI Cards *@
+                        <MudGrid Class="mb-4">
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Projected NOI</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_varianceReport.ProjectedNoi.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Actual NOI</MudText>
+                                    <MudText Typo="Typo.h6" Style="@($"font-weight: 700; color: {GetVarianceColor(_varianceReport.NoiVariancePercent)}")">@_varianceReport.ActualNoi.ToString("C0")</MudText>
+                                    <MudText Typo="Typo.caption" Style="@($"color: {GetVarianceColor(_varianceReport.NoiVariancePercent)}")">
+                                        @FormatVariancePercent(_varianceReport.NoiVariancePercent)
+                                    </MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Projected CoC</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_varianceReport.ProjectedCashOnCash.ToString("F1")%</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Actual CoC</MudText>
+                                    <MudText Typo="Typo.h6" Style="@($"font-weight: 700; color: {GetVarianceColor(_varianceReport.ActualCashOnCash - _varianceReport.ProjectedCashOnCash)}")">
+                                        @_varianceReport.ActualCashOnCash.ToString("F1")%
+                                    </MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+
+                        @* Revenue Variance Table *@
+                        @if (_varianceReport.RevenueItems.Length > 0)
+                        {
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #1A2332;" Class="mb-2">Revenue</MudText>
+                            <MudSimpleTable Dense="true" Bordered="true" Class="mb-4" Style="border-radius: 8px;">
+                                <thead>
+                                    <tr>
+                                        <th>Line Item</th>
+                                        <th style="text-align: right;">Projected</th>
+                                        <th style="text-align: right;">Actual</th>
+                                        <th style="text-align: right;">Variance</th>
+                                        <th style="text-align: center;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in _varianceReport.RevenueItems)
+                                    {
+                                        <tr>
+                                            <td>@item.Label</td>
+                                            <td style="text-align: right;">@item.Projected.ToString("C0")</td>
+                                            <td style="text-align: right;">@item.Actual.ToString("C0")</td>
+                                            <td style="text-align: right; color: @GetVarianceColor(item.VarianceAmount);">
+                                                @item.VarianceAmount.ToString("C0") (@item.VariancePercent.ToString("F1")%)
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <MudChip T="string" Size="Size.Small" Color="@GetSeverityColor(item.Severity)">@item.Severity</MudChip>
+                                            </td>
+                                        </tr>
+                                    }
+                                    <tr style="font-weight: 700; background: #F9FAFB;">
+                                        <td>Total Revenue</td>
+                                        <td style="text-align: right;">@_varianceReport.ProjectedRevenue.ToString("C0")</td>
+                                        <td style="text-align: right;">@_varianceReport.ActualRevenue.ToString("C0")</td>
+                                        <td style="text-align: right; color: @GetVarianceColor(_varianceReport.ActualRevenue - _varianceReport.ProjectedRevenue);">
+                                            @((_varianceReport.ActualRevenue - _varianceReport.ProjectedRevenue).ToString("C0"))
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+
+                        @* Expense Variance Table *@
+                        @if (_varianceReport.ExpenseItems.Length > 0)
+                        {
+                            <MudText Typo="Typo.subtitle1" Style="font-weight: 600; color: #1A2332;" Class="mb-2">Expenses</MudText>
+                            <MudSimpleTable Dense="true" Bordered="true" Class="mb-4" Style="border-radius: 8px;">
+                                <thead>
+                                    <tr>
+                                        <th>Line Item</th>
+                                        <th style="text-align: right;">Projected</th>
+                                        <th style="text-align: right;">Actual</th>
+                                        <th style="text-align: right;">Variance</th>
+                                        <th style="text-align: center;">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in _varianceReport.ExpenseItems)
+                                    {
+                                        <tr>
+                                            <td>@item.Label</td>
+                                            <td style="text-align: right;">@item.Projected.ToString("C0")</td>
+                                            <td style="text-align: right;">@item.Actual.ToString("C0")</td>
+                                            <td style="text-align: right; color: @GetExpenseVarianceColor(item.VarianceAmount);">
+                                                @item.VarianceAmount.ToString("C0") (@item.VariancePercent.ToString("F1")%)
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <MudChip T="string" Size="Size.Small" Color="@GetSeverityColor(item.Severity)">@item.Severity</MudChip>
+                                            </td>
+                                        </tr>
+                                    }
+                                    <tr style="font-weight: 700; background: #F9FAFB;">
+                                        <td>Total Expenses</td>
+                                        <td style="text-align: right;">@_varianceReport.ProjectedExpenses.ToString("C0")</td>
+                                        <td style="text-align: right;">@_varianceReport.ActualExpenses.ToString("C0")</td>
+                                        <td style="text-align: right; color: @GetExpenseVarianceColor(_varianceReport.ActualExpenses - _varianceReport.ProjectedExpenses);">
+                                            @((_varianceReport.ActualExpenses - _varianceReport.ProjectedExpenses).ToString("C0"))
+                                        </td>
+                                        <td></td>
+                                    </tr>
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+
+                        @* NOI Summary *@
+                        <MudPaper Elevation="0" Class="pa-4" Style="border: 2px solid #E5E7EB; border-radius: 12px; background: #F9FAFB;">
+                            <MudGrid>
+                                <MudItem xs="4" Style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">NOI Variance</MudText>
+                                    <MudText Typo="Typo.h5" Style="@($"font-weight: 700; color: {GetVarianceColor(_varianceReport.NoiVariance)}")">
+                                        @_varianceReport.NoiVariance.ToString("C0")
+                                    </MudText>
+                                </MudItem>
+                                <MudItem xs="4" Style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">NOI Variance %</MudText>
+                                    <MudText Typo="Typo.h5" Style="@($"font-weight: 700; color: {GetVarianceColor(_varianceReport.NoiVariancePercent)}")">
+                                        @FormatVariancePercent(_varianceReport.NoiVariancePercent)
+                                    </MudText>
+                                </MudItem>
+                                <MudItem xs="4" Style="text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">CoC Variance</MudText>
+                                    <MudText Typo="Typo.h5" Style="@($"font-weight: 700; color: {GetVarianceColor(_varianceReport.ActualCashOnCash - _varianceReport.ProjectedCashOnCash)}")">
+                                        @((_varianceReport.ActualCashOnCash - _varianceReport.ProjectedCashOnCash).ToString("F1"))pp
+                                    </MudText>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
                 </div>
             </MudTabPanel>
 
@@ -1279,6 +1428,9 @@ else
     private decimal _newCapExBudget;
     private int? _newCapExUnits;
 
+    // Performance tab (Track 5)
+    private VarianceReport? _varianceReport;
+
     private string DealIngestEmail => $"deal-{_deal?.ShortCode}@ingest.zsrunderwriting.com";
 
     // New capital stack item form
@@ -1383,6 +1535,7 @@ else
                 _rentRollSummary = await RentRollService.GetSummaryAsync(_deal.Id);
                 await RefreshActualsData();
                 _capExProjects = (await CapExService.GetProjectsAsync(_deal.Id)).ToList();
+                await RefreshVarianceData();
             }
         }
 
@@ -1501,6 +1654,7 @@ else
     {
         _yearActuals = (await ActualsService.GetForYearAsync(DealId, _actualsYear)).ToList();
         _annualSummary = await ActualsService.GetAnnualSummaryAsync(DealId, _actualsYear);
+        await RefreshVarianceData();
     }
 
     private async Task ChangeActualsYear(int delta)
@@ -1559,6 +1713,56 @@ else
     {
         await CapExService.DeleteProjectAsync(projectId);
         _capExProjects = (await CapExService.GetProjectsAsync(DealId)).ToList();
+    }
+
+    // === Performance / Variance methods ===
+
+    private async Task RefreshVarianceData()
+    {
+        if (_deal?.CalculationResult is null) return;
+        var actuals = await ActualsService.GetTrailingTwelveAsync(_deal.Id);
+        if (actuals.Count > 0)
+        {
+            _varianceReport = VarianceCalculator.CalculateVariance(_deal.CalculationResult, actuals);
+        }
+    }
+
+    private static string GetVarianceColor(decimal value)
+    {
+        return value switch
+        {
+            > 0 => "#16A34A",   // green — favorable
+            < 0 => "#DC2626",   // red — unfavorable
+            _ => "#6B7280"      // gray — neutral
+        };
+    }
+
+    private static string GetExpenseVarianceColor(decimal value)
+    {
+        // For expenses, higher actual = unfavorable (opposite of revenue)
+        return value switch
+        {
+            > 0 => "#DC2626",   // red — over budget
+            < 0 => "#16A34A",   // green — under budget
+            _ => "#6B7280"
+        };
+    }
+
+    private static string FormatVariancePercent(decimal percent)
+    {
+        var sign = percent >= 0 ? "+" : "";
+        return $"{sign}{percent:F1}%";
+    }
+
+    private static Color GetSeverityColor(VarianceSeverity severity)
+    {
+        return severity switch
+        {
+            VarianceSeverity.OnTrack => Color.Success,
+            VarianceSeverity.Warning => Color.Warning,
+            VarianceSeverity.Critical => Color.Error,
+            _ => Color.Default
+        };
     }
 
     private async Task RefreshDealData()

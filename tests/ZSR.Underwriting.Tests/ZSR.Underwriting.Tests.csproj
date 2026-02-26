@@ -178,6 +178,8 @@
     <Compile Include="Services\ActualsServiceTests.cs" />
     <!-- CapEx Project Tracking track (Track 7) -->
     <Compile Include="Services\CapExServiceTests.cs" />
+    <!-- Variance Analysis & Performance track (Track 5) -->
+    <Compile Include="Calculations\VarianceCalculatorTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
