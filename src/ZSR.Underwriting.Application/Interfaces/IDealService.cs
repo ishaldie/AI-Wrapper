@@ -10,4 +10,5 @@ public interface IDealService
     Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId);
     Task SetStatusAsync(Guid id, string status, string userId);
     Task DeleteDealAsync(Guid id, string userId);
+    Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId);
 }

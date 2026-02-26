@@ -49,6 +49,8 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.CapexBudget).HasPrecision(18, 2);
             entity.Property(e => e.TargetOccupancy).HasPrecision(5, 2);
             entity.Property(e => e.ValueAddPlans).HasMaxLength(2000);
+            entity.Property(e => e.Latitude).HasPrecision(9, 6);
+            entity.Property(e => e.Longitude).HasPrecision(9, 6);
 
             // ShortCode for email ingestion
             entity.Property(e => e.ShortCode).IsRequired().HasMaxLength(8);

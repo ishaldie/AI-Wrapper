@@ -157,6 +157,12 @@
     <Compile Include="Claude\ClaudeClientByokTests.cs" />
     <Compile Include="Components\AccountSettingsTests.cs" />
     <Compile Include="Components\AdminTokenDashboardTests.cs" />
+    <!-- Deal Map Dashboard track -->
+    <Compile Include="Domain\DealGeocodingTests.cs" />
+    <Compile Include="Services\GeocodingServiceTests.cs" />
+    <Compile Include="Services\DealMapQueryTests.cs" />
+    <Compile Include="Components\DealMapTests.cs" />
+    <Compile Include="Services\GeocodingBackfillServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

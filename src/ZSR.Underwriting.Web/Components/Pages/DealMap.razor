@@ -1,0 +1,143 @@
+@page "/map"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IDealService DealService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JS
+@inject IConfiguration Configuration
+@inject ILogger<DealMap> Logger
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Deal Map - Underwriting Analyst</PageTitle>
+
+<div class="animate-in" style="height: calc(100vh - 48px); display: flex; flex-direction: column;">
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+        <MudText Typo="Typo.h5" Style="color: #1A1D23; font-weight: 700;">
+            Deal Map
+        </MudText>
+
+        <AuthorizeView Roles="Admin">
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       Color="Color.Primary"
+                       StartIcon="@Icons.Material.Filled.Refresh"
+                       Disabled="@_isBackfilling"
+                       OnClick="BackfillDeals">
+                @(_isBackfilling ? "Backfilling..." : "Backfill Addresses")
+            </MudButton>
+        </AuthorizeView>
+    </div>
+
+    @if (_loading)
+    {
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+        </div>
+    }
+    else if (_pins.Count == 0)
+    {
+        <div class="deal-map-empty" style="flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+            <MudIcon Icon="@Icons.Material.Filled.Map" Size="Size.Large" Style="color: #D1D5DB; font-size: 4rem;" />
+            <MudText Typo="Typo.h6" Style="color: #9CA3AF; margin-top: 1rem;">No geocoded deals yet</MudText>
+            <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                Create a deal with an address to see it on the map.
+            </MudText>
+        </div>
+    }
+    else
+    {
+        <div id="deal-map-container" style="flex: 1; border-radius: 8px; overflow: hidden; min-height: 400px;"></div>
+    }
+</div>
+
+@code {
+    private List<DealMapPinDto> _pins = new();
+    private bool _loading = true;
+    private bool _isBackfilling;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        if (!string.IsNullOrEmpty(_userId))
+        {
+            _pins = (await DealService.GetDealsForMapAsync(_userId)).ToList();
+        }
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _pins.Count > 0)
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        try
+        {
+            var apiKey = Configuration["GoogleMaps:ApiKey"] ?? string.Empty;
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                Logger.LogWarning("Google Maps API key not configured");
+                Snackbar.Add("Google Maps API key not configured. Set it in user secrets.", Severity.Warning);
+                return;
+            }
+
+            await JS.InvokeVoidAsync("googleMapsInterop.loadGoogleMaps", apiKey);
+            var dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("googleMapsInterop.initMap", "deal-map-container", _pins, dotNetRef);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to initialize Google Map");
+        }
+    }
+
+    [JSInvokable]
+    public void OnMarkerClicked(string dealId)
+    {
+        // Info window is rendered in JS — no server action needed
+    }
+
+    private async Task BackfillDeals()
+    {
+        _isBackfilling = true;
+        try
+        {
+            var backfillService = ((IServiceProvider)ScopedServices).GetService<IGeocodingBackfillService>();
+            if (backfillService is not null)
+            {
+                var count = await backfillService.BackfillAsync();
+                Snackbar.Add($"Geocoded {count} deals.", Severity.Success);
+
+                // Refresh pins
+                _pins = (await DealService.GetDealsForMapAsync(_userId)).ToList();
+                StateHasChanged();
+                await InitializeMap();
+            }
+            else
+            {
+                Snackbar.Add("Backfill service not available.", Severity.Warning);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Backfill failed");
+            Snackbar.Add("Backfill failed. Check logs.", Severity.Error);
+        }
+        finally
+        {
+            _isBackfilling = false;
+        }
+    }
+
+    [Inject] private IServiceProvider ScopedServices { get; set; } = null!;
+}

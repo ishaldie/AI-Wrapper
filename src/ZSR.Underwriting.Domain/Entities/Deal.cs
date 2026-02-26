@@ -48,6 +48,8 @@ public class Deal
     public decimal? TargetOccupancy { get; set; }
     public string? ValueAddPlans { get; set; }
     public string? QuickAnalysisContent { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
     // === End temporary fields ===
 
     // EF Core parameterless constructor

@@ -80,7 +80,9 @@ try
         options.AccessDeniedPath = "/access-denied";
         options.ExpireTimeSpan = TimeSpan.FromHours(24);
         options.SlidingExpiration = true;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest
+            : CookieSecurePolicy.Always;
         options.Cookie.SameSite = SameSiteMode.Strict;
         options.Cookie.HttpOnly = true;
     });
@@ -209,6 +211,16 @@ try
     builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
     builder.Services.AddScoped<IApiKeyResolver, ApiKeyResolver>();
 
+    // Add Google Maps geocoding service
+    builder.Services.Configure<GoogleMapsOptions>(
+        builder.Configuration.GetSection(GoogleMapsOptions.SectionName));
+    var googleMapsApiKey = builder.Configuration["GoogleMaps:ApiKey"];
+    if (!string.IsNullOrWhiteSpace(googleMapsApiKey))
+    {
+        builder.Services.AddHttpClient<IGeocodingService, GoogleGeocodingService>();
+        builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();
+    }
+
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
@@ -308,7 +320,10 @@ try
     }
 
     app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-    app.UseHttpsRedirection();
+    if (!app.Environment.IsDevelopment())
+    {
+        app.UseHttpsRedirection();
+    }
     app.UseMiddleware<ZSR.Underwriting.Web.Middleware.SecurityHeadersMiddleware>();
     app.UseSerilogRequestLogging(options =>
     {

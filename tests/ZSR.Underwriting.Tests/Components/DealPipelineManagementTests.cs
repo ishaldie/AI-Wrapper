@@ -87,6 +87,8 @@ public class DealPipelineManagementTests : IAsyncLifetime
         public Task<DealInputDto?> GetDealAsync(Guid id, string userId) => Task.FromResult<DealInputDto?>(null);
         public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
         public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
+        public Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId)
+            => Task.FromResult<IReadOnlyList<DealMapPinDto>>(new List<DealMapPinDto>());
         public Task<IReadOnlyList<DealSummaryDto>> GetAllDealsAsync(string userId)
         {
             var deals = new List<DealSummaryDto>

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
@@ -10,10 +11,14 @@ namespace ZSR.Underwriting.Infrastructure.Services;
 public class DealService : IDealService
 {
     private readonly AppDbContext _db;
+    private readonly IGeocodingService? _geocodingService;
+    private readonly ILogger<DealService> _logger;
 
-    public DealService(AppDbContext db)
+    public DealService(AppDbContext db, ILogger<DealService> logger, IGeocodingService? geocodingService = null)
     {
         _db = db;
+        _logger = logger;
+        _geocodingService = geocodingService;
     }
 
     public async Task<Guid> CreateDealAsync(DealInputDto input, string userId)
@@ -21,6 +26,7 @@ public class DealService : IDealService
         var deal = new Deal(input.PropertyName, userId);
 
         MapFromDto(deal, input);
+        await TryGeocodeAsync(deal);
 
         _db.Deals.Add(deal);
         await _db.SaveChangesAsync();
@@ -33,7 +39,13 @@ public class DealService : IDealService
         var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
             ?? throw new KeyNotFoundException($"Deal {id} not found.");
 
+        var previousAddress = deal.Address;
         MapFromDto(deal, input);
+
+        if (!string.Equals(previousAddress, deal.Address, StringComparison.OrdinalIgnoreCase))
+        {
+            await TryGeocodeAsync(deal);
+        }
 
         await _db.SaveChangesAsync();
     }
@@ -68,6 +80,27 @@ public class DealService : IDealService
             .ToListAsync();
     }
 
+    public async Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId)
+    {
+        return await _db.Deals
+            .Where(d => d.UserId == userId && d.Latitude != null && d.Longitude != null)
+            .Include(d => d.CalculationResult)
+            .Select(d => new DealMapPinDto
+            {
+                Id = d.Id,
+                PropertyName = d.PropertyName,
+                Address = d.Address,
+                Status = d.Status.ToString(),
+                Latitude = d.Latitude!.Value,
+                Longitude = d.Longitude!.Value,
+                UnitCount = d.UnitCount,
+                PurchasePrice = d.PurchasePrice,
+                CapRate = d.CalculationResult != null ? d.CalculationResult.GoingInCapRate : null,
+                Irr = d.CalculationResult != null ? d.CalculationResult.InternalRateOfReturn : null
+            })
+            .ToListAsync();
+    }
+
     public async Task SetStatusAsync(Guid id, string status, string userId)
     {
         var deal = await _db.Deals.FirstOrDefaultAsync(d => d.Id == id && d.UserId == userId)
@@ -85,6 +118,26 @@ public class DealService : IDealService
 
         _db.Deals.Remove(deal);
         await _db.SaveChangesAsync();
+    }
+
+    private async Task TryGeocodeAsync(Deal deal)
+    {
+        if (_geocodingService is null || string.IsNullOrWhiteSpace(deal.Address))
+            return;
+
+        try
+        {
+            var result = await _geocodingService.GeocodeAsync(deal.Address);
+            if (result is not null)
+            {
+                deal.Latitude = result.Latitude;
+                deal.Longitude = result.Longitude;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Geocoding failed for deal {DealName}, continuing without coordinates", deal.Name);
+        }
     }
 
     private static void MapFromDto(Deal deal, DealInputDto input)

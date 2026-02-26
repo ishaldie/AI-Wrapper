@@ -135,6 +135,8 @@ public class DashboardTests : IAsyncLifetime
             => Task.FromResult<IReadOnlyList<DealSummaryDto>>(new List<DealSummaryDto>());
         public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
         public Task DeleteDealAsync(Guid id, string userId) => Task.CompletedTask;
+        public Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId)
+            => Task.FromResult<IReadOnlyList<DealMapPinDto>>(new List<DealMapPinDto>());
     }
 
     private class StubDealServiceWithData : IDealService
@@ -155,5 +157,7 @@ public class DashboardTests : IAsyncLifetime
             return Task.FromResult<IReadOnlyList<DealSummaryDto>>(deals);
         }
         public Task SetStatusAsync(Guid id, string status, string userId) => Task.CompletedTask;
+        public Task<IReadOnlyList<DealMapPinDto>> GetDealsForMapAsync(string userId)
+            => Task.FromResult<IReadOnlyList<DealMapPinDto>>(new List<DealMapPinDto>());
     }
 }
