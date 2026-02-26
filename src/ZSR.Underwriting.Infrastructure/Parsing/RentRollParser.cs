@@ -81,7 +81,7 @@ public class RentRollParser : IDocumentParser
         {
             HeaderValidated = null,
             MissingFieldFound = null,
-            PrepareHeaderForMatch = args => NormalizeHeader(args.Header),
+            PrepareHeaderForMatch = args => SpreadsheetHelper.NormalizeHeader(args.Header),
         });
 
         csv.Read();
@@ -129,7 +129,7 @@ public class RentRollParser : IDocumentParser
         if (rows.Count < 2) return units;
 
         // Build header map from first row using cell references (not list indices)
-        var headerRow = GetCellsByColumn(rows[0], wbPart);
+        var headerRow = SpreadsheetHelper.GetCellsByColumn(rows[0], wbPart);
         var headerMap = MapHeaders(headerRow.Values.ToArray());
 
         // Map canonical names to column indices
@@ -137,14 +137,14 @@ public class RentRollParser : IDocumentParser
         foreach (var (canonical, headerName) in headerMap)
         {
             var col = headerRow.FirstOrDefault(kv =>
-                NormalizeHeader(kv.Value) == NormalizeHeader(headerName));
+                SpreadsheetHelper.NormalizeHeader(kv.Value) == SpreadsheetHelper.NormalizeHeader(headerName));
             if (col.Value != null)
                 colMap[canonical] = col.Key;
         }
 
         for (int i = 1; i < rows.Count; i++)
         {
-            var cellsByCol = GetCellsByColumn(rows[i], wbPart);
+            var cellsByCol = SpreadsheetHelper.GetCellsByColumn(rows[i], wbPart);
 
             string CellVal(string canonical) =>
                 colMap.TryGetValue(canonical, out var colIdx) && cellsByCol.TryGetValue(colIdx, out var val) ? val : "";
@@ -172,9 +172,6 @@ public class RentRollParser : IDocumentParser
         return units;
     }
 
-    /// <summary>
-    /// Maps canonical field names to actual header strings found in the file.
-    /// </summary>
     private static Dictionary<string, string> MapHeaders(string[] headers)
     {
         var result = new Dictionary<string, string>();
@@ -182,7 +179,7 @@ public class RentRollParser : IDocumentParser
         {
             foreach (var header in headers)
             {
-                var normalized = NormalizeHeader(header);
+                var normalized = SpreadsheetHelper.NormalizeHeader(header);
                 if (aliases.Any(a => a.Equals(normalized, StringComparison.OrdinalIgnoreCase)))
                 {
                     result[canonical] = header;
@@ -192,53 +189,6 @@ public class RentRollParser : IDocumentParser
         }
         return result;
     }
-
-    /// <summary>
-    /// Extracts cells from a row keyed by 0-based column index (derived from cell reference).
-    /// Handles sparse rows where OpenXML omits empty cells.
-    /// </summary>
-    private static Dictionary<int, string> GetCellsByColumn(Row row, WorkbookPart wbPart)
-    {
-        var result = new Dictionary<int, string>();
-        foreach (var cell in row.Elements<Cell>())
-        {
-            var colIndex = GetColumnIndex(cell.CellReference?.Value);
-            if (colIndex >= 0)
-                result[colIndex] = GetCellValue(cell, wbPart);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Converts a cell reference like "B3" to a 0-based column index (1).
-    /// </summary>
-    private static int GetColumnIndex(string? cellReference)
-    {
-        if (string.IsNullOrEmpty(cellReference)) return -1;
-        var match = Regex.Match(cellReference, @"^([A-Z]+)");
-        if (!match.Success) return -1;
-
-        var letters = match.Value;
-        int index = 0;
-        foreach (var ch in letters)
-            index = index * 26 + (ch - 'A' + 1);
-        return index - 1; // 0-based
-    }
-
-    private static string GetCellValue(Cell cell, WorkbookPart wbPart)
-    {
-        var value = cell.CellValue?.Text ?? "";
-        if (cell.DataType?.Value == CellValues.SharedString)
-        {
-            var sst = wbPart.SharedStringTablePart?.SharedStringTable;
-            if (sst != null && int.TryParse(value, out var idx))
-                value = sst.ElementAt(idx).InnerText;
-        }
-        return value;
-    }
-
-    private static string NormalizeHeader(string header) =>
-        Regex.Replace(header.Trim(), @"[\s\-_./\\#]+", "").ToLowerInvariant();
 
     private static decimal ParseDecimal(string value)
     {

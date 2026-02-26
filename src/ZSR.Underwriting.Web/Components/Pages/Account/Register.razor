@@ -120,11 +120,7 @@
         }
     }
 
-    private string QuerySuffix(string prefix)
-    {
-        if (string.IsNullOrWhiteSpace(SearchQuery)) return "";
-        return prefix + Uri.EscapeDataString(SearchQuery);
-    }
+    private string QuerySuffix(string prefix) => Helpers.AuthQueryHelper.QuerySuffix(SearchQuery, prefix);
 
     private async Task RegisterUser()
     {
@@ -156,9 +152,6 @@
         await UserManager.AddToRoleAsync(user, "Analyst");
         await SignInManager.SignInAsync(user, isPersistent: false);
 
-        var redirectUrl = string.IsNullOrWhiteSpace(SearchQuery)
-            ? "/search"
-            : $"/search?q={Uri.EscapeDataString(SearchQuery)}";
-        Navigation.NavigateTo(redirectUrl, forceLoad: true);
+        Navigation.NavigateTo(Helpers.AuthQueryHelper.SearchRedirectUrl(SearchQuery), forceLoad: true);
     }
 }

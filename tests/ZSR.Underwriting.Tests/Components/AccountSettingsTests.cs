@@ -90,7 +90,7 @@ public class AccountSettingsTests : IAsyncLifetime
 
         public Task<(string ApiKey, string? Model)?> GetDecryptedKeyAsync(string userId) =>
             _hasKey && _apiKey is not null
-                ? Task.FromResult<(string, string?)?>((ApiKey: _apiKey, Model: _model))
+                ? Task.FromResult<(string, string?)?>((_apiKey, _model))
                 : Task.FromResult<(string, string?)?>(null);
 
         public Task RemoveKeyAsync(string userId) => Task.CompletedTask;

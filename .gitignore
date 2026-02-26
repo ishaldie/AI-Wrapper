@@ -12,6 +12,9 @@
 # Upload storage
 src/ZSR.Underwriting.Web/uploads/
 
+# ASP.NET Data Protection keys (contain unencrypted master keys)
+src/ZSR.Underwriting.Web/keys/
+
 # Windows NUL artifact
 nul
 

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Interfaces;
@@ -11,15 +12,17 @@ namespace ZSR.Underwriting.Application.Services;
 public class SalesCompExtractor : ISalesCompExtractor
 {
     private readonly IClaudeClient _claude;
+    private readonly ILogger<SalesCompExtractor> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public SalesCompExtractor(IClaudeClient claude)
+    public SalesCompExtractor(IClaudeClient claude, ILogger<SalesCompExtractor> logger)
     {
         _claude = claude;
+        _logger = logger;
     }
 
     public async Task<SalesCompResult> ExtractCompsAsync(
@@ -50,8 +53,9 @@ public class SalesCompExtractor : ISalesCompExtractor
             result.OutputTokens = response.OutputTokens;
             return result;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to extract sales comps from Claude response");
             return new SalesCompResult();
         }
     }
@@ -136,7 +140,7 @@ public class SalesCompExtractor : ISalesCompExtractor
 
             return new SalesCompResult { Comps = comps, Adjustments = adjustments };
         }
-        catch
+        catch (JsonException)
         {
             return new SalesCompResult();
         }

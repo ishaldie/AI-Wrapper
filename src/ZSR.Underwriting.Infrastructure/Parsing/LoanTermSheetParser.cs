@@ -130,8 +130,8 @@ public class LoanTermSheetParser : IDocumentParser
         for (int i = 1; i < rows.Count; i++)
         {
             var cells = rows[i].Elements<Cell>().ToList();
-            var term = cells.Count > 0 ? GetCellValue(cells[0], wbPart).Trim() : "";
-            var value = cells.Count > 1 ? GetCellValue(cells[1], wbPart).Trim() : "";
+            var term = cells.Count > 0 ? SpreadsheetHelper.GetCellValue(cells[0], wbPart).Trim() : "";
+            var value = cells.Count > 1 ? SpreadsheetHelper.GetCellValue(cells[1], wbPart).Trim() : "";
 
             if (!string.IsNullOrEmpty(term))
                 terms[term] = value;
@@ -140,15 +140,4 @@ public class LoanTermSheetParser : IDocumentParser
         return terms;
     }
 
-    private static string GetCellValue(Cell cell, WorkbookPart wbPart)
-    {
-        var value = cell.CellValue?.Text ?? "";
-        if (cell.DataType?.Value == CellValues.SharedString)
-        {
-            var sst = wbPart.SharedStringTablePart?.SharedStringTable;
-            if (sst != null && int.TryParse(value, out var idx))
-                value = sst.ElementAt(idx).InnerText;
-        }
-        return value;
-    }
 }

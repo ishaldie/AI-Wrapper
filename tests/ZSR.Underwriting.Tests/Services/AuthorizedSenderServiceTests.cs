@@ -44,6 +44,7 @@ public class AuthorizedSenderServiceTests : IAsyncLifetime
     {
         var result = await _svc.AddAsync(UserId, "  Broker@EXAMPLE.com  ", "Broker");
 
+        Assert.NotNull(result);
         Assert.Equal("broker@example.com", result.Email);
     }
 

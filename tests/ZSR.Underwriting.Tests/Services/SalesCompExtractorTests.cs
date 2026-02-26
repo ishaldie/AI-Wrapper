@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Interfaces;
@@ -63,7 +64,7 @@ public class SalesCompExtractorTests
     public async Task ExtractCompsAsync_ParsesCompsFromClaudeResponse()
     {
         var claude = new StubClaudeClient(ValidCompsJson);
-        var extractor = new SalesCompExtractor(claude);
+        var extractor = new SalesCompExtractor(claude, NullLogger<SalesCompExtractor>.Instance);
         var context = CreateMarketContextWithComps();
 
         var result = await extractor.ExtractCompsAsync(context, "123 Main St, Dallas, TX", 100_000m, 100);
@@ -79,7 +80,7 @@ public class SalesCompExtractorTests
     public async Task ExtractCompsAsync_ParsesAdjustmentsFromClaudeResponse()
     {
         var claude = new StubClaudeClient(ValidCompsJson);
-        var extractor = new SalesCompExtractor(claude);
+        var extractor = new SalesCompExtractor(claude, NullLogger<SalesCompExtractor>.Instance);
         var context = CreateMarketContextWithComps();
 
         var result = await extractor.ExtractCompsAsync(context, "123 Main St, Dallas, TX", 100_000m, 100);
@@ -93,7 +94,7 @@ public class SalesCompExtractorTests
     public async Task ExtractCompsAsync_EmptyComparableTransactions_ReturnsEmptyResult()
     {
         var claude = new StubClaudeClient("{}");
-        var extractor = new SalesCompExtractor(claude);
+        var extractor = new SalesCompExtractor(claude, NullLogger<SalesCompExtractor>.Instance);
         var context = new MarketContextDto(); // No comparable transactions
 
         var result = await extractor.ExtractCompsAsync(context, "123 Main St", 100_000m, 100);
@@ -106,7 +107,7 @@ public class SalesCompExtractorTests
     public async Task ExtractCompsAsync_MalformedClaudeResponse_ReturnsEmptyResult()
     {
         var claude = new StubClaudeClient("This is not JSON at all");
-        var extractor = new SalesCompExtractor(claude);
+        var extractor = new SalesCompExtractor(claude, NullLogger<SalesCompExtractor>.Instance);
         var context = CreateMarketContextWithComps();
 
         var result = await extractor.ExtractCompsAsync(context, "123 Main St", 100_000m, 100);
@@ -119,7 +120,7 @@ public class SalesCompExtractorTests
     public async Task ExtractCompsAsync_CapRateIsParsedCorrectly()
     {
         var claude = new StubClaudeClient(ValidCompsJson);
-        var extractor = new SalesCompExtractor(claude);
+        var extractor = new SalesCompExtractor(claude, NullLogger<SalesCompExtractor>.Instance);
         var context = CreateMarketContextWithComps();
 
         var result = await extractor.ExtractCompsAsync(context, "123 Main St", 100_000m, 100);

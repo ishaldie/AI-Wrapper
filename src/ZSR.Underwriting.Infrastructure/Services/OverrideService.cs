@@ -77,77 +77,38 @@ public class OverrideService : IOverrideService
 
     private static void ApplyRentRollOverrides(Deal deal, ParsedDocumentResult parsed, string source, List<FieldOverrideDto> overrides)
     {
-        if (parsed.TotalMonthlyRent.HasValue)
-        {
-            var annualized = parsed.TotalMonthlyRent.Value * 12;
-            TrackOverride(overrides, "RentRollSummary", deal.RentRollSummary?.ToString() ?? "", annualized.ToString(), source);
-            deal.RentRollSummary = annualized;
-        }
-
-        if (parsed.OccupancyRate.HasValue)
-        {
-            TrackOverride(overrides, "TargetOccupancy", deal.TargetOccupancy?.ToString() ?? "", parsed.OccupancyRate.Value.ToString(), source);
-            deal.TargetOccupancy = parsed.OccupancyRate.Value;
-        }
-
-        if (parsed.UnitCount.HasValue)
-        {
-            TrackOverride(overrides, "UnitCount", deal.UnitCount.ToString(), parsed.UnitCount.Value.ToString(), source);
-            deal.UnitCount = parsed.UnitCount.Value;
-        }
+        decimal? annualized = parsed.TotalMonthlyRent.HasValue ? parsed.TotalMonthlyRent.Value * 12 : null;
+        ApplyField(overrides, source, "RentRollSummary", deal.RentRollSummary?.ToString() ?? "", annualized, v => deal.RentRollSummary = v);
+        ApplyField(overrides, source, "TargetOccupancy", deal.TargetOccupancy?.ToString() ?? "", parsed.OccupancyRate, v => deal.TargetOccupancy = v);
+        ApplyField<int>(overrides, source, "UnitCount", deal.UnitCount.ToString(), parsed.UnitCount, v => deal.UnitCount = v);
     }
 
     private static void ApplyT12Overrides(Deal deal, ParsedDocumentResult parsed, string source, List<FieldOverrideDto> overrides)
     {
-        if (parsed.NetOperatingIncome.HasValue)
-        {
-            TrackOverride(overrides, "T12Summary", deal.T12Summary?.ToString() ?? "", parsed.NetOperatingIncome.Value.ToString(), source);
-            deal.T12Summary = parsed.NetOperatingIncome.Value;
-        }
+        ApplyField(overrides, source, "T12Summary", deal.T12Summary?.ToString() ?? "", parsed.NetOperatingIncome, v => deal.T12Summary = v);
     }
 
     private static void ApplyLoanTermOverrides(Deal deal, ParsedDocumentResult parsed, string source, List<FieldOverrideDto> overrides)
     {
-        if (parsed.LtvRatio.HasValue)
-        {
-            TrackOverride(overrides, "LoanLtv", deal.LoanLtv?.ToString() ?? "", parsed.LtvRatio.Value.ToString(), source);
-            deal.LoanLtv = parsed.LtvRatio.Value;
-        }
-
-        if (parsed.InterestRate.HasValue)
-        {
-            TrackOverride(overrides, "LoanRate", deal.LoanRate?.ToString() ?? "", parsed.InterestRate.Value.ToString(), source);
-            deal.LoanRate = parsed.InterestRate.Value;
-        }
-
-        if (parsed.IsInterestOnly.HasValue)
-        {
-            TrackOverride(overrides, "IsInterestOnly", deal.IsInterestOnly.ToString(), parsed.IsInterestOnly.Value.ToString(), source);
-            deal.IsInterestOnly = parsed.IsInterestOnly.Value;
-        }
-
-        if (parsed.AmortizationYears.HasValue)
-        {
-            TrackOverride(overrides, "AmortizationYears", deal.AmortizationYears?.ToString() ?? "", parsed.AmortizationYears.Value.ToString(), source);
-            deal.AmortizationYears = parsed.AmortizationYears.Value;
-        }
-
-        if (parsed.LoanTermYears.HasValue)
-        {
-            TrackOverride(overrides, "LoanTermYears", deal.LoanTermYears?.ToString() ?? "", parsed.LoanTermYears.Value.ToString(), source);
-            deal.LoanTermYears = parsed.LoanTermYears.Value;
-        }
+        ApplyField(overrides, source, "LoanLtv", deal.LoanLtv?.ToString() ?? "", parsed.LtvRatio, v => deal.LoanLtv = v);
+        ApplyField(overrides, source, "LoanRate", deal.LoanRate?.ToString() ?? "", parsed.InterestRate, v => deal.LoanRate = v);
+        ApplyField(overrides, source, "IsInterestOnly", deal.IsInterestOnly.ToString(), parsed.IsInterestOnly, v => deal.IsInterestOnly = v);
+        ApplyField(overrides, source, "AmortizationYears", deal.AmortizationYears?.ToString() ?? "", parsed.AmortizationYears, v => deal.AmortizationYears = v);
+        ApplyField(overrides, source, "LoanTermYears", deal.LoanTermYears?.ToString() ?? "", parsed.LoanTermYears, v => deal.LoanTermYears = v);
     }
 
-    private static void TrackOverride(List<FieldOverrideDto> overrides, string fieldName, string original, string newValue, string source)
+    private static void ApplyField<T>(List<FieldOverrideDto> overrides, string source, string fieldName, string currentValue, T? newValue, Action<T> setter)
+        where T : struct
     {
+        if (!newValue.HasValue) return;
         overrides.Add(new FieldOverrideDto
         {
             FieldName = fieldName,
-            OriginalValue = original,
-            NewValue = newValue,
+            OriginalValue = currentValue,
+            NewValue = newValue.Value.ToString()!,
             Source = source,
             AppliedAt = DateTime.UtcNow,
         });
+        setter(newValue.Value);
     }
 }

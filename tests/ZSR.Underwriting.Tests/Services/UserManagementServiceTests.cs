@@ -46,7 +46,9 @@ public class UserManagementServiceTests
     public async Task GetAllUsersAsync_Returns_Users_With_Roles()
     {
         using var sp = CreateServiceProvider();
-        await SeedData.SeedAsync(sp);
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "Test123!");
+        try { await SeedData.SeedAsync(sp); }
+        finally { Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null); }
 
         using var scope = sp.CreateScope();
         var svc = scope.ServiceProvider.GetRequiredService<IUserManagementService>();
@@ -61,7 +63,9 @@ public class UserManagementServiceTests
     public async Task AssignRoleAsync_Adds_Role_To_User()
     {
         using var sp = CreateServiceProvider();
-        await SeedData.SeedAsync(sp);
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "Test123!");
+        try { await SeedData.SeedAsync(sp); }
+        finally { Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null); }
 
         // Create a test user
         using (var scope = sp.CreateScope())
@@ -94,7 +98,9 @@ public class UserManagementServiceTests
     public async Task RemoveRoleAsync_Removes_Role_From_User()
     {
         using var sp = CreateServiceProvider();
-        await SeedData.SeedAsync(sp);
+        Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", "Test123!");
+        try { await SeedData.SeedAsync(sp); }
+        finally { Environment.SetEnvironmentVariable("ADMIN_SEED_PASSWORD", null); }
 
         using var scope = sp.CreateScope();
         var svc = scope.ServiceProvider.GetRequiredService<IUserManagementService>();

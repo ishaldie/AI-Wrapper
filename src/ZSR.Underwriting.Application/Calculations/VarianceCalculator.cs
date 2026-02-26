@@ -81,7 +81,7 @@ public class VarianceCalculator : IVarianceCalculator
     private static void AddItem(List<VarianceLineItem> items, string label, decimal projected, decimal actual)
     {
         var variance = actual - projected;
-        var variancePct = projected != 0 ? Math.Abs(variance / projected * 100) : 0;
+        var variancePct = projected != 0 ? variance / projected * 100 : 0;
 
         items.Add(new VarianceLineItem
         {
@@ -90,7 +90,7 @@ public class VarianceCalculator : IVarianceCalculator
             Actual = actual,
             VarianceAmount = variance,
             VariancePercent = variancePct,
-            Severity = variancePct switch
+            Severity = Math.Abs(variancePct) switch
             {
                 < 5 => VarianceSeverity.OnTrack,
                 < 15 => VarianceSeverity.Warning,

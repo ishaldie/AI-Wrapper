@@ -82,7 +82,7 @@ public class ApiKeyResolverTests
         public Task<(string ApiKey, string? Model)?> GetDecryptedKeyAsync(string userId) =>
             _apiKey is null
                 ? Task.FromResult<(string, string?)?>(null)
-                : Task.FromResult<(string, string?)?>((ApiKey: _apiKey, Model: _model));
+                : Task.FromResult<(string, string?)?>((_apiKey, _model));
 
         public Task RemoveKeyAsync(string userId) => Task.CompletedTask;
         public Task<bool> HasKeyAsync(string userId) => Task.FromResult(_apiKey is not null);

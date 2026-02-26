@@ -123,7 +123,7 @@ else
                     <CellTemplate>
                         <MudIconButton Icon="@Icons.Material.Filled.RemoveCircleOutline" Size="Size.Small"
                                        OnClick="@(() => RemoveDealAsync(context.Item.Id))"
-                                       Title="Remove from portfolio" />
+                                       aria-label="Remove from portfolio" />
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>

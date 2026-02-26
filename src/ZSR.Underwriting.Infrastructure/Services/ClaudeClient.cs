@@ -19,7 +19,7 @@ public class ClaudeClient : IClaudeClient
     private readonly ILogger<ClaudeClient> _logger;
     private readonly IApiKeyResolver? _apiKeyResolver;
 
-    private const string ApiVersion = "2023-06-01";
+    public const string AnthropicApiVersion = "2023-06-01";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -92,7 +92,7 @@ public class ClaudeClient : IClaudeClient
             Content = content
         };
         httpRequest.Headers.Add("x-api-key", apiKey);
-        httpRequest.Headers.Add("anthropic-version", ApiVersion);
+        httpRequest.Headers.Add("anthropic-version", AnthropicApiVersion);
 
         _logger.LogInformation("Claude API call: POST v1/messages (model={Model}, max_tokens={MaxTokens})",
             model, maxTokens);

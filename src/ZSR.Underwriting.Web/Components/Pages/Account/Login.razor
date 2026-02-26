@@ -109,17 +109,8 @@
         }
     }
 
-    private string QuerySuffix(string prefix)
-    {
-        if (string.IsNullOrWhiteSpace(SearchQuery)) return "";
-        return prefix + Uri.EscapeDataString(SearchQuery);
-    }
-
-    private string ReturnUrl()
-    {
-        if (string.IsNullOrWhiteSpace(SearchQuery)) return "/search";
-        return $"/search?q={Uri.EscapeDataString(SearchQuery)}";
-    }
+    private string QuerySuffix(string prefix) => Helpers.AuthQueryHelper.QuerySuffix(SearchQuery, prefix);
+    private string ReturnUrl() => Helpers.AuthQueryHelper.SearchRedirectUrl(SearchQuery);
 
     private async Task LoginUser()
     {

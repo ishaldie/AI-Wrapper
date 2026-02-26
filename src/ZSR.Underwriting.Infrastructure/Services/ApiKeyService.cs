@@ -2,8 +2,10 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Infrastructure.Configuration;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
 
@@ -12,17 +14,20 @@ public class ApiKeyService : IApiKeyService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IDataProtector _protector;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ClaudeOptions _claudeOptions;
 
     private const string ProtectorPurpose = "AnthropicApiKey";
 
     public ApiKeyService(
         UserManager<ApplicationUser> userManager,
         IDataProtectionProvider dataProtectionProvider,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IOptions<ClaudeOptions> claudeOptions)
     {
         _userManager = userManager;
         _protector = dataProtectionProvider.CreateProtector(ProtectorPurpose);
         _httpClientFactory = httpClientFactory;
+        _claudeOptions = claudeOptions.Value;
     }
 
     public async Task SaveKeyAsync(string userId, string apiKey, string? model = null)
@@ -76,7 +81,7 @@ public class ApiKeyService : IApiKeyService
             var client = _httpClientFactory.CreateClient();
             var payload = JsonSerializer.Serialize(new
             {
-                model = "claude-haiku-4-5-20251001",
+                model = _claudeOptions.ValidationModel,
                 max_tokens = 1,
                 messages = new[] { new { role = "user", content = "Hi" } }
             });
@@ -86,7 +91,7 @@ public class ApiKeyService : IApiKeyService
                 Content = new StringContent(payload, Encoding.UTF8, "application/json")
             };
             request.Headers.Add("x-api-key", apiKey);
-            request.Headers.Add("anthropic-version", "2023-06-01");
+            request.Headers.Add("anthropic-version", ClaudeClient.AnthropicApiVersion);
 
             var response = await client.SendAsync(request);
 
