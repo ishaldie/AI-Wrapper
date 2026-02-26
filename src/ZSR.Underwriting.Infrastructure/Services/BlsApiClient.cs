@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -6,15 +7,17 @@ namespace ZSR.Underwriting.Infrastructure.Services;
 public class BlsApiClient
 {
     private readonly HttpClient _http;
+    private readonly ILogger<BlsApiClient> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
     };
 
-    public BlsApiClient(HttpClient http)
+    public BlsApiClient(HttpClient http, ILogger<BlsApiClient> logger)
     {
         _http = http;
+        _logger = logger;
     }
 
     /// <summary>
@@ -46,8 +49,9 @@ public class BlsApiClient
                 AreaName = $"{metro}, {state}"
             };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to fetch BLS data for {State}/{Metro}", state, metro);
             return null;
         }
     }

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -6,6 +7,7 @@ namespace ZSR.Underwriting.Infrastructure.Services;
 public class FredApiClient
 {
     private readonly HttpClient _http;
+    private readonly ILogger<FredApiClient> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -17,9 +19,10 @@ public class FredApiClient
     private const string TreasurySeriesId = "DGS10"; // 10-Year Treasury
     private const string RentIndexSeriesId = "CUUR0000SEHA"; // Rent of Primary Residence
 
-    public FredApiClient(HttpClient http)
+    public FredApiClient(HttpClient http, ILogger<FredApiClient> logger)
     {
         _http = http;
+        _logger = logger;
     }
 
     /// <summary>
@@ -45,8 +48,9 @@ public class FredApiClient
                 RentIndex = rent
             };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to fetch FRED economic data");
             return null;
         }
     }
@@ -69,8 +73,9 @@ public class FredApiClient
 
             return null;
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to fetch FRED series {SeriesId}", seriesId);
             return null;
         }
     }

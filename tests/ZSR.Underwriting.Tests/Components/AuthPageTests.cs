@@ -95,10 +95,8 @@ public class AuthPageTests
     public async Task VerifyCode_Page_Redirects_Without_Email()
     {
         var response = await _client.GetAsync("/verify-code");
-        // Should redirect to login since no email query param
-        Assert.True(
-            response.StatusCode == HttpStatusCode.OK ||
-            response.StatusCode == HttpStatusCode.Redirect);
+        Assert.Equal(HttpStatusCode.Found, response.StatusCode);
+        Assert.EndsWith("/login", response.Headers.Location?.OriginalString ?? "");
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 
@@ -18,9 +19,12 @@ public class HudApiClient : IHudApiClient
         PropertyNameCaseInsensitive = true
     };
 
-    public HudApiClient(HttpClient http)
+    private readonly ILogger<HudApiClient> _logger;
+
+    public HudApiClient(HttpClient http, ILogger<HudApiClient> logger)
     {
         _http = http;
+        _logger = logger;
     }
 
     public async Task<HudIncomeLimitsDto?> GetIncomeLimitsAsync(
@@ -54,8 +58,9 @@ public class HudApiClient : IHudApiClient
 
             return MapToDto(match);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to fetch HUD income limits for {StateCode}", stateCode);
             return null;
         }
     }

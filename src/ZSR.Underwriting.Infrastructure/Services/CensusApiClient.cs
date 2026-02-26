@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -6,10 +7,12 @@ namespace ZSR.Underwriting.Infrastructure.Services;
 public class CensusApiClient
 {
     private readonly HttpClient _http;
+    private readonly ILogger<CensusApiClient> _logger;
 
-    public CensusApiClient(HttpClient http)
+    public CensusApiClient(HttpClient http, ILogger<CensusApiClient> logger)
     {
         _http = http;
+        _logger = logger;
     }
 
     /// <summary>
@@ -41,8 +44,9 @@ public class CensusApiClient
                 ZipCode = zipCode
             };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to fetch Census data for zip {ZipCode}", zipCode);
             return null;
         }
     }
@@ -82,8 +86,9 @@ public class CensusApiClient
                 ZipCode = zipCode
             };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to fetch tenant demographics for zip {ZipCode}", zipCode);
             return null;
         }
     }

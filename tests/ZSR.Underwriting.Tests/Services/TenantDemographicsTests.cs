@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.DTOs.Report;
 using ZSR.Underwriting.Application.Services;
@@ -23,7 +24,7 @@ public class CensusDemographicsTests
     {
         var handler = new MockHttpMessageHandler(ValidDemographicsResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.census.gov/") };
-        var service = new CensusApiClient(client);
+        var service = new CensusApiClient(client, NullLogger<CensusApiClient>.Instance);
 
         var result = await service.GetTenantDemographicsAsync("75201");
 
@@ -40,7 +41,7 @@ public class CensusDemographicsTests
     {
         var handler = new MockHttpMessageHandler(ValidDemographicsResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.census.gov/") };
-        var service = new CensusApiClient(client);
+        var service = new CensusApiClient(client, NullLogger<CensusApiClient>.Instance);
 
         var result = await service.GetTenantDemographicsAsync("75201");
 
@@ -55,7 +56,7 @@ public class CensusDemographicsTests
     {
         var handler = new MockHttpMessageHandler("error", HttpStatusCode.InternalServerError);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.census.gov/") };
-        var service = new CensusApiClient(client);
+        var service = new CensusApiClient(client, NullLogger<CensusApiClient>.Instance);
 
         var result = await service.GetTenantDemographicsAsync("00000");
 

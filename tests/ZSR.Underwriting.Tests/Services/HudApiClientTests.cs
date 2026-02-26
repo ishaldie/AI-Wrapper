@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Infrastructure.Services;
 using ZSR.Underwriting.Tests.Helpers;
 
@@ -82,7 +83,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX", "Dallas");
 
@@ -99,7 +100,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX", "dallas");
 
@@ -112,7 +113,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX", "NonexistentCounty");
 
@@ -126,7 +127,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX");
 
@@ -138,7 +139,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler("Server Error", HttpStatusCode.InternalServerError);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX", "Dallas");
 
@@ -150,7 +151,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler("not json", HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX", "Dallas");
 
@@ -162,7 +163,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         await service.GetIncomeLimitsAsync("TX", "Dallas");
 
@@ -178,7 +179,7 @@ public class HudApiClientTests
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
         // HUD API requires Bearer token — client should set Authorization header
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         await service.GetIncomeLimitsAsync("TX", "Dallas");
 
@@ -191,7 +192,7 @@ public class HudApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidHudStateResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://www.huduser.gov/hudapi/public/") };
-        var service = new HudApiClient(client);
+        var service = new HudApiClient(client, NullLogger<HudApiClient>.Instance);
 
         var result = await service.GetIncomeLimitsAsync("TX", "Dallas");
 

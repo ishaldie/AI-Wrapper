@@ -114,8 +114,7 @@
         appUser.TosVersion = tosVersion;
         await UserManager.UpdateAsync(appUser);
 
-        var redirect = !string.IsNullOrWhiteSpace(ReturnUrl) ? ReturnUrl : "/search";
-        Navigation.NavigateTo(redirect, forceLoad: true);
+        Navigation.NavigateTo(Helpers.AuthQueryHelper.SafeLocalRedirect(ReturnUrl), forceLoad: true);
     }
 
     public class AcceptTermsInput

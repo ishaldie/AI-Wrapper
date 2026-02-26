@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
+using ZSR.Underwriting.Web.Helpers;
 
 namespace ZSR.Underwriting.Web.Endpoints;
 
@@ -38,9 +39,10 @@ public static class ExternalAuthEndpoints
             return Results.BadRequest($"Invalid provider: {provider}");
         }
 
+        var safeReturn = AuthQueryHelper.SafeLocalRedirect(returnUrl);
         var properties = new AuthenticationProperties
         {
-            RedirectUri = $"/api/auth/external-callback?returnUrl={Uri.EscapeDataString(returnUrl ?? "/search")}",
+            RedirectUri = $"/api/auth/external-callback?returnUrl={Uri.EscapeDataString(safeReturn)}",
             Items = { ["LoginProvider"] = provider }
         };
 
@@ -67,7 +69,7 @@ public static class ExternalAuthEndpoints
         {
             var userId = info.Principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
             await TrackOAuthLogin(activityTracker, userId, info.LoginProvider);
-            return Results.Redirect(returnUrl ?? "/search");
+            return Results.Redirect(AuthQueryHelper.SafeLocalRedirect(returnUrl));
         }
 
         // No existing link — check if user with this email exists
@@ -89,7 +91,7 @@ public static class ExternalAuthEndpoints
 
             await signInManager.SignInAsync(existingUser, isPersistent: true);
             await TrackOAuthLogin(activityTracker, existingUser.Id, info.LoginProvider);
-            return Results.Redirect(returnUrl ?? "/search");
+            return Results.Redirect(AuthQueryHelper.SafeLocalRedirect(returnUrl));
         }
 
         // Brand new user — auto-create with Analyst role
@@ -114,11 +116,10 @@ public static class ExternalAuthEndpoints
         await TrackOAuthLogin(activityTracker, newUser.Id, info.LoginProvider);
 
         // New OAuth users must accept TOS before accessing the app
-        var acceptTermsUrl = "/accept-terms";
-        if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl != "/search")
-        {
-            acceptTermsUrl += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
-        }
+        var safeReturn = AuthQueryHelper.SafeLocalRedirect(returnUrl);
+        var acceptTermsUrl = safeReturn != "/search"
+            ? $"/accept-terms?returnUrl={Uri.EscapeDataString(safeReturn)}"
+            : "/accept-terms";
         return Results.Redirect(acceptTermsUrl);
     }
 

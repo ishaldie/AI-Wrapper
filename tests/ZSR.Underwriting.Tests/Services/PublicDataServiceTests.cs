@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Logging.Abstractions;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Infrastructure.Services;
@@ -20,7 +21,7 @@ public class CensusApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidCensusResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.census.gov/") };
-        var service = new CensusApiClient(client);
+        var service = new CensusApiClient(client, NullLogger<CensusApiClient>.Instance);
 
         var result = await service.GetCensusDataAsync("75201");
 
@@ -36,7 +37,7 @@ public class CensusApiClientTests
     {
         var handler = new MockHttpMessageHandler("Server Error", HttpStatusCode.InternalServerError);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.census.gov/") };
-        var service = new CensusApiClient(client);
+        var service = new CensusApiClient(client, NullLogger<CensusApiClient>.Instance);
 
         var result = await service.GetCensusDataAsync("00000");
 
@@ -48,7 +49,7 @@ public class CensusApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidCensusResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.census.gov/") };
-        var service = new CensusApiClient(client);
+        var service = new CensusApiClient(client, NullLogger<CensusApiClient>.Instance);
 
         await service.GetCensusDataAsync("75201");
 
@@ -80,7 +81,7 @@ public class BlsApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidBlsResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.bls.gov/") };
-        var service = new BlsApiClient(client);
+        var service = new BlsApiClient(client, NullLogger<BlsApiClient>.Instance);
 
         var result = await service.GetBlsDataAsync("TX", "Dallas");
 
@@ -93,7 +94,7 @@ public class BlsApiClientTests
     {
         var handler = new MockHttpMessageHandler("{}", HttpStatusCode.InternalServerError);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.bls.gov/") };
-        var service = new BlsApiClient(client);
+        var service = new BlsApiClient(client, NullLogger<BlsApiClient>.Instance);
 
         var result = await service.GetBlsDataAsync("TX", "Dallas");
 
@@ -116,7 +117,7 @@ public class FredApiClientTests
     {
         var handler = new MockHttpMessageHandler(ValidFredCpiResponse, HttpStatusCode.OK);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.stlouisfed.org/") };
-        var service = new FredApiClient(client);
+        var service = new FredApiClient(client, NullLogger<FredApiClient>.Instance);
 
         var result = await service.GetFredDataAsync();
 
@@ -129,7 +130,7 @@ public class FredApiClientTests
     {
         var handler = new MockHttpMessageHandler("error", HttpStatusCode.InternalServerError);
         var client = new HttpClient(handler) { BaseAddress = new Uri("https://api.stlouisfed.org/") };
-        var service = new FredApiClient(client);
+        var service = new FredApiClient(client, NullLogger<FredApiClient>.Instance);
 
         var result = await service.GetFredDataAsync();
 
