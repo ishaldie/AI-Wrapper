@@ -211,6 +211,10 @@ try
     builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
     builder.Services.AddScoped<IApiKeyResolver, ApiKeyResolver>();
 
+    // Add monthly actuals and CapEx services
+    builder.Services.AddScoped<IActualsService, ActualsService>();
+    builder.Services.AddScoped<ICapExService, CapExService>();
+
     // Add geocoding service (Nominatim/OpenStreetMap — free, no API key needed)
     builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
     builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();

@@ -24,6 +24,8 @@
 @inject IContractService ContractService
 @inject IRentRollService RentRollService
 @inject IPortfolioService PortfolioService
+@inject IActualsService ActualsService
+@inject ICapExService CapExService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -915,13 +917,136 @@ else
 
             <MudTabPanel Text="Actuals" Icon="@Icons.Material.Filled.ReceiptLong">
                 <div class="deal-tab-content">
-                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Large" Style="color: #D1D5DB;" />
-                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Monthly Actuals</MudText>
-                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
-                            Track actual monthly revenue, expenses, and NOI vs. projections. Coming in Track 4.
-                        </MudText>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Monthly Actuals — @_actualsYear</MudText>
+                        <MudStack Row="true" Spacing="2">
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronLeft"
+                                           OnClick="@(() => ChangeActualsYear(-1))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.ChevronRight"
+                                           OnClick="@(() => ChangeActualsYear(1))" />
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Material.Filled.Add"
+                                       OnClick="@(() => _showActualForm = true)"
+                                       Style="text-transform: none;">
+                                Add Month
+                            </MudButton>
+                        </MudStack>
                     </MudStack>
+
+                    @if (_annualSummary is not null && _annualSummary.MonthsReported > 0)
+                    {
+                        <MudGrid Class="mb-4">
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">YTD Revenue</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_annualSummary.TotalRevenue.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">YTD NOI</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_annualSummary.TotalNoi.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">YTD Cash Flow</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_annualSummary.TotalCashFlow.ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="3">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Avg Occupancy</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_annualSummary.AverageOccupancy.ToString("F1")%</MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    }
+
+                    @if (_showActualForm)
+                    {
+                        <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight: 600;">Enter Monthly Data</MudText>
+                            <MudGrid>
+                                <MudItem xs="6" md="2">
+                                    <MudSelect @bind-Value="_newActualMonth" Label="Month" Variant="Variant.Outlined">
+                                        @for (int m = 1; m <= 12; m++)
+                                        {
+                                            var month = m;
+                                            <MudSelectItem Value="@month">@(new DateTime(2026, month, 1).ToString("MMM"))</MudSelectItem>
+                                        }
+                                    </MudSelect>
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newActualGri" Label="Gross Rental Income" Variant="Variant.Outlined"
+                                                     Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newActualVacancy" Label="Vacancy Loss" Variant="Variant.Outlined"
+                                                     Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newActualExpenses" Label="Total OpEx" Variant="Variant.Outlined"
+                                                     Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newActualDebtService" Label="Debt Service" Variant="Variant.Outlined"
+                                                     Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newActualOccupied" Label="Occupied Units" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" Class="d-flex justify-end gap-2">
+                                    <MudButton Variant="Variant.Text" OnClick="@(() => _showActualForm = false)"
+                                               Style="text-transform: none;">Cancel</MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                               OnClick="SaveActualAsync"
+                                               Style="text-transform: none;">Save</MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+
+                    @if (_yearActuals.Count > 0)
+                    {
+                        <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th style="text-align: right;">EGI</th>
+                                    <th style="text-align: right;">OpEx</th>
+                                    <th style="text-align: right;">NOI</th>
+                                    <th style="text-align: right;">Cash Flow</th>
+                                    <th style="text-align: right;">Occupancy</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in _yearActuals)
+                                {
+                                    <tr>
+                                        <td>@(new DateTime(a.Year, a.Month, 1).ToString("MMM yyyy"))</td>
+                                        <td style="text-align: right;">@a.EffectiveGrossIncome.ToString("C0")</td>
+                                        <td style="text-align: right;">@a.TotalOperatingExpenses.ToString("C0")</td>
+                                        <td style="text-align: right; font-weight: 600;">@a.NetOperatingIncome.ToString("C0")</td>
+                                        <td style="text-align: right;">@a.CashFlow.ToString("C0")</td>
+                                        <td style="text-align: right;">@a.OccupancyPercent.ToString("F1")%</td>
+                                        <td>
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                           OnClick="@(() => DeleteActualAsync(a.Id))" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    }
+                    else
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.ReceiptLong" Size="Size.Large" Style="color: #D1D5DB;" />
+                            <MudText Typo="Typo.body1" Style="color: #6B7280;">No actuals for @_actualsYear</MudText>
+                        </MudStack>
+                    }
                 </div>
             </MudTabPanel>
 
@@ -939,13 +1064,113 @@ else
 
             <MudTabPanel Text="CapEx" Icon="@Icons.Material.Filled.Construction">
                 <div class="deal-tab-content">
-                    <MudStack AlignItems="AlignItems.Center" Class="pa-8">
-                        <MudIcon Icon="@Icons.Material.Filled.Construction" Size="Size.Large" Style="color: #D1D5DB;" />
-                        <MudText Typo="Typo.h6" Style="color: #6B7280;">Capital Expenditures</MudText>
-                        <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
-                            Track renovation projects, budgets vs. actuals, and ROI. Coming in Track 7.
-                        </MudText>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-4">
+                        <MudText Typo="Typo.h6" Style="font-weight: 600; color: #1A2332;">Capital Expenditures</MudText>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="@(() => _showCapExForm = true)"
+                                   Style="text-transform: none;">
+                            Add Project
+                        </MudButton>
                     </MudStack>
+
+                    @if (_capExProjects.Count > 0)
+                    {
+                        <MudGrid Class="mb-4">
+                            <MudItem xs="6" md="4">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Budget</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_capExProjects.Sum(p => p.BudgetAmount).ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="6" md="4">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Spent</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_capExProjects.Sum(p => p.ActualSpend).ToString("C0")</MudText>
+                                </MudPaper>
+                            </MudItem>
+                            <MudItem xs="12" md="4">
+                                <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                    <MudText Typo="Typo.caption" Style="color: #6B7280;">Projects</MudText>
+                                    <MudText Typo="Typo.h6" Style="font-weight: 700;">@_capExProjects.Count</MudText>
+                                </MudPaper>
+                            </MudItem>
+                        </MudGrid>
+                    }
+
+                    @if (_showCapExForm)
+                    {
+                        <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <MudGrid>
+                                <MudItem xs="12" md="4">
+                                    <MudTextField @bind-Value="_newCapExName" Label="Project Name" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudNumericField @bind-Value="_newCapExBudget" Label="Budget" Variant="Variant.Outlined"
+                                                     Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="6" md="2">
+                                    <MudNumericField @bind-Value="_newCapExUnits" Label="Units Affected" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="12" md="3" Class="d-flex align-end gap-2">
+                                    <MudButton Variant="Variant.Text" OnClick="@(() => _showCapExForm = false)"
+                                               Style="text-transform: none;">Cancel</MudButton>
+                                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                               OnClick="AddCapExProjectAsync"
+                                               Style="text-transform: none;">Add</MudButton>
+                                </MudItem>
+                            </MudGrid>
+                        </MudPaper>
+                    }
+
+                    @foreach (var project in _capExProjects)
+                    {
+                        <MudCard Elevation="0" Class="mb-3" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <MudCardContent>
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <MudStack Spacing="0">
+                                        <MudText Typo="Typo.subtitle1" Style="font-weight: 600;">@project.Name</MudText>
+                                        @if (project.UnitsAffected.HasValue)
+                                        {
+                                            <MudText Typo="Typo.caption" Style="color: #6B7280;">@project.UnitsAffected units affected</MudText>
+                                        }
+                                    </MudStack>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudChip T="string" Size="Size.Small"
+                                                 Color="@(project.Status == CapExStatus.Complete ? Color.Success :
+                                                           project.Status == CapExStatus.InProgress ? Color.Info :
+                                                           project.Status == CapExStatus.Cancelled ? Color.Error : Color.Default)">
+                                            @project.Status
+                                        </MudChip>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small"
+                                                       OnClick="@(() => DeleteCapExProjectAsync(project.Id))" />
+                                    </MudStack>
+                                </MudStack>
+                                <MudProgressLinear Color="@(project.BudgetUtilizationPercent > 100 ? Color.Error : Color.Primary)"
+                                                   Value="@((double)Math.Min(project.BudgetUtilizationPercent, 100))"
+                                                   Class="my-2" />
+                                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                                    <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                                        @project.ActualSpend.ToString("C0") of @project.BudgetAmount.ToString("C0")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Style="font-weight: 600;">
+                                        @project.BudgetUtilizationPercent.ToString("F0")%
+                                    </MudText>
+                                </MudStack>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+
+                    @if (_capExProjects.Count == 0 && !_showCapExForm)
+                    {
+                        <MudStack AlignItems="AlignItems.Center" Class="pa-8">
+                            <MudIcon Icon="@Icons.Material.Filled.Construction" Size="Size.Large" Style="color: #D1D5DB;" />
+                            <MudText Typo="Typo.body1" Style="color: #6B7280;">No CapEx projects</MudText>
+                            <MudText Typo="Typo.body2" Style="color: #9CA3AF;">
+                                Track renovation projects, budgets, and ROI.
+                            </MudText>
+                        </MudStack>
+                    }
                 </div>
             </MudTabPanel>
         }
@@ -1034,6 +1259,25 @@ else
     private decimal _newUnitMarketRent;
     private UnitStatus _newUnitStatus = UnitStatus.Vacant;
     private string? _newUnitTenant;
+
+    // Actuals tab (Track 4)
+    private List<MonthlyActual> _yearActuals = new();
+    private AnnualSummaryDto? _annualSummary;
+    private int _actualsYear = DateTime.UtcNow.Year;
+    private bool _showActualForm;
+    private int _newActualMonth = DateTime.UtcNow.Month;
+    private decimal _newActualGri;
+    private decimal _newActualVacancy;
+    private decimal _newActualExpenses;
+    private decimal _newActualDebtService;
+    private int _newActualOccupied;
+
+    // CapEx tab (Track 7)
+    private List<CapExProject> _capExProjects = new();
+    private bool _showCapExForm;
+    private string _newCapExName = "";
+    private decimal _newCapExBudget;
+    private int? _newCapExUnits;
 
     private string DealIngestEmail => $"deal-{_deal?.ShortCode}@ingest.zsrunderwriting.com";
 
@@ -1137,6 +1381,8 @@ else
             {
                 _rentRollUnits = (await RentRollService.GetUnitsForDealAsync(_deal.Id)).ToList();
                 _rentRollSummary = await RentRollService.GetSummaryAsync(_deal.Id);
+                await RefreshActualsData();
+                _capExProjects = (await CapExService.GetProjectsAsync(_deal.Id)).ToList();
             }
         }
 
@@ -1247,6 +1493,72 @@ else
         _newUnitStatus = UnitStatus.Vacant;
         _newUnitTenant = null;
         _showUnitForm = false;
+    }
+
+    // === Actuals methods ===
+
+    private async Task RefreshActualsData()
+    {
+        _yearActuals = (await ActualsService.GetForYearAsync(DealId, _actualsYear)).ToList();
+        _annualSummary = await ActualsService.GetAnnualSummaryAsync(DealId, _actualsYear);
+    }
+
+    private async Task ChangeActualsYear(int delta)
+    {
+        _actualsYear += delta;
+        await RefreshActualsData();
+    }
+
+    private async Task SaveActualAsync()
+    {
+        if (_newActualGri <= 0) return;
+        var actual = new MonthlyActual(DealId, _actualsYear, _newActualMonth)
+        {
+            GrossRentalIncome = _newActualGri,
+            VacancyLoss = _newActualVacancy,
+            PropertyTaxes = _newActualExpenses * 0.25m,
+            Insurance = _newActualExpenses * 0.1m,
+            Utilities = _newActualExpenses * 0.15m,
+            Repairs = _newActualExpenses * 0.1m,
+            Management = _newActualExpenses * 0.2m,
+            OtherExpenses = _newActualExpenses * 0.2m,
+            DebtService = _newActualDebtService,
+            OccupiedUnits = _newActualOccupied,
+            TotalUnits = _deal?.UnitCount ?? 0
+        };
+        await ActualsService.SaveAsync(actual);
+        await RefreshActualsData();
+        _showActualForm = false;
+        Snackbar.Add($"Actuals saved for {new DateTime(_actualsYear, _newActualMonth, 1):MMM yyyy}.", Severity.Success);
+    }
+
+    private async Task DeleteActualAsync(Guid id)
+    {
+        await ActualsService.DeleteAsync(id);
+        await RefreshActualsData();
+    }
+
+    // === CapEx methods ===
+
+    private async Task AddCapExProjectAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_newCapExName) || _newCapExBudget <= 0) return;
+        var project = new CapExProject(DealId, _newCapExName, _newCapExBudget)
+        {
+            UnitsAffected = _newCapExUnits
+        };
+        await CapExService.AddProjectAsync(project);
+        _capExProjects = (await CapExService.GetProjectsAsync(DealId)).ToList();
+        _newCapExName = "";
+        _newCapExBudget = 0;
+        _newCapExUnits = null;
+        _showCapExForm = false;
+    }
+
+    private async Task DeleteCapExProjectAsync(Guid projectId)
+    {
+        await CapExService.DeleteProjectAsync(projectId);
+        _capExProjects = (await CapExService.GetProjectsAsync(DealId)).ToList();
     }
 
     private async Task RefreshDealData()

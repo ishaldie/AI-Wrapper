@@ -30,6 +30,9 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<RentRollUnit> RentRollUnits => Set<RentRollUnit>();
     public DbSet<ContractTimeline> ContractTimelines => Set<ContractTimeline>();
     public DbSet<ClosingCostItem> ClosingCostItems => Set<ClosingCostItem>();
+    public DbSet<MonthlyActual> MonthlyActuals => Set<MonthlyActual>();
+    public DbSet<CapExProject> CapExProjects => Set<CapExProject>();
+    public DbSet<CapExLineItem> CapExLineItems => Set<CapExLineItem>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -425,6 +428,74 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.HasOne(e => e.Deal)
                 .WithMany()
                 .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- MonthlyActual (Track 4) ---
+        modelBuilder.Entity<MonthlyActual>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => new { e.DealId, e.Year, e.Month }).IsUnique();
+
+            entity.Property(e => e.GrossRentalIncome).HasPrecision(18, 2);
+            entity.Property(e => e.VacancyLoss).HasPrecision(18, 2);
+            entity.Property(e => e.OtherIncome).HasPrecision(18, 2);
+            entity.Property(e => e.EffectiveGrossIncome).HasPrecision(18, 2);
+            entity.Property(e => e.PropertyTaxes).HasPrecision(18, 2);
+            entity.Property(e => e.Insurance).HasPrecision(18, 2);
+            entity.Property(e => e.Utilities).HasPrecision(18, 2);
+            entity.Property(e => e.Repairs).HasPrecision(18, 2);
+            entity.Property(e => e.Management).HasPrecision(18, 2);
+            entity.Property(e => e.Payroll).HasPrecision(18, 2);
+            entity.Property(e => e.Marketing).HasPrecision(18, 2);
+            entity.Property(e => e.Administrative).HasPrecision(18, 2);
+            entity.Property(e => e.OtherExpenses).HasPrecision(18, 2);
+            entity.Property(e => e.TotalOperatingExpenses).HasPrecision(18, 2);
+            entity.Property(e => e.NetOperatingIncome).HasPrecision(18, 2);
+            entity.Property(e => e.DebtService).HasPrecision(18, 2);
+            entity.Property(e => e.CapitalExpenditures).HasPrecision(18, 2);
+            entity.Property(e => e.CashFlow).HasPrecision(18, 2);
+            entity.Property(e => e.OccupancyPercent).HasPrecision(5, 2);
+            entity.Property(e => e.Notes).HasMaxLength(2000);
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- CapExProject (Track 7) ---
+        modelBuilder.Entity<CapExProject>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.BudgetAmount).HasPrecision(18, 2);
+            entity.Property(e => e.ActualSpend).HasPrecision(18, 2);
+            entity.Property(e => e.ExpectedRentIncrease).HasPrecision(18, 2);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            entity.Ignore(e => e.BudgetVariance);
+            entity.Ignore(e => e.BudgetUtilizationPercent);
+            entity.HasIndex(e => e.DealId);
+
+            entity.HasOne(e => e.Deal)
+                .WithMany()
+                .HasForeignKey(e => e.DealId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- CapExLineItem (Track 7) ---
+        modelBuilder.Entity<CapExLineItem>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Description).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.Vendor).HasMaxLength(200);
+            entity.Property(e => e.Amount).HasPrecision(18, 2);
+            entity.HasIndex(e => e.CapExProjectId);
+
+            entity.HasOne(e => e.Project)
+                .WithMany(p => p.LineItems)
+                .HasForeignKey(e => e.CapExProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

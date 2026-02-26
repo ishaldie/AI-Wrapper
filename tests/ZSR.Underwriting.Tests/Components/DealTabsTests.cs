@@ -49,6 +49,8 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -246,6 +248,8 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -406,6 +410,8 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -527,6 +533,8 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -660,6 +668,8 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -829,6 +839,8 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -1037,6 +1049,29 @@ internal class NoOpRentRollService : IRentRollService
     public Task<IReadOnlyList<RentRollUnit>> GetUnitsForDealAsync(Guid dealId) => Task.FromResult<IReadOnlyList<RentRollUnit>>(new List<RentRollUnit>());
     public Task<RentRollSummaryDto> GetSummaryAsync(Guid dealId) => Task.FromResult(new RentRollSummaryDto());
     public Task BulkAddUnitsAsync(IEnumerable<RentRollUnit> units) => Task.CompletedTask;
+}
+
+internal class NoOpActualsService : IActualsService
+{
+    public Task<MonthlyActual?> GetAsync(Guid dealId, int year, int month) => Task.FromResult<MonthlyActual?>(null);
+    public Task<Guid> SaveAsync(MonthlyActual actual) => Task.FromResult(Guid.NewGuid());
+    public Task DeleteAsync(Guid id) => Task.CompletedTask;
+    public Task<IReadOnlyList<MonthlyActual>> GetForYearAsync(Guid dealId, int year) => Task.FromResult<IReadOnlyList<MonthlyActual>>(new List<MonthlyActual>());
+    public Task<IReadOnlyList<MonthlyActual>> GetTrailingTwelveAsync(Guid dealId) => Task.FromResult<IReadOnlyList<MonthlyActual>>(new List<MonthlyActual>());
+    public Task<AnnualSummaryDto> GetAnnualSummaryAsync(Guid dealId, int year) => Task.FromResult(new AnnualSummaryDto { Year = year });
+}
+
+internal class NoOpCapExService : ICapExService
+{
+    public Task<IReadOnlyList<CapExProject>> GetProjectsAsync(Guid dealId) => Task.FromResult<IReadOnlyList<CapExProject>>(new List<CapExProject>());
+    public Task<CapExProject?> GetProjectAsync(Guid projectId) => Task.FromResult<CapExProject?>(null);
+    public Task<Guid> AddProjectAsync(CapExProject project) => Task.FromResult(Guid.NewGuid());
+    public Task UpdateProjectAsync(CapExProject project) => Task.CompletedTask;
+    public Task DeleteProjectAsync(Guid projectId) => Task.CompletedTask;
+    public Task<Guid> AddLineItemAsync(CapExLineItem lineItem) => Task.FromResult(Guid.NewGuid());
+    public Task DeleteLineItemAsync(Guid lineItemId) => Task.CompletedTask;
+    public Task<decimal> GetTotalBudgetAsync(Guid dealId) => Task.FromResult(0m);
+    public Task<decimal> GetTotalSpendAsync(Guid dealId) => Task.FromResult(0m);
 }
 
 internal class NoOpPortfolioService : IPortfolioService

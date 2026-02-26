@@ -40,6 +40,8 @@ public class DealTabsPhaseTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
         _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
         _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
