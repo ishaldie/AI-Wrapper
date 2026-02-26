@@ -1,25 +1,51 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
+using ZSR.Underwriting.Application.Constants;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Models;
 
 namespace ZSR.Underwriting.Application.Services;
 
 public class UnderwritingPromptBuilder : IPromptBuilder
 {
-    private const string SystemRole =
+    private const string MultifamilySystemRole =
         "You are a senior multifamily real estate underwriting analyst at ZSR Ventures. " +
         "You produce institutional-quality prose for underwriting reports. " +
         "Be precise with numbers, concise in language, and analytical in tone. " +
         "Do not use markdown headers or bullet points unless explicitly requested.";
 
+    private const string SeniorHousingSystemRole =
+        "You are a senior housing underwriting analyst at ZSR Ventures specializing in assisted living, " +
+        "skilled nursing, memory care, and CCRC facilities. You understand payer mix dynamics (private pay, " +
+        "Medicaid, Medicare), staffing-driven cost structures, regulatory compliance (CMS star ratings, " +
+        "deficiency citations), and bed-based revenue models. You produce institutional-quality prose for " +
+        "underwriting reports. Be precise with numbers, concise in language, and analytical in tone. " +
+        "Do not use markdown headers or bullet points unless explicitly requested.";
+
+    private static string GetSystemRole(PropertyType type) =>
+        ProtocolDefaults.IsSeniorHousing(type) ? SeniorHousingSystemRole : MultifamilySystemRole;
+
+    private static string GetAssetTypeLabel(PropertyType type) => type switch
+    {
+        PropertyType.AssistedLiving => "assisted living",
+        PropertyType.SkilledNursing => "skilled nursing facility",
+        PropertyType.MemoryCare => "memory care",
+        PropertyType.CCRC => "continuing care retirement community (CCRC)",
+        _ => "multifamily"
+    };
+
     public ClaudeRequest BuildExecutiveSummaryPrompt(ProseGenerationContext context)
     {
+        var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
+        var systemRole = GetSystemRole(context.Deal.PropertyType);
         var sb = new StringBuilder();
-        sb.AppendLine("Write an executive summary for the following multifamily acquisition opportunity.");
+        sb.AppendLine($"Write an executive summary for the following {assetType} acquisition opportunity.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
+        AppendSeniorHousingMetrics(sb, context);
         AppendFinancialMetrics(sb, context);
         sb.AppendLine();
         sb.AppendLine("The executive summary should include:");
@@ -30,7 +56,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = SystemRole + " Focus on the executive summary for this underwriting report.",
+            SystemPrompt = systemRole + " Focus on the executive summary for this underwriting report.",
             UserMessage = sb.ToString(),
             MaxTokens = 2048
         };
@@ -38,10 +64,12 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     public ClaudeRequest BuildMarketContextPrompt(ProseGenerationContext context)
     {
+        var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var sb = new StringBuilder();
-        sb.AppendLine("Write a market context analysis for the following multifamily acquisition.");
+        sb.AppendLine($"Write a market context analysis for the following {assetType} acquisition.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
+        AppendSeniorHousingMetrics(sb, context);
 
         if (context.MarketContext is { } mc)
         {
@@ -68,11 +96,14 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         }
 
         sb.AppendLine();
-        sb.AppendLine("Write a 2-3 paragraph market context covering supply-demand dynamics, economic drivers, and rent growth outlook.");
+        if (ProtocolDefaults.IsSeniorHousing(context.Deal.PropertyType))
+            sb.AppendLine("Write a 2-3 paragraph market context covering senior housing supply-demand dynamics, demographic trends (aging population), regulatory environment, and rate growth outlook.");
+        else
+            sb.AppendLine("Write a 2-3 paragraph market context covering supply-demand dynamics, economic drivers, and rent growth outlook.");
 
         return new ClaudeRequest
         {
-            SystemPrompt = SystemRole + " Focus on market context and economic analysis.",
+            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Focus on market context and economic analysis.",
             UserMessage = sb.ToString(),
             MaxTokens = 1536
         };
@@ -80,8 +111,9 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     public ClaudeRequest BuildValueCreationPrompt(ProseGenerationContext context)
     {
+        var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var sb = new StringBuilder();
-        sb.AppendLine("Write a value creation strategy for the following multifamily acquisition.");
+        sb.AppendLine($"Write a value creation strategy for the following {assetType} acquisition.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
 
@@ -107,7 +139,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = SystemRole + " Focus on value creation strategy and execution planning.",
+            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Focus on value creation strategy and execution planning.",
             UserMessage = sb.ToString(),
             MaxTokens = 1536
         };
@@ -115,8 +147,9 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     public ClaudeRequest BuildRiskAssessmentPrompt(ProseGenerationContext context)
     {
+        var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var sb = new StringBuilder();
-        sb.AppendLine("Analyze the risks for the following multifamily acquisition.");
+        sb.AppendLine($"Analyze the risks for the following {assetType} acquisition.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFinancialMetrics(sb, context);
@@ -130,7 +163,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = SystemRole + " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies.",
+            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies.",
             UserMessage = sb.ToString(),
             MaxTokens = 2048
         };
@@ -138,8 +171,9 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     public ClaudeRequest BuildInvestmentDecisionPrompt(ProseGenerationContext context)
     {
+        var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var sb = new StringBuilder();
-        sb.AppendLine("Make an investment decision for the following multifamily acquisition.");
+        sb.AppendLine($"Make an investment decision for the following {assetType} acquisition.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFinancialMetrics(sb, context);
@@ -166,7 +200,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = SystemRole + " Make a GO, CONDITIONAL GO, or NO GO investment decision based on the ZSR Ventures underwriting protocol.",
+            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Make a GO, CONDITIONAL GO, or NO GO investment decision based on the ZSR Ventures underwriting protocol.",
             UserMessage = sb.ToString(),
             MaxTokens = 1536
         };
@@ -174,8 +208,9 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     public ClaudeRequest BuildPropertyOverviewPrompt(ProseGenerationContext context)
     {
+        var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var sb = new StringBuilder();
-        sb.AppendLine("Write a property overview paragraph for the following multifamily asset.");
+        sb.AppendLine($"Write a property overview paragraph for the following {assetType} asset.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
 
@@ -184,7 +219,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = SystemRole + " Write a concise property overview for the underwriting report.",
+            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Write a concise property overview for the underwriting report.",
             UserMessage = sb.ToString(),
             MaxTokens = 512
         };
@@ -195,13 +230,74 @@ public class UnderwritingPromptBuilder : IPromptBuilder
     private static void AppendPropertyHeader(StringBuilder sb, ProseGenerationContext context)
     {
         var deal = context.Deal;
+        var isSenior = ProtocolDefaults.IsSeniorHousing(deal.PropertyType);
         sb.AppendLine("## Property Information");
         sb.AppendLine($"- Property: {deal.PropertyName}");
+        sb.AppendLine($"- Property Type: {GetAssetTypeLabel(deal.PropertyType)}");
         sb.AppendLine($"- Address: {deal.Address}");
-        sb.AppendLine($"- Units: {deal.UnitCount:N0}");
+        if (isSenior)
+        {
+            sb.AppendLine($"- Licensed Beds: {deal.LicensedBeds ?? 0:N0}");
+            if (deal.PurchasePrice > 0 && (deal.LicensedBeds ?? 0) > 0)
+                sb.AppendLine($"- Price/Bed: {FormatCurrency(deal.PurchasePrice / deal.LicensedBeds!.Value)}");
+        }
+        else
+        {
+            sb.AppendLine($"- Units: {deal.UnitCount:N0}");
+            if (deal.PurchasePrice > 0 && deal.UnitCount > 0)
+                sb.AppendLine($"- Price/Unit: {FormatCurrency(deal.PurchasePrice / deal.UnitCount)}");
+        }
         sb.AppendLine($"- Purchase Price: {FormatCurrency(deal.PurchasePrice)}");
-        if (deal.PurchasePrice > 0 && deal.UnitCount > 0)
-            sb.AppendLine($"- Price/Unit: {FormatCurrency(deal.PurchasePrice / deal.UnitCount)}");
+        sb.AppendLine();
+    }
+
+    private static void AppendSeniorHousingMetrics(StringBuilder sb, ProseGenerationContext context)
+    {
+        var deal = context.Deal;
+        if (!ProtocolDefaults.IsSeniorHousing(deal.PropertyType)) return;
+
+        sb.AppendLine("## Senior Housing Metrics");
+        if (deal.AlBeds.HasValue) sb.AppendLine($"- AL Beds: {deal.AlBeds.Value}");
+        if (deal.SnfBeds.HasValue) sb.AppendLine($"- SNF Beds: {deal.SnfBeds.Value}");
+        if (deal.MemoryCareBeds.HasValue) sb.AppendLine($"- Memory Care Beds: {deal.MemoryCareBeds.Value}");
+        if (deal.AverageDailyRate.HasValue) sb.AppendLine($"- Average Daily Rate: {FormatCurrency(deal.AverageDailyRate.Value)}");
+        if (deal.PrivatePayPct.HasValue) sb.AppendLine($"- Private Pay: {deal.PrivatePayPct.Value:N1}%");
+        if (deal.MedicaidPct.HasValue) sb.AppendLine($"- Medicaid: {deal.MedicaidPct.Value:N1}%");
+        if (deal.MedicarePct.HasValue) sb.AppendLine($"- Medicare: {deal.MedicarePct.Value:N1}%");
+        if (deal.StaffingRatio.HasValue) sb.AppendLine($"- Staffing Ratio: {deal.StaffingRatio.Value:N2}");
+        if (!string.IsNullOrWhiteSpace(deal.LicenseType)) sb.AppendLine($"- License Type: {deal.LicenseType}");
+        if (deal.AverageLengthOfStayMonths.HasValue) sb.AppendLine($"- Average Length of Stay: {deal.AverageLengthOfStayMonths.Value} months");
+
+        // Include CMS data if available
+        if (!string.IsNullOrWhiteSpace(deal.CmsData))
+        {
+            try
+            {
+                var cms = JsonSerializer.Deserialize<CmsProviderDto>(deal.CmsData);
+                if (cms != null)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("## CMS Care Compare Data");
+                    sb.AppendLine($"- Overall Star Rating: {cms.OverallRating}/5");
+                    sb.AppendLine($"- Health Inspection Rating: {cms.HealthInspectionRating}/5");
+                    sb.AppendLine($"- Staffing Rating: {cms.StaffingRating}/5");
+                    sb.AppendLine($"- Quality Measure Rating: {cms.QualityMeasureRating}/5");
+                    sb.AppendLine($"- Total Deficiencies: {cms.TotalDeficiencies}");
+                    sb.AppendLine($"- Number of Fines: {cms.NumberOfFines} (Total: {FormatCurrency(cms.TotalFinesAmount)})");
+                    sb.AppendLine($"- Certified Beds: {cms.CertifiedBeds}");
+                    sb.AppendLine($"- RN Hours/Resident/Day: {cms.RnHoursPerResidentDay:N2}");
+                    sb.AppendLine($"- Nursing Turnover: {cms.NursingTurnoverPct:N1}%");
+                    if (cms.AbuseFlag) sb.AppendLine("- WARNING: Abuse flag present");
+                    if (!string.IsNullOrWhiteSpace(cms.SpecialFocusStatus))
+                        sb.AppendLine($"- Special Focus Status: {cms.SpecialFocusStatus}");
+                }
+            }
+            catch
+            {
+                // CMS data parse failure is non-fatal
+            }
+        }
+
         sb.AppendLine();
     }
 

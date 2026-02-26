@@ -1,5 +1,6 @@
 using FluentValidation;
 using ZSR.Underwriting.Application.DTOs;
+using ZSR.Underwriting.Domain.Enums;
 
 namespace ZSR.Underwriting.Application.Validators;
 
@@ -14,13 +15,44 @@ public class DealInputValidator : AbstractValidator<DealInputDto>
         RuleFor(x => x.Address)
             .NotEmpty().WithMessage("Address is required.");
 
-        RuleFor(x => x.UnitCount)
-            .NotNull().WithMessage("Unit count is required.")
-            .GreaterThan(0).WithMessage("Unit count must be greater than 0.");
+        // UnitCount required for multifamily only
+        When(x => !x.IsSeniorHousing, () =>
+        {
+            RuleFor(x => x.UnitCount)
+                .NotNull().WithMessage("Unit count is required.")
+                .GreaterThan(0).WithMessage("Unit count must be greater than 0.");
+        });
 
         RuleFor(x => x.PurchasePrice)
             .NotNull().WithMessage("Purchase price is required.")
             .GreaterThan(0).WithMessage("Purchase price must be greater than 0.");
+
+        // Senior housing conditional rules
+        When(x => x.IsSeniorHousing, () =>
+        {
+            RuleFor(x => x.LicensedBeds)
+                .NotNull().WithMessage("Licensed beds is required for senior housing.")
+                .GreaterThan(0).WithMessage("Licensed beds must be greater than 0.");
+
+            When(x => x.PrivatePayPct.HasValue || x.MedicaidPct.HasValue || x.MedicarePct.HasValue, () =>
+            {
+                RuleFor(x => (x.PrivatePayPct ?? 0) + (x.MedicaidPct ?? 0) + (x.MedicarePct ?? 0))
+                    .InclusiveBetween(95, 105)
+                    .WithMessage("Payer mix percentages must sum to approximately 100%.");
+            });
+
+            When(x => x.StaffingRatio.HasValue, () =>
+            {
+                RuleFor(x => x.StaffingRatio)
+                    .InclusiveBetween(0, 5).WithMessage("Staffing ratio must be between 0 and 5.");
+            });
+
+            When(x => x.AverageDailyRate.HasValue, () =>
+            {
+                RuleFor(x => x.AverageDailyRate)
+                    .GreaterThan(0).WithMessage("Average daily rate must be greater than 0.");
+            });
+        });
 
         // Step 2: Preferred fields (optional but validated when provided)
         When(x => x.LoanLtv.HasValue, () =>

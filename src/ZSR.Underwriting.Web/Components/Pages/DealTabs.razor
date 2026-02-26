@@ -29,6 +29,7 @@
 @inject IVarianceCalculator VarianceCalculator
 @inject IAssetReportService AssetReportService
 @inject IDispositionService DispositionService
+@inject ICmsProviderService CmsProviderService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -132,7 +133,15 @@ else
 
                 <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Deal Classification</MudText>
                 <MudGrid>
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
+                        <MudSelect @bind-Value="_deal.PropertyType" Label="Property Type" Variant="Variant.Outlined">
+                            @foreach (var pt in Enum.GetValues<PropertyType>())
+                            {
+                                <MudSelectItem Value="@pt">@FormatPropertyType(pt)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
                         <MudSelect @bind-Value="_deal.ExecutionType" Label="Execution Type" Variant="Variant.Outlined">
                             @foreach (var et in Enum.GetValues<ExecutionType>())
                             {
@@ -140,10 +149,123 @@ else
                             }
                         </MudSelect>
                     </MudItem>
-                    <MudItem xs="12" md="6">
+                    <MudItem xs="12" md="4">
                         <MudTextField @bind-Value="_deal.TransactionType" Label="Transaction Type" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
+
+                @if (_deal.PropertyType != PropertyType.Multifamily)
+                {
+                    <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Senior Housing — Bed Configuration</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.LicensedBeds" Label="Licensed Beds" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.AlBeds" Label="AL Beds" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.SnfBeds" Label="SNF Beds" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.MemoryCareBeds" Label="Memory Care Beds" Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Payer Mix</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="4">
+                            <MudNumericField @bind-Value="_deal.PrivatePayPct" Label="Private Pay (%)" Variant="Variant.Outlined" Format="N1" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudNumericField @bind-Value="_deal.MedicaidPct" Label="Medicaid (%)" Variant="Variant.Outlined" Format="N1" />
+                        </MudItem>
+                        <MudItem xs="12" md="4">
+                            <MudNumericField @bind-Value="_deal.MedicarePct" Label="Medicare (%)" Variant="Variant.Outlined" Format="N1" />
+                        </MudItem>
+                    </MudGrid>
+
+                    <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Operations</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.AverageDailyRate" Label="Avg Daily Rate" Variant="Variant.Outlined"
+                                             Format="N0" Adornment="Adornment.Start" AdornmentText="$" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.StaffingRatio" Label="Staffing Ratio" Variant="Variant.Outlined" Format="N2" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudNumericField @bind-Value="_deal.AverageLengthOfStayMonths" Label="Avg LOS (months)" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="12" md="3">
+                            <MudTextField @bind-Value="_deal.LicenseType" Label="License Type" Variant="Variant.Outlined" />
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (!string.IsNullOrWhiteSpace(_deal.CmsData))
+                    {
+                        <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">
+                            CMS Care Compare Data
+                            <MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small"
+                                           OnClick="RefreshCmsDataAsync" Disabled="_refreshingCms"
+                                           Style="vertical-align: middle; margin-left: 4px;" />
+                        </MudText>
+                        @if (DeserializeCmsData(_deal.CmsData) is { } cmsDto)
+                        {
+                            <MudGrid>
+                                <MudItem xs="6" md="3">
+                                    <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">Overall Rating</MudText>
+                                        <MudRating ReadOnly="true" SelectedValue="cmsDto.OverallRating" MaxValue="5" />
+                                    </MudPaper>
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">Health Inspection</MudText>
+                                        <MudRating ReadOnly="true" SelectedValue="cmsDto.HealthInspectionRating" MaxValue="5" />
+                                    </MudPaper>
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">Staffing</MudText>
+                                        <MudRating ReadOnly="true" SelectedValue="cmsDto.StaffingRating" MaxValue="5" />
+                                    </MudPaper>
+                                </MudItem>
+                                <MudItem xs="6" md="3">
+                                    <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; text-align: center;">
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">Quality Measures</MudText>
+                                        <MudRating ReadOnly="true" SelectedValue="cmsDto.QualityMeasureRating" MaxValue="5" />
+                                    </MudPaper>
+                                </MudItem>
+                            </MudGrid>
+
+                            <MudSimpleTable Dense="true" Hover="true" Elevation="0" Class="mt-4"
+                                            Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                <tbody>
+                                    <tr><td>Certified Beds</td><td style="text-align: right;">@cmsDto.CertifiedBeds</td></tr>
+                                    <tr><td>Total Deficiencies</td><td style="text-align: right;">@cmsDto.TotalDeficiencies</td></tr>
+                                    <tr><td>Fines</td><td style="text-align: right;">@cmsDto.NumberOfFines (@cmsDto.TotalFinesAmount.ToString("C0"))</td></tr>
+                                    <tr><td>RN Hours/Resident/Day</td><td style="text-align: right;">@cmsDto.RnHoursPerResidentDay.ToString("N2")</td></tr>
+                                    <tr><td>Nursing Turnover</td><td style="text-align: right;">@cmsDto.NursingTurnoverPct.ToString("N1")%</td></tr>
+                                    <tr><td>Ownership</td><td style="text-align: right;">@cmsDto.OwnershipType</td></tr>
+                                    @if (cmsDto.AbuseFlag)
+                                    {
+                                        <tr style="background: #FEF2F2;"><td style="color: #DC2626; font-weight: 600;">Abuse Flag</td><td style="text-align: right; color: #DC2626;">YES</td></tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Class="mt-4"
+                                   StartIcon="@Icons.Material.Filled.Search"
+                                   OnClick="RefreshCmsDataAsync" Disabled="_refreshingCms"
+                                   Style="text-transform: none;">
+                            @(_refreshingCms ? "Searching CMS..." : "Fetch CMS Data")
+                        </MudButton>
+                    }
+                }
 
                 <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-6">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -1559,6 +1681,7 @@ else
     private List<EmailIngestionLog> _ingestionLogs = new();
     private bool _loading = true;
     private bool _saving;
+    private bool _refreshingCms;
     private int _activePanelIndex;
     private bool _chatOpen;
     private MarketContextDto? _marketContext;
@@ -2144,6 +2267,56 @@ else
             _saving = false;
         }
     }
+
+    private async Task RefreshCmsDataAsync()
+    {
+        if (_deal is null) return;
+        _refreshingCms = true;
+        StateHasChanged();
+        try
+        {
+            if (CmsProviderService is null) { Snackbar.Add("CMS service not available", Severity.Warning); return; }
+
+            var (_, state) = ParseCityState(_deal.Address);
+            if (string.IsNullOrWhiteSpace(state)) { Snackbar.Add("Could not parse state from address", Severity.Warning); return; }
+
+            var result = await CmsProviderService.SearchByNameAndStateAsync(_deal.PropertyName, state);
+            if (result is not null)
+            {
+                _deal.CmsData = System.Text.Json.JsonSerializer.Serialize(result);
+                await Db.SaveChangesAsync();
+                Snackbar.Add("CMS data updated", Severity.Success);
+            }
+            else
+            {
+                Snackbar.Add("No CMS data found for this facility", Severity.Info);
+            }
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to fetch CMS data", Severity.Error);
+        }
+        finally
+        {
+            _refreshingCms = false;
+        }
+    }
+
+    private static Application.DTOs.CmsProviderDto? DeserializeCmsData(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return System.Text.Json.JsonSerializer.Deserialize<Application.DTOs.CmsProviderDto>(json); }
+        catch { return null; }
+    }
+
+    private static string FormatPropertyType(PropertyType pt) => pt switch
+    {
+        PropertyType.AssistedLiving => "Assisted Living",
+        PropertyType.SkilledNursing => "Skilled Nursing",
+        PropertyType.MemoryCare => "Memory Care",
+        PropertyType.CCRC => "CCRC",
+        _ => "Multifamily"
+    };
 
     private async Task AddCapitalStackItem()
     {

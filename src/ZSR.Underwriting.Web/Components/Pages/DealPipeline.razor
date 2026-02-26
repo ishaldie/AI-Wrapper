@@ -1,6 +1,7 @@
 @page "/deals"
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Application.Constants
 @using ZSR.Underwriting.Domain.Enums
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
@@ -84,6 +85,16 @@ else
                 <Columns>
                     <SelectColumn T="DealSummaryDto" ShowInFooter="false" />
                     <PropertyColumn Property="x => x.PropertyName" Title="Property Name" Sortable="true" />
+                    <TemplateColumn Title="Type" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.PropertyType.ToString()))">
+                        <CellTemplate>
+                            @if (context.Item.IsSeniorHousing)
+                            {
+                                <MudChip T="string" Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">
+                                    @FormatPropertyType(context.Item.PropertyType)
+                                </MudChip>
+                            }
+                        </CellTemplate>
+                    </TemplateColumn>
                     <PropertyColumn Property="x => x.Address" Title="Address" Sortable="true" />
                     <TemplateColumn Title="Status" Sortable="true" SortBy="@(new Func<DealSummaryDto, object>(x => x.Status))">
                         <CellTemplate>
@@ -214,5 +225,14 @@ else
         "InProgress" => "Screening",
         "UnderContract" => "Under Contract",
         _ => status
+    };
+
+    private static string FormatPropertyType(PropertyType pt) => pt switch
+    {
+        PropertyType.AssistedLiving => "AL",
+        PropertyType.SkilledNursing => "SNF",
+        PropertyType.MemoryCare => "MC",
+        PropertyType.CCRC => "CCRC",
+        _ => "MF"
     };
 }

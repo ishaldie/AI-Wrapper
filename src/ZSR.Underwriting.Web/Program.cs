@@ -228,6 +228,13 @@ try
     builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
     builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();
 
+    // Add CMS Care Compare API client (senior housing data)
+    builder.Services.AddHttpClient<ICmsProviderService, CmsProviderService>(client =>
+    {
+        client.BaseAddress = new Uri("https://data.cms.gov/provider-data/api/1/datastore/query/");
+        client.Timeout = TimeSpan.FromSeconds(30);
+    });
+
     // Add bulk import service
     builder.Services.AddScoped<IBulkImportService, BulkImportService>();
 

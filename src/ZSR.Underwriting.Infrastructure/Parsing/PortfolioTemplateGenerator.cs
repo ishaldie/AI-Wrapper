@@ -10,19 +10,24 @@ public static class PortfolioTemplateGenerator
     [
         "Property Name",
         "Address",
+        "Property Type",
         "Units",
+        "Licensed Beds",
         "Purchase Price",
         "Monthly Rent",
         "T12 NOI",
         "LTV (%)",
         "Interest Rate (%)",
         "CapEx Budget",
+        "Average Daily Rate",
+        "Private Pay %",
     ];
 
     private static readonly string[][] SampleRows =
     [
-        ["Sunset Apartments", "123 Main St, Austin TX 78701", "24", "$2,500,000", "$18,000", "$150,000", "75", "5.25", "$100,000"],
-        ["River Place", "456 Oak Ave, Denver CO 80202", "12", "$1,200,000", "$9,500", "", "65", "4.75", ""],
+        ["Sunset Apartments", "123 Main St, Austin TX 78701", "Multifamily", "24", "", "$2,500,000", "$18,000", "$150,000", "75", "5.25", "$100,000", "", ""],
+        ["River Place", "456 Oak Ave, Denver CO 80202", "Multifamily", "12", "", "$1,200,000", "$9,500", "", "65", "4.75", "", "", ""],
+        ["Sunrise Senior Living", "789 Elm Blvd, Phoenix AZ 85001", "AssistedLiving", "", "120", "$18,000,000", "", "$1,200,000", "60", "5.75", "$500,000", "$250", "65"],
     ];
 
     public static MemoryStream Generate()

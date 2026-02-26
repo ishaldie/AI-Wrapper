@@ -5,6 +5,11 @@ namespace ZSR.Underwriting.Application.Validators;
 
 public class BulkImportRowValidator : AbstractValidator<BulkImportRowDto>
 {
+    private static readonly HashSet<string> ValidPropertyTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Multifamily", "AssistedLiving", "SkilledNursing", "MemoryCare", "CCRC"
+    };
+
     public BulkImportRowValidator()
     {
         RuleFor(x => x.PropertyName)
@@ -12,6 +17,27 @@ public class BulkImportRowValidator : AbstractValidator<BulkImportRowDto>
 
         RuleFor(x => x.Address)
             .NotEmpty().WithMessage("Address is required.");
+
+        When(x => !string.IsNullOrWhiteSpace(x.PropertyType), () =>
+        {
+            RuleFor(x => x.PropertyType)
+                .Must(pt => ValidPropertyTypes.Contains(pt!))
+                .WithMessage("Property type must be one of: Multifamily, AssistedLiving, SkilledNursing, MemoryCare, CCRC.");
+        });
+
+        // Senior housing: LicensedBeds required instead of UnitCount
+        When(x => x.IsSeniorType, () =>
+        {
+            RuleFor(x => x.LicensedBeds)
+                .NotNull().WithMessage("Licensed beds is required for senior housing.")
+                .GreaterThan(0).WithMessage("Licensed beds must be greater than 0.");
+
+            When(x => x.PrivatePayPct.HasValue, () =>
+            {
+                RuleFor(x => x.PrivatePayPct)
+                    .InclusiveBetween(0, 100).WithMessage("Private pay percentage must be between 0% and 100%.");
+            });
+        });
 
         When(x => x.UnitCount.HasValue, () =>
         {

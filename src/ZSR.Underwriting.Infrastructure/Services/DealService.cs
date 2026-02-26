@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using ZSR.Underwriting.Application.Constants;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Entities;
@@ -12,13 +14,17 @@ public class DealService : IDealService
 {
     private readonly AppDbContext _db;
     private readonly IGeocodingService? _geocodingService;
+    private readonly ICmsProviderService? _cmsProviderService;
     private readonly ILogger<DealService> _logger;
 
-    public DealService(AppDbContext db, ILogger<DealService> logger, IGeocodingService? geocodingService = null)
+    public DealService(AppDbContext db, ILogger<DealService> logger,
+        IGeocodingService? geocodingService = null,
+        ICmsProviderService? cmsProviderService = null)
     {
         _db = db;
         _logger = logger;
         _geocodingService = geocodingService;
+        _cmsProviderService = cmsProviderService;
     }
 
     public async Task<Guid> CreateDealAsync(DealInputDto input, string userId)
@@ -30,6 +36,12 @@ public class DealService : IDealService
 
         _db.Deals.Add(deal);
         await _db.SaveChangesAsync();
+
+        // Auto-fetch CMS data for senior housing deals (fire-and-forget)
+        if (ProtocolDefaults.IsSeniorHousing(deal.PropertyType))
+        {
+            _ = TryFetchCmsDataAsync(deal);
+        }
 
         return deal.Id;
     }
@@ -73,6 +85,8 @@ public class DealService : IDealService
                 PurchasePrice = d.PurchasePrice,
                 Status = d.Status.ToString(),
                 Phase = d.Phase.ToString(),
+                PropertyType = d.PropertyType,
+                LicensedBeds = d.LicensedBeds,
                 PortfolioId = d.PortfolioId,
                 CreatedAt = d.CreatedAt,
                 UpdatedAt = d.UpdatedAt,
@@ -185,12 +199,36 @@ public class DealService : IDealService
         }
     }
 
+    private async Task TryFetchCmsDataAsync(Deal deal)
+    {
+        if (_cmsProviderService is null || string.IsNullOrWhiteSpace(deal.Address))
+            return;
+
+        try
+        {
+            var (_, state) = ReportAssembler.ParseCityState(deal.Address);
+            if (string.IsNullOrWhiteSpace(state)) return;
+
+            var cmsResult = await _cmsProviderService.SearchByNameAndStateAsync(deal.PropertyName, state);
+            if (cmsResult is not null)
+            {
+                deal.CmsData = JsonSerializer.Serialize(cmsResult);
+                await _db.SaveChangesAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "CMS data fetch failed for deal {DealName}, continuing without CMS data", deal.Name);
+        }
+    }
+
     private static void MapFromDto(Deal deal, DealInputDto input)
     {
         deal.PropertyName = input.PropertyName;
         deal.Address = input.Address;
         deal.UnitCount = input.UnitCount ?? 0;
         deal.PurchasePrice = input.PurchasePrice ?? 0;
+        deal.PropertyType = input.PropertyType;
         deal.RentRollSummary = input.RentRollSummary;
         deal.T12Summary = input.T12Summary;
         deal.LoanLtv = input.LoanLtv;
@@ -202,6 +240,20 @@ public class DealService : IDealService
         deal.CapexBudget = input.CapexBudget;
         deal.TargetOccupancy = input.TargetOccupancy;
         deal.ValueAddPlans = string.IsNullOrWhiteSpace(input.ValueAddPlans) ? null : input.ValueAddPlans;
+
+        // Senior housing fields
+        deal.LicensedBeds = input.LicensedBeds;
+        deal.AlBeds = input.AlBeds;
+        deal.SnfBeds = input.SnfBeds;
+        deal.MemoryCareBeds = input.MemoryCareBeds;
+        deal.PrivatePayPct = input.PrivatePayPct;
+        deal.MedicaidPct = input.MedicaidPct;
+        deal.MedicarePct = input.MedicarePct;
+        deal.RevenuePerOccupiedBed = input.RevenuePerOccupiedBed;
+        deal.StaffingRatio = input.StaffingRatio;
+        deal.AverageDailyRate = input.AverageDailyRate;
+        deal.AverageLengthOfStayMonths = input.AverageLengthOfStayMonths;
+        deal.LicenseType = input.LicenseType;
     }
 
     private static DealInputDto MapToDto(Deal deal)
@@ -212,6 +264,7 @@ public class DealService : IDealService
             Address = deal.Address,
             UnitCount = deal.UnitCount,
             PurchasePrice = deal.PurchasePrice,
+            PropertyType = deal.PropertyType,
             RentRollSummary = deal.RentRollSummary,
             T12Summary = deal.T12Summary,
             LoanLtv = deal.LoanLtv,
@@ -222,7 +275,20 @@ public class DealService : IDealService
             HoldPeriodYears = deal.HoldPeriodYears,
             CapexBudget = deal.CapexBudget,
             TargetOccupancy = deal.TargetOccupancy,
-            ValueAddPlans = deal.ValueAddPlans ?? string.Empty
+            ValueAddPlans = deal.ValueAddPlans ?? string.Empty,
+            // Senior housing fields
+            LicensedBeds = deal.LicensedBeds,
+            AlBeds = deal.AlBeds,
+            SnfBeds = deal.SnfBeds,
+            MemoryCareBeds = deal.MemoryCareBeds,
+            PrivatePayPct = deal.PrivatePayPct,
+            MedicaidPct = deal.MedicaidPct,
+            MedicarePct = deal.MedicarePct,
+            RevenuePerOccupiedBed = deal.RevenuePerOccupiedBed,
+            StaffingRatio = deal.StaffingRatio,
+            AverageDailyRate = deal.AverageDailyRate,
+            AverageLengthOfStayMonths = deal.AverageLengthOfStayMonths,
+            LicenseType = deal.LicenseType,
         };
     }
 }

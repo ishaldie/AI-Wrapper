@@ -54,21 +54,39 @@ public class ReportAssembler : IReportAssembler
 
         var effectiveLtv = ProtocolDefaults.GetEffectiveLtv(deal.LoanLtv);
         var effectiveHold = ProtocolDefaults.GetEffectiveHoldPeriod(deal.HoldPeriodYears);
-        var effectiveOccupancy = ProtocolDefaults.GetEffectiveOccupancy(deal.TargetOccupancy);
+        var effectiveOccupancy = ProtocolDefaults.GetEffectiveOccupancy(deal.TargetOccupancy, deal.PropertyType);
         var effectiveAmort = ProtocolDefaults.GetEffectiveAmortization(deal.AmortizationYears);
         var effectiveTerm = ProtocolDefaults.GetEffectiveLoanTerm(deal.LoanTermYears);
+        var isSenior = ProtocolDefaults.IsSeniorHousing(deal.PropertyType);
 
         var loanAmount = deal.PurchasePrice * effectiveLtv / 100m;
         var equityRequired = deal.PurchasePrice - loanAmount;
-        var pricePerUnit = deal.UnitCount > 0 ? deal.PurchasePrice / deal.UnitCount : 0m;
+        var sizeMetric = isSenior ? (deal.LicensedBeds ?? 0) : deal.UnitCount;
+        var pricePerUnit = sizeMetric > 0 ? deal.PurchasePrice / sizeMetric : 0m;
 
-        // Revenue calculations using available data
-        var gpr = (deal.RentRollSummary ?? 0m) * deal.UnitCount * 12m;
-        var vacancyLoss = gpr * (1m - effectiveOccupancy / 100m);
-        var netRent = gpr - vacancyLoss;
-        var otherIncome = netRent * 0.135m;
-        var egi = netRent + otherIncome;
-        var opEx = deal.T12Summary ?? (egi * 0.5435m);
+        // Revenue calculations — type-aware
+        decimal gpr, vacancyLoss, netRent, otherIncome, egi, opEx;
+        if (isSenior && deal.AverageDailyRate.HasValue && (deal.LicensedBeds ?? 0) > 0)
+        {
+            // Senior housing: Revenue = OccupiedBeds x ADR x 365
+            var occupiedBeds = (deal.LicensedBeds ?? 0) * (effectiveOccupancy / 100m);
+            gpr = (deal.LicensedBeds ?? 0) * deal.AverageDailyRate.Value * 365m;
+            vacancyLoss = gpr * (1m - effectiveOccupancy / 100m);
+            netRent = gpr - vacancyLoss;
+            otherIncome = netRent * ProtocolDefaults.GetEffectiveOtherIncomeRatio(deal.PropertyType);
+            egi = netRent + otherIncome;
+            opEx = deal.T12Summary ?? (egi * ProtocolDefaults.GetEffectiveOpExRatio(deal.PropertyType));
+        }
+        else
+        {
+            // Multifamily: Revenue = Units x Monthly Rent x 12
+            gpr = (deal.RentRollSummary ?? 0m) * deal.UnitCount * 12m;
+            vacancyLoss = gpr * (1m - effectiveOccupancy / 100m);
+            netRent = gpr - vacancyLoss;
+            otherIncome = netRent * ProtocolDefaults.GetEffectiveOtherIncomeRatio(deal.PropertyType);
+            egi = netRent + otherIncome;
+            opEx = deal.T12Summary ?? (egi * ProtocolDefaults.GetEffectiveOpExRatio(deal.PropertyType));
+        }
         var noi = egi - opEx;
         var noiMargin = egi > 0 ? noi / egi * 100m : 0m;
         var capRate = deal.PurchasePrice > 0 ? noi / deal.PurchasePrice * 100m : 0m;
@@ -116,7 +134,7 @@ public class ReportAssembler : IReportAssembler
         // Debt service calculation — prefer user rate, fall back to market rate
         var loanRate = MarketDataEnricher.GetEffectiveLoanRate(deal.LoanRate, marketContext ?? new MarketContextDto()) ?? 0m;
         var debtService = _calc.CalculateAnnualDebtService(loanAmount, loanRate, deal.IsInterestOnly, effectiveAmort);
-        var reserves = _calc.CalculateAnnualReserves(deal.UnitCount);
+        var reserves = _calc.CalculateAnnualReserves(sizeMetric);
         var acqCosts = _calc.CalculateAcquisitionCosts(deal.PurchasePrice);
         var totalEquity = _calc.CalculateEquityRequired(deal.PurchasePrice, acqCosts, loanAmount);
 
@@ -149,7 +167,7 @@ public class ReportAssembler : IReportAssembler
             PropertyName = deal.PropertyName,
             Address = deal.Address,
             GeneratedAt = DateTime.UtcNow,
-            CoreMetrics = BuildCoreMetrics(deal, loanAmount, effectiveLtv, pricePerUnit, noi, egi, opEx, capRate),
+            CoreMetrics = BuildCoreMetrics(deal, loanAmount, effectiveLtv, pricePerUnit, noi, egi, opEx, capRate, isSenior, sizeMetric),
             ExecutiveSummary = BuildExecutiveSummary(prose),
             Assumptions = BuildAssumptions(deal, effectiveLtv, effectiveHold, effectiveOccupancy, effectiveAmort, effectiveTerm),
             PropertyComps = await BuildPropertyCompsAsync(deal, marketContext, pricePerUnit, cancellationToken),
@@ -166,14 +184,18 @@ public class ReportAssembler : IReportAssembler
 
     private static CoreMetricsSection BuildCoreMetrics(
         Deal deal, decimal loanAmount, decimal ltv, decimal pricePerUnit,
-        decimal noi, decimal egi, decimal opEx, decimal capRate)
+        decimal noi, decimal egi, decimal opEx, decimal capRate,
+        bool isSenior = false, int sizeMetric = 0)
     {
         var opExRatio = egi > 0 ? opEx / egi * 100m : 0m;
+        var sizeLabel = isSenior ? "Licensed Beds" : "Unit Count";
+        var priceLabel = isSenior ? "Price/Bed" : "Price/Unit";
+        var size = isSenior ? (deal.LicensedBeds ?? 0) : deal.UnitCount;
 
         return new CoreMetricsSection
         {
             PurchasePrice = deal.PurchasePrice,
-            UnitCount = deal.UnitCount,
+            UnitCount = size,
             PricePerUnit = pricePerUnit,
             CapRate = capRate,
             Noi = noi,
@@ -184,8 +206,8 @@ public class ReportAssembler : IReportAssembler
             Metrics =
             [
                 new() { Label = "Purchase Price", Value = ProtocolFormatter.Currency(deal.PurchasePrice), Source = DataSource.UserInput },
-                new() { Label = "Unit Count", Value = ProtocolFormatter.Integer(deal.UnitCount), Source = DataSource.UserInput },
-                new() { Label = "Price/Unit", Value = ProtocolFormatter.Currency(pricePerUnit), Source = DataSource.Calculated },
+                new() { Label = sizeLabel, Value = ProtocolFormatter.Integer(size), Source = DataSource.UserInput },
+                new() { Label = priceLabel, Value = ProtocolFormatter.Currency(pricePerUnit), Source = DataSource.Calculated },
                 new() { Label = "Cap Rate", Value = ProtocolFormatter.Percent(capRate), Source = DataSource.Calculated },
                 new() { Label = "NOI", Value = ProtocolFormatter.Currency(noi), Source = DataSource.Calculated },
                 new() { Label = "Loan Amount", Value = ProtocolFormatter.Currency(loanAmount), Source = DataSource.Calculated },

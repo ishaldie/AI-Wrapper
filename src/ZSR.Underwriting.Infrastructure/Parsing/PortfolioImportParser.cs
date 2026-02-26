@@ -24,6 +24,10 @@ public class PortfolioImportParser
         ["LoanLtv"] = ["ltv", "ltv(%)", "loantovalueratio", "loanltv", "leverageratio"],
         ["LoanRate"] = ["interestrate", "interestrate(%)", "rate", "loanrate", "couponrate", "mortgagerate"],
         ["CapexBudget"] = ["capexbudget", "rehabbudget", "renovationbudget", "capex", "rehab", "capitalexpenditures"],
+        ["PropertyType"] = ["propertytype", "assettype", "type", "assetclass", "facilitytype"],
+        ["LicensedBeds"] = ["licensedbeds", "beds", "totalbeds", "bedcount"],
+        ["AverageDailyRate"] = ["averagedailyrate", "adr", "dailyrate", "rateperday"],
+        ["PrivatePayPct"] = ["privatepaypct", "privatepay", "privatepay%", "privpay"],
     };
 
     public bool CanParse(string fileName) =>
@@ -124,6 +128,7 @@ public class PortfolioImportParser
 
     private static BulkImportRowDto BuildRow(int rowNumber, Func<string, string> field)
     {
+        var propertyType = CellSanitizer.SanitizeCellValue(field("PropertyType"));
         return new BulkImportRowDto
         {
             RowNumber = rowNumber,
@@ -136,6 +141,10 @@ public class PortfolioImportParser
             LoanLtv = ParseDecimalOrNull(field("LoanLtv")),
             LoanRate = ParseDecimalOrNull(field("LoanRate")),
             CapexBudget = ParseDecimalOrNull(field("CapexBudget")),
+            PropertyType = string.IsNullOrWhiteSpace(propertyType) ? null : propertyType,
+            LicensedBeds = ParseIntOrNull(field("LicensedBeds")),
+            AverageDailyRate = ParseDecimalOrNull(field("AverageDailyRate")),
+            PrivatePayPct = ParseDecimalOrNull(field("PrivatePayPct")),
         };
     }
 

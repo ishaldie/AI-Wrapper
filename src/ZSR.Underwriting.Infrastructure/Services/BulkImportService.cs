@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Application.Validators;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Infrastructure.Parsing;
 
 namespace ZSR.Underwriting.Infrastructure.Services;
@@ -84,6 +85,13 @@ public class BulkImportService : IBulkImportService
 
             try
             {
+                var propertyType = PropertyType.Multifamily;
+                if (!string.IsNullOrWhiteSpace(row.PropertyType) &&
+                    Enum.TryParse<PropertyType>(row.PropertyType, true, out var parsed))
+                {
+                    propertyType = parsed;
+                }
+
                 var input = new DealInputDto
                 {
                     PropertyName = row.PropertyName,
@@ -95,6 +103,10 @@ public class BulkImportService : IBulkImportService
                     LoanLtv = row.LoanLtv,
                     LoanRate = row.LoanRate,
                     CapexBudget = row.CapexBudget,
+                    PropertyType = propertyType,
+                    LicensedBeds = row.LicensedBeds,
+                    AverageDailyRate = row.AverageDailyRate,
+                    PrivatePayPct = row.PrivatePayPct,
                 };
 
                 var dealId = await _dealService.CreateDealAsync(input, userId);

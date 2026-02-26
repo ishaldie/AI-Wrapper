@@ -54,6 +54,7 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -256,6 +257,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -421,6 +423,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -547,6 +550,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -685,6 +689,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -859,6 +864,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -1126,4 +1132,12 @@ internal class NoOpDispositionService : IDispositionService
     public Task<HoldScenario> CalculateHoldScenarioAsync(Guid dealId, int additionalYears = 5, decimal noiGrowthRate = 2m) => Task.FromResult(new HoldScenario());
     public Task<RefinanceScenario> CalculateRefinanceScenarioAsync(Guid dealId, decimal newLoanAmount, decimal newRate) => Task.FromResult(new RefinanceScenario());
     public Task DeleteAnalysisAsync(Guid dealId) => Task.CompletedTask;
+}
+
+internal class NoOpCmsProviderService : ICmsProviderService
+{
+    public Task<CmsProviderDto?> SearchByNameAndStateAsync(string facilityName, string state, CancellationToken ct = default) => Task.FromResult<CmsProviderDto?>(null);
+    public Task<CmsProviderDto?> GetByCcnAsync(string ccn, CancellationToken ct = default) => Task.FromResult<CmsProviderDto?>(null);
+    public Task<List<CmsDeficiencyDto>> GetDeficienciesAsync(string ccn, CancellationToken ct = default) => Task.FromResult(new List<CmsDeficiencyDto>());
+    public Task<List<CmsPenaltyDto>> GetPenaltiesAsync(string ccn, CancellationToken ct = default) => Task.FromResult(new List<CmsPenaltyDto>());
 }

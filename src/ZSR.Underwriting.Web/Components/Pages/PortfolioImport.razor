@@ -23,7 +23,7 @@
         Upload a spreadsheet to create multiple deals at once, grouped into a portfolio.
     </MudText>
 
-    <MudStepper @bind-ActiveIndex="_step" NonLinear="false" Color="Color.Primary" Class="mb-4">
+    <MudStepper @bind-ActiveIndex="_step" NonLinear="false" Class="mb-4">
         <MudStep Title="Upload" />
         <MudStep Title="Preview" />
         <MudStep Title="Importing" />
@@ -103,7 +103,24 @@
                 </TemplateColumn>
                 <PropertyColumn Property="x => x.PropertyName" Title="Property Name" />
                 <PropertyColumn Property="x => x.Address" Title="Address" />
-                <PropertyColumn Property="x => x.UnitCount" Title="Units" />
+                <TemplateColumn Title="Type">
+                    <CellTemplate>
+                        @(context.Item.PropertyType ?? "Multifamily")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Units/Beds">
+                    <CellTemplate>
+                        @if (context.Item.IsSeniorType)
+                        {
+                            @(context.Item.LicensedBeds?.ToString() ?? "—")
+                            <MudText Typo="Typo.caption" Style="color: #6B7280;">beds</MudText>
+                        }
+                        else
+                        {
+                            @(context.Item.UnitCount?.ToString() ?? "—")
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
                 <TemplateColumn Title="Price">
                     <CellTemplate>
                         @(context.Item.PurchasePrice?.ToString("C0") ?? "—")

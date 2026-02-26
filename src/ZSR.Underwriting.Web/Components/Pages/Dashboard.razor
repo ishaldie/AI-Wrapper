@@ -11,6 +11,7 @@
 @inject NavigationManager Navigation
 @inject ILogger<Dashboard> Logger
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Dashboard - Underwriting Analyst</PageTitle>
@@ -60,7 +61,7 @@
 
     <MudGrid Spacing="3" Class="mb-6">
         <MudItem xs="12" sm="4">
-            <div class="rec-card animate-in delay-1" style="cursor: pointer;" @onclick="NavigateToNewAnalysis">
+            <div class="rec-card animate-in delay-1" style="cursor: pointer;" @onclick="FocusSearchBar">
                 <MudStack Spacing="2">
                     <MudChip T="string" Size="Size.Small" Style="background: #EFF6FF; color: #2563EB; font-weight: 600;">
                         New
@@ -236,6 +237,11 @@
     private void NavigateToNewAnalysis()
     {
         Navigation.NavigateTo("/analysis/start");
+    }
+
+    private async Task FocusSearchBar()
+    {
+        await JS.InvokeVoidAsync("eval", "document.querySelector('.search-bar input')?.focus()");
     }
 
     private void NavigateToDeals()

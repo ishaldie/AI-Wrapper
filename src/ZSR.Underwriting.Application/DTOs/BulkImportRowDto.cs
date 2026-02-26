@@ -15,7 +15,17 @@ public class BulkImportRowDto
     public decimal? LoanRate { get; set; }
     public decimal? CapexBudget { get; set; }
 
+    // Senior housing fields
+    public string? PropertyType { get; set; }
+    public int? LicensedBeds { get; set; }
+    public decimal? AverageDailyRate { get; set; }
+    public decimal? PrivatePayPct { get; set; }
+
     // Validation state
     public bool IsValid => Errors.Count == 0;
     public List<string> Errors { get; set; } = new();
+
+    public bool IsSeniorType => PropertyType != null &&
+        !PropertyType.Equals("Multifamily", StringComparison.OrdinalIgnoreCase) &&
+        !string.IsNullOrWhiteSpace(PropertyType);
 }
