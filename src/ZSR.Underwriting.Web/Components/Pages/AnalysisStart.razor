@@ -9,6 +9,7 @@
 @inject IActivityTracker ActivityTracker
 @inject AuthenticationStateProvider AuthStateProvider
 @inject ILogger<AnalysisStart> Logger
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>New Analysis - Underwriting Analyst</PageTitle>
@@ -107,7 +108,7 @@
             <MudText Typo="Typo.h6" Style="color: #1A1D23; margin-bottom: 0.75rem;">
                 Institutions
             </MudText>
-            <div class="category-card" @onclick="() => ShowComingSoon()">
+            <div class="category-card" style="border-color: #7C3AED; cursor: pointer;" @onclick="@(() => Navigation.NavigateTo("/portfolios/import"))">
                 <div class="category-icon" style="background: #F5F3FF; color: #7C3AED;">
                     <MudIcon Icon="@Icons.Material.Filled.AccountBalance" />
                 </div>
@@ -115,7 +116,7 @@
                     Portfolio review
                 </MudText>
                 <MudText Typo="Typo.body2" Style="color: #6B7280;">
-                    Bulk analysis across your entire property portfolio.
+                    Upload a spreadsheet to import multiple deals into a portfolio.
                 </MudText>
             </div>
             <div class="category-card" style="margin-top: 0.75rem;" @onclick="() => ShowComingSoon()">
@@ -175,9 +176,9 @@
             await HandleSearch();
     }
 
-    private void NavigateToWizard()
+    private async Task NavigateToWizard()
     {
-        Navigation.NavigateTo("/search");
+        await JS.InvokeVoidAsync("eval", "document.querySelector('.search-bar input')?.focus()");
     }
 
     private void ShowComingSoon()

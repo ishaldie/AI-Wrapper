@@ -83,7 +83,7 @@ try
         options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
             ? CookieSecurePolicy.SameAsRequest
             : CookieSecurePolicy.Always;
-        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.HttpOnly = true;
     });
 
@@ -227,6 +227,9 @@ try
     // Add geocoding service (Nominatim/OpenStreetMap — free, no API key needed)
     builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>();
     builder.Services.AddScoped<IGeocodingBackfillService, GeocodingBackfillService>();
+
+    // Add bulk import service
+    builder.Services.AddScoped<IBulkImportService, BulkImportService>();
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();

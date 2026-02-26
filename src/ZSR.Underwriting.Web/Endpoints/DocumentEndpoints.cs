@@ -4,6 +4,7 @@ using ZSR.Underwriting.Application.Interfaces;
 using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
 using ZSR.Underwriting.Infrastructure.Data;
+using ZSR.Underwriting.Infrastructure.Parsing;
 
 namespace ZSR.Underwriting.Web.Endpoints;
 
@@ -12,6 +13,9 @@ public static class DocumentEndpoints
     public static void MapDocumentEndpoints(this WebApplication app)
     {
         app.MapGet("/api/documents/{id:guid}/download", HandleDownload)
+            .RequireAuthorization();
+
+        app.MapGet("/api/templates/portfolio-import", HandlePortfolioTemplate)
             .RequireAuthorization();
     }
 
@@ -48,6 +52,15 @@ public static class DocumentEndpoints
         await activityTracker.TrackEventAsync(ActivityEventType.DocumentDownloaded, dealId: document.DealId, metadata: document.FileName);
 
         return Results.File(stream, contentType, document.FileName);
+    }
+
+    private static IResult HandlePortfolioTemplate()
+    {
+        var stream = PortfolioTemplateGenerator.Generate();
+        return Results.File(
+            stream,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "portfolio-import-template.xlsx");
     }
 
     private static string GetContentType(string fileName)

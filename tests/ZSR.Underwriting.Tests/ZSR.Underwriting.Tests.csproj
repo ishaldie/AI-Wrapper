@@ -184,6 +184,9 @@
     <Compile Include="Services\AssetReportServiceTests.cs" />
     <!-- Disposition Modeling track (Track 9) -->
     <Compile Include="Services\DispositionServiceTests.cs" />
+    <!-- Bulk Portfolio Import -->
+    <Compile Include="Parsing\PortfolioImportParserTests.cs" />
+    <Compile Include="Services\BulkImportServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

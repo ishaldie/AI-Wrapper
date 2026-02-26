@@ -19,12 +19,20 @@
             Group deals into funds for aggregated tracking and reporting.
         </MudText>
     </MudStack>
-    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-               StartIcon="@Icons.Material.Filled.Add"
-               OnClick="ShowCreateDialog"
-               Style="text-transform: none; font-weight: 500;">
-        New Portfolio
-    </MudButton>
+    <MudStack Row="true" Spacing="2">
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.UploadFile"
+                   OnClick="@(() => Navigation.NavigateTo("/portfolios/import"))"
+                   Style="text-transform: none; font-weight: 500;">
+            Import Portfolio
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   OnClick="ShowCreateDialog"
+                   Style="text-transform: none; font-weight: 500;">
+            New Portfolio
+        </MudButton>
+    </MudStack>
 </MudStack>
 
 @if (_loading)

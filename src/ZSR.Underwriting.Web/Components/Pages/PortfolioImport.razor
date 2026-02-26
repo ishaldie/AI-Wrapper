@@ -1,0 +1,343 @@
+@page "/portfolios/import"
+@using ZSR.Underwriting.Application.DTOs
+@using ZSR.Underwriting.Application.Interfaces
+@using ZSR.Underwriting.Application.Constants
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject IBulkImportService BulkImportService
+@inject IFileContentValidator FileValidator
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@rendermode InteractiveServer
+
+<PageTitle>Import Portfolio - Underwriting Analyst</PageTitle>
+
+<div style="max-width: 960px;">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => Navigation.NavigateTo("/portfolios"))" />
+        <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">Import Portfolio</MudText>
+    </MudStack>
+    <MudText Typo="Typo.body2" Style="color: #6B7280; margin-bottom: 2rem;">
+        Upload a spreadsheet to create multiple deals at once, grouped into a portfolio.
+    </MudText>
+
+    <MudStepper @bind-ActiveIndex="_step" NonLinear="false" Color="Color.Primary" Class="mb-4">
+        <MudStep Title="Upload" />
+        <MudStep Title="Preview" />
+        <MudStep Title="Importing" />
+        <MudStep Title="Results" />
+    </MudStepper>
+
+    @* Step 0: Upload *@
+    @if (_step == 0)
+    {
+        <MudCard Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 12px;">
+            <MudCardContent>
+                <MudTextField @bind-Value="_portfolioName" Label="Portfolio Name" Variant="Variant.Outlined"
+                              Placeholder="e.g. Q1 2026 Acquisitions" Class="mb-4" />
+
+                <MudStack AlignItems="AlignItems.Center" Class="pa-8" Style="border: 2px dashed #D1D5DB; border-radius: 8px;">
+                    <MudIcon Icon="@Icons.Material.Outlined.CloudUpload" Size="Size.Large" Style="color: #9CA3AF; font-size: 3rem;" />
+                    <MudText Typo="Typo.body1" Style="color: #6B7280;">Upload an XLSX or CSV file</MudText>
+                    <MudText Typo="Typo.caption" Style="color: #9CA3AF;">Max 25 MB. Required columns: Property Name, Address</MudText>
+                    <MudFileUpload T="IBrowserFile" FilesChanged="OnFileSelected" Accept=".xlsx,.csv">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       StartIcon="@Icons.Material.Filled.UploadFile"
+                                       Style="text-transform: none;" Disabled="_parsing">
+                                @(_parsing ? "Parsing..." : "Choose File")
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                </MudStack>
+
+                <MudButton Variant="Variant.Text" Color="Color.Primary" Class="mt-3"
+                           StartIcon="@Icons.Material.Filled.Download"
+                           OnClick="DownloadTemplate" Style="text-transform: none;">
+                    Download sample template
+                </MudButton>
+            </MudCardContent>
+        </MudCard>
+    }
+
+    @* Step 1: Preview *@
+    @if (_step == 1)
+    {
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.body1">
+                <b>@_rows.Count</b> rows parsed — <b>@_rows.Count(r => r.IsValid)</b> valid,
+                <span style="color: @(_rows.Any(r => !r.IsValid) ? "#DC2626" : "#16A34A")">@_rows.Count(r => !r.IsValid) errors</span>
+            </MudText>
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Outlined" OnClick="Reset" Style="text-transform: none;">
+                    Start Over
+                </MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           StartIcon="@Icons.Material.Filled.RocketLaunch"
+                           OnClick="StartImport" Disabled="@(!_rows.Any(r => r.IsValid))"
+                           Style="text-transform: none;">
+                    Import @_rows.Count(r => r.IsValid) Deals
+                </MudButton>
+            </MudStack>
+        </MudStack>
+
+        <MudDataGrid T="BulkImportRowDto" Items="_rows" Dense="true" Bordered="true" Elevation="0"
+                     Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+            <Columns>
+                <PropertyColumn Property="x => x.RowNumber" Title="Row" />
+                <TemplateColumn Title="Status" SortBy="x => x.IsValid ? 0 : 1">
+                    <CellTemplate>
+                        @if (context.Item.IsValid)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudTooltip Text="@string.Join("; ", context.Item.Errors)">
+                                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+                            </MudTooltip>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.PropertyName" Title="Property Name" />
+                <PropertyColumn Property="x => x.Address" Title="Address" />
+                <PropertyColumn Property="x => x.UnitCount" Title="Units" />
+                <TemplateColumn Title="Price">
+                    <CellTemplate>
+                        @(context.Item.PurchasePrice?.ToString("C0") ?? "—")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Rent">
+                    <CellTemplate>
+                        @(context.Item.RentRollSummary?.ToString("C0") ?? "—")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="NOI">
+                    <CellTemplate>
+                        @(context.Item.T12Summary?.ToString("C0") ?? "—")
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    }
+
+    @* Step 2: Importing *@
+    @if (_step == 2)
+    {
+        <MudCard Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 12px;">
+            <MudCardContent Class="pa-8">
+                <MudStack AlignItems="AlignItems.Center" Spacing="4">
+                    <MudProgressCircular Indeterminate="@(_progressPercent == 0)" Value="_progressPercent"
+                                         Color="Color.Primary" Size="Size.Large" />
+                    <MudText Typo="Typo.h6">Importing deals...</MudText>
+                    <MudProgressLinear Value="_progressPercent" Color="Color.Primary" Rounded="true" Size="Size.Medium" />
+                    <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                        @_progressPercent% complete
+                    </MudText>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    }
+
+    @* Step 3: Results *@
+    @if (_step == 3 && _result != null)
+    {
+        <MudCard Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 12px;">
+            <MudCardContent Class="pa-6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="3">
+                    @if (_result.FailedCount == 0)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success"
+                                 Style="font-size: 4rem;" />
+                        <MudText Typo="Typo.h5" Style="font-weight: 600;">Import Complete</MudText>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Warning" Color="Color.Warning"
+                                 Style="font-size: 4rem;" />
+                        <MudText Typo="Typo.h5" Style="font-weight: 600;">Import Completed with Errors</MudText>
+                    }
+
+                    <MudGrid Spacing="3" Justify="Justify.Center" Class="mt-2">
+                        <MudItem xs="4">
+                            <MudStack AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.h4" Color="Color.Success" Style="font-weight: 700;">@_result.SuccessCount</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Deals Created</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="4">
+                            <MudStack AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.h4" Color="Color.Error" Style="font-weight: 700;">@_result.FailedCount</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Failed</MudText>
+                            </MudStack>
+                        </MudItem>
+                        <MudItem xs="4">
+                            <MudStack AlignItems="AlignItems.Center">
+                                <MudText Typo="Typo.h4" Style="font-weight: 700; color: #1A2332;">@_result.TotalRows</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Total Rows</MudText>
+                            </MudStack>
+                        </MudItem>
+                    </MudGrid>
+
+                    @if (_result.Errors.Count > 0)
+                    {
+                        <MudAlert Severity="Severity.Warning" Class="mt-3" Style="width: 100%;">
+                            <MudText Typo="Typo.body2" Style="font-weight: 600;" Class="mb-1">Errors:</MudText>
+                            @foreach (var error in _result.Errors.Take(10))
+                            {
+                                <MudText Typo="Typo.body2">@error</MudText>
+                            }
+                            @if (_result.Errors.Count > 10)
+                            {
+                                <MudText Typo="Typo.caption">...and @(_result.Errors.Count - 10) more</MudText>
+                            }
+                        </MudAlert>
+                    }
+
+                    <MudStack Row="true" Spacing="2" Class="mt-4">
+                        @if (_result.PortfolioId.HasValue)
+                        {
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                       OnClick="@(() => Navigation.NavigateTo($"/portfolios/{_result.PortfolioId}"))"
+                                       Style="text-transform: none;">
+                                View Portfolio
+                            </MudButton>
+                        }
+                        <MudButton Variant="Variant.Outlined"
+                                   OnClick="@(() => Navigation.NavigateTo("/dashboard"))"
+                                   Style="text-transform: none;">
+                            Go to Dashboard
+                        </MudButton>
+                        <MudButton Variant="Variant.Text" OnClick="Reset" Style="text-transform: none;">
+                            Import Another
+                        </MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    }
+</div>
+
+@code {
+    private int _step;
+    private string _portfolioName = string.Empty;
+    private List<BulkImportRowDto> _rows = new();
+    private BulkImportResultDto? _result;
+    private bool _parsing;
+    private int _progressPercent;
+    private string _userId = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+    }
+
+    private async Task OnFileSelected(IBrowserFile file)
+    {
+        if (file == null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        if (ext is not ".xlsx" and not ".csv")
+        {
+            Snackbar.Add("Please upload an XLSX or CSV file.", Severity.Warning);
+            return;
+        }
+
+        if (!FileUploadConstants.IsValidFileSize(file.Size))
+        {
+            Snackbar.Add("File exceeds 25 MB limit.", Severity.Warning);
+            return;
+        }
+
+        _parsing = true;
+        StateHasChanged();
+
+        try
+        {
+            using var ms = new MemoryStream();
+            await file.OpenReadStream(FileUploadConstants.MaxFileSizeBytes).CopyToAsync(ms);
+            ms.Position = 0;
+
+            // Validate file content (magic bytes)
+            var validation = await FileValidator.ValidateAsync(ms, ext);
+            if (!validation.IsValid)
+            {
+                Snackbar.Add(validation.ErrorMessage ?? "Invalid file content.", Severity.Error);
+                return;
+            }
+
+            ms.Position = 0;
+            _rows = await BulkImportService.ParseFileAsync(ms, file.Name);
+
+            if (_rows.Count == 0)
+            {
+                Snackbar.Add("No data rows found in the file.", Severity.Warning);
+                return;
+            }
+
+            // Auto-fill portfolio name from file name if empty
+            if (string.IsNullOrWhiteSpace(_portfolioName))
+                _portfolioName = Path.GetFileNameWithoutExtension(file.Name);
+
+            // Run validation on parsed rows
+            var validator = new Application.Validators.BulkImportRowValidator();
+            foreach (var row in _rows)
+            {
+                var result = await validator.ValidateAsync(row);
+                if (!result.IsValid)
+                    row.Errors = result.Errors.Select(e => e.ErrorMessage).ToList();
+            }
+
+            _step = 1;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to parse file: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _parsing = false;
+        }
+    }
+
+    private async Task StartImport()
+    {
+        if (string.IsNullOrWhiteSpace(_portfolioName))
+        {
+            Snackbar.Add("Please enter a portfolio name.", Severity.Warning);
+            return;
+        }
+
+        _step = 2;
+        _progressPercent = 0;
+        StateHasChanged();
+
+        var progress = new Progress<int>(async p =>
+        {
+            _progressPercent = p;
+            await InvokeAsync(StateHasChanged);
+        });
+
+        _result = await BulkImportService.ImportAsync(_rows, _portfolioName, _userId, progress);
+
+        _step = 3;
+        StateHasChanged();
+    }
+
+    private async Task DownloadTemplate()
+    {
+        await JS.InvokeVoidAsync("open", "/api/templates/portfolio-import", "_blank");
+    }
+
+    private void Reset()
+    {
+        _step = 0;
+        _rows = new();
+        _result = null;
+        _portfolioName = string.Empty;
+        _progressPercent = 0;
+    }
+}
