@@ -189,6 +189,40 @@ else
                         }
                     </MudGrid>
                 }
+                else if (_deal.ExecutionType == ExecutionType.FreddieMac)
+                {
+                    <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Freddie Mac Product</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudSelect @bind-Value="_deal.FreddieProductType" Label="Freddie Mac Product Type" Variant="Variant.Outlined"
+                                       T="FreddieProductType?" Clearable="true">
+                                @foreach (var fpt in Enum.GetValues<FreddieProductType>())
+                                {
+                                    <MudSelectItem Value="@((FreddieProductType?)fpt)">@FormatFreddieProductType(fpt)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        @if (_deal.FreddieProductType.HasValue)
+                        {
+                            var profile = FreddieProductProfiles.TryGet(_deal.FreddieProductType);
+                            @if (profile != null)
+                            {
+                                <MudItem xs="12" md="6">
+                                    <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; background: #F9FAFB;">
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">Product Requirements</MudText>
+                                        <MudText Typo="Typo.body2" Style="color: #1A2332;">
+                                            Min DSCR: @(profile.MinDscr.ToString("F2"))x | Max LTV: @(profile.MaxLtvPercent.ToString("F0"))% | Max Amort: @(profile.MaxAmortizationYears) yrs
+                                        </MudText>
+                                        @if (!string.IsNullOrWhiteSpace(profile.Notes))
+                                        {
+                                            <MudText Typo="Typo.caption" Style="color: #9CA3AF; margin-top: 4px;">@profile.Notes</MudText>
+                                        }
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
+                }
 
                 @if (ProtocolDefaults.IsSeniorHousing(_deal.PropertyType))
                 {
@@ -496,6 +530,62 @@ else
                                     </thead>
                                     <tbody>
                                         @foreach (var test in GetComplianceTests(compliance))
+                                        {
+                                            var testColor = test.Pass ? "#16A34A" : "#DC2626";
+                                            var testStatus = test.Pass ? "PASS" : "FAIL";
+                                            <tr>
+                                                <td>@test.Name</td>
+                                                <td style="@($"text-align: center; color: {testColor}; font-weight: 600;")">
+                                                    @testStatus
+                                                </td>
+                                                <td style="text-align: right;">@test.ActualValue.ToString("F2")</td>
+                                                <td style="text-align: right;">@test.RequiredValue.ToString("F2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            </MudPaper>
+                        }
+                    }
+
+                    @* Freddie Mac Compliance Summary *@
+                    @if (_deal.FreddieProductType.HasValue && _calc.FreddieComplianceJson is not null)
+                    {
+                        var freddieCompliance = DeserializeFreddieCompliance(_calc.FreddieComplianceJson);
+                        @if (freddieCompliance != null)
+                        {
+                            var freddieProfile = FreddieProductProfiles.TryGet(_deal.FreddieProductType);
+                            var freddieBorderColor = freddieCompliance.OverallPass ? "#16A34A" : "#DC2626";
+                            var freddieStatusIcon = freddieCompliance.OverallPass ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel;
+                            var freddieStatusColor = freddieCompliance.OverallPass ? Color.Success : Color.Error;
+                            var freddieStatusLabel = freddieCompliance.OverallPass ? "PASS" : "FAIL";
+                            <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Freddie Mac Compliance</MudText>
+                            <MudPaper Elevation="0" Class="pa-4 mb-6" Style="@($"border: 1px solid {freddieBorderColor}; border-radius: 8px;")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@freddieStatusIcon" Color="@freddieStatusColor" />
+                                        <MudText Typo="Typo.h6" Style="@($"font-weight: 700; color: {freddieBorderColor};")">
+                                            @freddieStatusLabel
+                                        </MudText>
+                                    </MudStack>
+                                    @if (freddieProfile != null)
+                                    {
+                                        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                                            @freddieProfile.DisplayName — Min DSCR: @(freddieProfile.MinDscr.ToString("F2"))x | Max LTV: @(freddieProfile.MaxLtvPercent.ToString("F0"))% | Max Amort: @(freddieProfile.MaxAmortizationYears) yrs
+                                        </MudText>
+                                    }
+                                </MudStack>
+                                <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                    <thead>
+                                        <tr style="background: #F9FAFB;">
+                                            <th>Test</th>
+                                            <th style="text-align: center;">Status</th>
+                                            <th style="text-align: right;">Actual</th>
+                                            <th style="text-align: right;">Required</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var test in GetFreddieComplianceTests(freddieCompliance))
                                         {
                                             var testColor = test.Pass ? "#16A34A" : "#DC2626";
                                             var testStatus = test.Pass ? "PASS" : "FAIL";
@@ -2569,6 +2659,38 @@ else
         if (compliance.SnfNcfCapTest is not null) tests.Add(compliance.SnfNcfCapTest);
         if (compliance.MhcVacancyFloorTest is not null) tests.Add(compliance.MhcVacancyFloorTest);
         if (compliance.RoarRehabDscrTest is not null) tests.Add(compliance.RoarRehabDscrTest);
+        if (compliance.SupplementalCombinedDscrTest is not null) tests.Add(compliance.SupplementalCombinedDscrTest);
+        if (compliance.SupplementalCombinedLtvTest is not null) tests.Add(compliance.SupplementalCombinedLtvTest);
+        return tests;
+    }
+
+    private static string FormatFreddieProductType(FreddieProductType fpt)
+    {
+        var profile = FreddieProductProfiles.TryGet(fpt);
+        return profile?.DisplayName ?? fpt.ToString();
+    }
+
+    private static FreddieComplianceResult? DeserializeFreddieCompliance(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return System.Text.Json.JsonSerializer.Deserialize<FreddieComplianceResult>(json); }
+        catch { return null; }
+    }
+
+    private static List<ComplianceTest> GetFreddieComplianceTests(FreddieComplianceResult compliance)
+    {
+        var tests = new List<ComplianceTest>();
+        if (compliance.DscrTest is not null) tests.Add(compliance.DscrTest);
+        if (compliance.LtvTest is not null) tests.Add(compliance.LtvTest);
+        if (compliance.AmortizationTest is not null) tests.Add(compliance.AmortizationTest);
+        if (compliance.SblMarketTierTest is not null) tests.Add(compliance.SblMarketTierTest);
+        if (compliance.SeniorsBlendedDscrTest is not null) tests.Add(compliance.SeniorsBlendedDscrTest);
+        if (compliance.SnfNoiCapTest is not null) tests.Add(compliance.SnfNoiCapTest);
+        if (compliance.MhcRentalHomesCapTest is not null) tests.Add(compliance.MhcRentalHomesCapTest);
+        if (compliance.FloatingRateCapTest is not null) tests.Add(compliance.FloatingRateCapTest);
+        if (compliance.ValueAddRehabDscrTest is not null) tests.Add(compliance.ValueAddRehabDscrTest);
+        if (compliance.LeaseUpOccupancyTest is not null) tests.Add(compliance.LeaseUpOccupancyTest);
+        if (compliance.LeaseUpLeasedTest is not null) tests.Add(compliance.LeaseUpLeasedTest);
         if (compliance.SupplementalCombinedDscrTest is not null) tests.Add(compliance.SupplementalCombinedDscrTest);
         if (compliance.SupplementalCombinedLtvTest is not null) tests.Add(compliance.SupplementalCombinedLtvTest);
         return tests;

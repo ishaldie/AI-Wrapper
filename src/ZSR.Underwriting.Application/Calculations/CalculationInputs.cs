@@ -20,4 +20,8 @@ public class CalculationInputs
     // Fannie Mae compliance (null when ExecutionType != FannieMae)
     public FannieProductType? FannieProductType { get; set; }
     public FannieComplianceInputs? FannieInputs { get; set; }
+
+    // Freddie Mac compliance (null when ExecutionType != FreddieMac)
+    public FreddieProductType? FreddieProductType { get; set; }
+    public FreddieComplianceInputs? FreddieInputs { get; set; }
 }

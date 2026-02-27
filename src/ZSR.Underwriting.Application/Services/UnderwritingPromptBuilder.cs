@@ -92,9 +92,11 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFannieProductHeader(sb, context);
+        AppendFreddieProductHeader(sb, context);
         AppendSeniorHousingMetrics(sb, context);
         AppendFinancialMetrics(sb, context);
         AppendFannieComplianceSection(sb, context);
+        AppendFreddieComplianceSection(sb, context);
         sb.AppendLine();
         sb.AppendLine("The executive summary should include:");
         sb.AppendLine("1. A one-line investment thesis");
@@ -197,13 +199,16 @@ public class UnderwritingPromptBuilder : IPromptBuilder
     {
         var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var isFannie = context.Deal.FannieProductType.HasValue;
+        var isFreddie = context.Deal.FreddieProductType.HasValue;
         var sb = new StringBuilder();
         sb.AppendLine($"Analyze the risks for the following {assetType} acquisition.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFannieProductHeader(sb, context);
+        AppendFreddieProductHeader(sb, context);
         AppendFinancialMetrics(sb, context);
         AppendFannieComplianceSection(sb, context);
+        AppendFreddieComplianceSection(sb, context);
 
         sb.AppendLine();
         sb.AppendLine("Identify and analyze the key risks. For each risk provide:");
@@ -214,7 +219,9 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         var systemSuffix = isFannie
             ? " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies. Include Fannie Mae compliance risks and product-specific regulatory requirements."
-            : " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies.";
+            : isFreddie
+                ? " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies. Include Freddie Mac compliance risks and product-specific regulatory requirements."
+                : " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies.";
 
         return new ClaudeRequest
         {
@@ -228,16 +235,18 @@ public class UnderwritingPromptBuilder : IPromptBuilder
     {
         var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
         var isFannie = context.Deal.FannieProductType.HasValue;
+        var isFreddie = context.Deal.FreddieProductType.HasValue;
         var sb = new StringBuilder();
         sb.AppendLine($"Make an investment decision for the following {assetType} acquisition.");
         sb.AppendLine();
         AppendPropertyHeader(sb, context);
         AppendFannieProductHeader(sb, context);
+        AppendFreddieProductHeader(sb, context);
         AppendFinancialMetrics(sb, context);
 
         if (isFannie)
         {
-            var compliance = DeserializeCompliance(context);
+            var compliance = DeserializeFannieCompliance(context);
             var profile = FannieProductProfiles.TryGet(context.Deal.FannieProductType);
 
             sb.AppendLine("## Fannie Mae Product Decision Thresholds");
@@ -267,6 +276,39 @@ public class UnderwritingPromptBuilder : IPromptBuilder
             }
 
             AppendFannieComplianceSection(sb, context);
+        }
+        else if (isFreddie)
+        {
+            var compliance = DeserializeFreddieCompliance(context);
+            var profile = FreddieProductProfiles.TryGet(context.Deal.FreddieProductType);
+
+            sb.AppendLine("## Freddie Mac Product Decision Thresholds");
+            if (profile != null)
+            {
+                sb.AppendLine($"- Product Minimum DSCR: {profile.MinDscr:F2}x");
+                sb.AppendLine($"- Product Maximum LTV: {profile.MaxLtvPercent:F0}%");
+                sb.AppendLine($"- Maximum Amortization: {profile.MaxAmortizationYears} years");
+            }
+
+            if (compliance != null)
+            {
+                sb.AppendLine($"- Overall Freddie Mac Compliance: {(compliance.OverallPass ? "PASS" : "FAIL")}");
+            }
+
+            sb.AppendLine();
+            sb.AppendLine("- GO: DSCR meets product minimum AND Freddie Mac compliance PASS AND IRR > 15%");
+            sb.AppendLine("- CONDITIONAL GO: Meets most criteria but has one or more compliance warnings");
+            sb.AppendLine("- NO GO: Fails Freddie Mac compliance or significantly misses product thresholds");
+
+            if (context.Calculations is { } calc)
+            {
+                sb.AppendLine();
+                sb.AppendLine("## Actual Metrics vs Thresholds");
+                sb.AppendLine($"- IRR: {FormatDecimalOrNa(calc.InternalRateOfReturn)}% (threshold: 15%)");
+                sb.AppendLine($"- DSCR: {FormatDecimalOrNa(calc.DebtServiceCoverageRatio)}x (product min: {profile?.MinDscr.ToString("F2") ?? "N/A"}x)");
+            }
+
+            AppendFreddieComplianceSection(sb, context);
         }
         else
         {
@@ -475,7 +517,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
     {
         if (!context.Deal.FannieProductType.HasValue) return string.Empty;
 
-        var compliance = DeserializeCompliance(context);
+        var compliance = DeserializeFannieCompliance(context);
         if (compliance == null) return string.Empty;
 
         var sb = new StringBuilder();
@@ -509,12 +551,84 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine($"- {test.Name}: {status} (actual: {test.ActualValue:F2}, required: {test.RequiredValue:F2}){(test.Notes != null ? $" — {test.Notes}" : "")}");
     }
 
-    private static FannieComplianceResult? DeserializeCompliance(ProseGenerationContext context)
+    private static FannieComplianceResult? DeserializeFannieCompliance(ProseGenerationContext context)
     {
         if (context.Calculations?.FannieComplianceJson is not { } json) return null;
         try
         {
             return JsonSerializer.Deserialize<FannieComplianceResult>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    // --- Freddie Mac compliance helpers ---
+
+    private static void AppendFreddieProductHeader(StringBuilder sb, ProseGenerationContext context)
+    {
+        if (!context.Deal.FreddieProductType.HasValue) return;
+
+        var profile = FreddieProductProfiles.TryGet(context.Deal.FreddieProductType);
+        if (profile == null) return;
+
+        sb.AppendLine("## Freddie Mac Execution");
+        sb.AppendLine($"- Product Type: {profile.DisplayName}");
+        sb.AppendLine($"- Min DSCR: {profile.MinDscr:F2}x");
+        sb.AppendLine($"- Max LTV: {profile.MaxLtvPercent:F0}%");
+        sb.AppendLine($"- Max Amortization: {profile.MaxAmortizationYears} years");
+        if (!string.IsNullOrWhiteSpace(profile.Notes))
+            sb.AppendLine($"- Notes: {profile.Notes}");
+        sb.AppendLine();
+    }
+
+    private static void AppendFreddieComplianceSection(StringBuilder sb, ProseGenerationContext context)
+    {
+        var summary = BuildFreddieComplianceSummary(context);
+        if (!string.IsNullOrEmpty(summary))
+        {
+            sb.AppendLine("## Freddie Mac Compliance Results");
+            sb.AppendLine(summary);
+            sb.AppendLine();
+        }
+    }
+
+    public static string BuildFreddieComplianceSummary(ProseGenerationContext context)
+    {
+        if (!context.Deal.FreddieProductType.HasValue) return string.Empty;
+
+        var compliance = DeserializeFreddieCompliance(context);
+        if (compliance == null) return string.Empty;
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"Overall Compliance: {(compliance.OverallPass ? "PASS" : "FAIL")}");
+        sb.AppendLine($"Product Min DSCR: {compliance.ProductMinDscr:F2}x | Max LTV: {compliance.ProductMaxLtvPercent:F0}% | Max Amort: {compliance.ProductMaxAmortYears} years");
+        sb.AppendLine();
+
+        AppendComplianceTest(sb, compliance.DscrTest);
+        AppendComplianceTest(sb, compliance.LtvTest);
+        AppendComplianceTest(sb, compliance.AmortizationTest);
+        AppendComplianceTest(sb, compliance.SblMarketTierTest);
+        AppendComplianceTest(sb, compliance.SeniorsBlendedDscrTest);
+        AppendComplianceTest(sb, compliance.SnfNoiCapTest);
+        AppendComplianceTest(sb, compliance.MhcRentalHomesCapTest);
+        AppendComplianceTest(sb, compliance.FloatingRateCapTest);
+        AppendComplianceTest(sb, compliance.ValueAddRehabDscrTest);
+        AppendComplianceTest(sb, compliance.LeaseUpOccupancyTest);
+        AppendComplianceTest(sb, compliance.LeaseUpLeasedTest);
+        AppendComplianceTest(sb, compliance.SupplementalCombinedDscrTest);
+        AppendComplianceTest(sb, compliance.SupplementalCombinedLtvTest);
+
+        return sb.ToString().TrimEnd();
+    }
+
+    private static FreddieComplianceResult? DeserializeFreddieCompliance(ProseGenerationContext context)
+    {
+        if (context.Calculations?.FreddieComplianceJson is not { } json) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<FreddieComplianceResult>(json);
         }
         catch
         {

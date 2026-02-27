@@ -411,6 +411,9 @@ namespace ZSR.Underwriting.Infrastructure.Data.Migrations
                     b.Property<string>("FannieComplianceJson")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FreddieComplianceJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal?>("GoingInCapRate")
                         .HasPrecision(5, 2)
                         .HasColumnType("TEXT");
@@ -817,6 +820,10 @@ namespace ZSR.Underwriting.Infrastructure.Data.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FannieProductType")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FreddieProductType")
                         .HasMaxLength(30)
                         .HasColumnType("TEXT");
 

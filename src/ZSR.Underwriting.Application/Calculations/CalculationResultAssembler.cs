@@ -11,10 +11,12 @@ public static class CalculationResultAssembler
         var calc = new UnderwritingCalculator();
         var result = new CalculationResult(inputs.DealId);
 
-        // Task 6: MHC vacancy floor enforcement — cap occupancy at 95%
+        // MHC vacancy floor enforcement — cap occupancy at 95% for Fannie or Freddie MHC
         var effectiveOccupancy = inputs.FannieProductType == FannieProductType.ManufacturedHousing
             ? FannieComplianceCalculator.EnforceMhcVacancyFloor(inputs.OccupancyPercent)
-            : inputs.OccupancyPercent;
+            : inputs.FreddieProductType == FreddieProductType.ManufacturedHousing
+                ? FreddieComplianceCalculator.EnforceMhcVacancyFloor(inputs.OccupancyPercent)
+                : inputs.OccupancyPercent;
 
         // Phase 1: Revenue & NOI
         var gpr = calc.CalculateGpr(inputs.RentPerUnit, inputs.UnitCount);
@@ -93,6 +95,22 @@ public static class CalculationResultAssembler
                 inputs.PurchasePrice,
                 inputs.FannieInputs);
             result.FannieComplianceJson = JsonSerializer.Serialize(compliance);
+        }
+
+        // Freddie Mac compliance evaluation
+        if (inputs.FreddieProductType.HasValue)
+        {
+            var compliance = FreddieComplianceCalculator.Evaluate(
+                inputs.FreddieProductType.Value,
+                dscr,
+                inputs.LtvPercent,
+                inputs.AmortizationYears,
+                noi,
+                debtService,
+                debtAmount,
+                inputs.PurchasePrice,
+                inputs.FreddieInputs);
+            result.FreddieComplianceJson = JsonSerializer.Serialize(compliance);
         }
 
         return result;

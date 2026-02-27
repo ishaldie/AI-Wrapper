@@ -204,6 +204,13 @@
     <Compile Include="Claude\ExpandedPromptBuilderTests.cs" />
     <Compile Include="Services\DealServiceDetailedExpensesTests.cs" />
     <Compile Include="Integration\PropertyTypeIntegrationTests.cs" />
+    <!-- Freddie Mac Compliance -->
+    <Compile Include="Domain\FreddieProductTests.cs" />
+    <Compile Include="Calculations\FreddieComplianceTests.cs" />
+    <Compile Include="Calculations\FreddieRiskRatingTests.cs" />
+    <Compile Include="Claude\FreddiePromptBuilderTests.cs" />
+    <Compile Include="Components\FreddieProductTypeUITests.cs" />
+    <Compile Include="Integration\FreddieIntegrationTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

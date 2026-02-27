@@ -32,6 +32,9 @@ public class Deal
     // Fannie Mae product type (nullable — only set when ExecutionType = FannieMae)
     public FannieProductType? FannieProductType { get; set; }
 
+    // Freddie Mac product type (nullable — only set when ExecutionType = FreddieMac)
+    public FreddieProductType? FreddieProductType { get; set; }
+
     // Portfolio assignment
     public Guid? PortfolioId { get; set; }
     public Portfolio? Portfolio { get; set; }
