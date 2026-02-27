@@ -730,6 +730,23 @@ else
                     </MudText>
                 </MudStack>
 
+                @{
+                    var fannieRequiredMissing = _deal?.FannieProductType != null
+                        ? _checklistItems.Count(i => i.Template.FannieProductType != null
+                            && i.Status != ChecklistStatus.Satisfied
+                            && i.Status != ChecklistStatus.NotApplicable
+                            && i.Status != ChecklistStatus.WaiverApproved)
+                        : 0;
+                }
+
+                @if (fannieRequiredMissing > 0)
+                {
+                    <MudAlert Severity="Severity.Warning" Class="mb-3" Dense="true"
+                              Icon="@Icons.Material.Filled.Warning">
+                        @($"{fannieRequiredMissing} Fannie Mae product-specific document(s) still required")
+                    </MudAlert>
+                }
+
                 @foreach (var grp in _checklistItems
                     .GroupBy(i => i.Template.Section)
                     .OrderBy(g => g.First().Template.SectionOrder))
@@ -740,13 +757,31 @@ else
 
                     @foreach (var item in grp.OrderBy(i => i.Template.SortOrder))
                     {
+                        var isFannieRequired = item.Template.FannieProductType != null;
+                        var isOutstanding = item.Status != ChecklistStatus.Satisfied
+                            && item.Status != ChecklistStatus.NotApplicable
+                            && item.Status != ChecklistStatus.WaiverApproved;
+                        var rowBorder = isFannieRequired && isOutstanding
+                            ? "border: 1px solid #F59E0B; border-radius: 8px; background: #FFFBEB;"
+                            : "border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF;";
+
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="mb-2 pa-2"
-                                  Style="border: 1px solid #E5E7EB; border-radius: 8px; background: #FFFFFF;">
+                                  Style="@rowBorder">
                             <MudChip T="string" Size="Size.Small" Color="@GetChecklistStatusColor(item.Status)"
                                      Style="min-width: 120px; text-align: center;">
                                 @FormatChecklistStatus(item.Status)
                             </MudChip>
-                            <MudText Style="flex: 1; color: #1A2332;">@item.Template.ItemName</MudText>
+                            <MudText Style="flex: 1; color: #1A2332;">
+                                @item.Template.ItemName
+                                @if (isFannieRequired)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined"
+                                             Color="Color.Warning" Class="ml-2"
+                                             Style="font-size: 0.7rem;">
+                                        Fannie Required
+                                    </MudChip>
+                                }
+                            </MudText>
                             @if (item.DocumentId != null)
                             {
                                 <MudTooltip Text="@($"Download: {item.Document?.FileName ?? "document"}")">
@@ -2357,6 +2392,7 @@ else
         var templates = await Db.ChecklistTemplates
             .Where(t => t.ExecutionType == ExecutionType.All || t.ExecutionType == _deal.ExecutionType)
             .Where(t => t.TransactionType == "All" || t.TransactionType == _deal.TransactionType)
+            .Where(t => t.FannieProductType == null || t.FannieProductType == _deal.FannieProductType)
             .OrderBy(t => t.SectionOrder).ThenBy(t => t.SortOrder)
             .ToListAsync();
 

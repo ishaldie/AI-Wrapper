@@ -304,6 +304,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             entity.Property(e => e.ItemName).IsRequired().HasMaxLength(500);
             entity.Property(e => e.ExecutionType).HasConversion<string>().HasMaxLength(20);
             entity.Property(e => e.TransactionType).HasMaxLength(100);
+            entity.Property(e => e.FannieProductType).HasConversion<string>().HasMaxLength(30);
             entity.HasIndex(e => new { e.SectionOrder, e.SortOrder });
         });
 

@@ -166,14 +166,46 @@ public static class ChecklistTemplateSeed
             templates.Add(T(s17, 17, ++sort, $"Additional Item {i}", ExecutionType.All, "Deal Specific"));
         }
 
+        // Section 18: Fannie Mae Product-Specific Due Diligence
+        var s18 = "Fannie Mae Product-Specific Due Diligence";
+
+        // Seniors Housing (IL/AL/ALZ)
+        templates.Add(T(s18, 18, ++sort, "Management Company Operations Review", ExecutionType.FannieMae, "All", FannieProductType.SeniorsIL));
+        templates.Add(T(s18, 18, ++sort, "Management Company Operations Review", ExecutionType.FannieMae, "All", FannieProductType.SeniorsAL));
+        templates.Add(T(s18, 18, ++sort, "Management Company Operations Review", ExecutionType.FannieMae, "All", FannieProductType.SeniorsALZ));
+        templates.Add(T(s18, 18, ++sort, "State Regulatory Compliance Reports", ExecutionType.FannieMae, "All", FannieProductType.SeniorsIL));
+        templates.Add(T(s18, 18, ++sort, "State Regulatory Compliance Reports", ExecutionType.FannieMae, "All", FannieProductType.SeniorsAL));
+        templates.Add(T(s18, 18, ++sort, "State Regulatory Compliance Reports", ExecutionType.FannieMae, "All", FannieProductType.SeniorsALZ));
+        templates.Add(T(s18, 18, ++sort, "Resident Care Level Mix & Census Report", ExecutionType.FannieMae, "All", FannieProductType.SeniorsAL));
+        templates.Add(T(s18, 18, ++sort, "Resident Care Level Mix & Census Report", ExecutionType.FannieMae, "All", FannieProductType.SeniorsALZ));
+
+        // Student Housing
+        templates.Add(T(s18, 18, ++sort, "Enrollment Verification from University Registrar", ExecutionType.FannieMae, "All", FannieProductType.StudentHousing));
+        templates.Add(T(s18, 18, ++sort, "University Distance & Proximity Documentation", ExecutionType.FannieMae, "All", FannieProductType.StudentHousing));
+
+        // Manufactured Housing Communities
+        templates.Add(T(s18, 18, ++sort, "Flood Zone Analysis & FEMA Map", ExecutionType.FannieMae, "All", FannieProductType.ManufacturedHousing));
+        templates.Add(T(s18, 18, ++sort, "Pad Site Inventory & Condition Report", ExecutionType.FannieMae, "All", FannieProductType.ManufacturedHousing));
+
+        // Cooperative
+        templates.Add(T(s18, 18, ++sort, "Operating Reserve Verification", ExecutionType.FannieMae, "All", FannieProductType.Cooperative));
+        templates.Add(T(s18, 18, ++sort, "Governance Documents & Board Minutes", ExecutionType.FannieMae, "All", FannieProductType.Cooperative));
+
+        // Green Rewards
+        templates.Add(T(s18, 18, ++sort, "HPB Report (High Performance Building)", ExecutionType.FannieMae, "All", FannieProductType.GreenRewards));
+        templates.Add(T(s18, 18, ++sort, "Energy & Water Audit Documentation", ExecutionType.FannieMae, "All", FannieProductType.GreenRewards));
+
         return templates;
     }
 
     private static ChecklistTemplate T(
         string section, int sectionOrder,
         int sortOrder, string itemName,
-        ExecutionType executionType, string transactionType)
+        ExecutionType executionType, string transactionType,
+        FannieProductType? fannieProductType = null)
     {
-        return new ChecklistTemplate(section, sectionOrder, itemName, sortOrder, executionType, transactionType);
+        var template = new ChecklistTemplate(section, sectionOrder, itemName, sortOrder, executionType, transactionType);
+        template.FannieProductType = fannieProductType;
+        return template;
     }
 }

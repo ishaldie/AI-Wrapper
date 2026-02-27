@@ -11,6 +11,7 @@ public class ChecklistTemplate
     public int SortOrder { get; set; }
     public ExecutionType ExecutionType { get; set; }
     public string TransactionType { get; set; }
+    public FannieProductType? FannieProductType { get; set; }
 
     private ChecklistTemplate()
     {
