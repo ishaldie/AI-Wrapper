@@ -143,6 +143,11 @@ public class SourcesAndUses
     public decimal CapexReserve { get; init; }
     public decimal TotalUses { get; init; }
     public decimal TotalSources { get; init; }
+
+    // Dual-constraint loan sizing
+    public decimal LtvBasedLoan { get; init; }
+    public decimal DscrBasedLoan { get; init; }
+    public string ConstrainingTest { get; init; } = "LTV";
 }
 
 public class CashFlowYear

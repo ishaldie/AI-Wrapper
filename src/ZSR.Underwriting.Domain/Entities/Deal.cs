@@ -29,6 +29,9 @@ public class Deal
     public ExecutionType ExecutionType { get; set; } = ExecutionType.All;
     public string TransactionType { get; set; } = "All";
 
+    // Fannie Mae product type (nullable — only set when ExecutionType = FannieMae)
+    public FannieProductType? FannieProductType { get; set; }
+
     // Portfolio assignment
     public Guid? PortfolioId { get; set; }
     public Portfolio? Portfolio { get; set; }
@@ -74,6 +77,9 @@ public class Deal
 
     // CMS Care Compare data (JSON blob, nullable)
     public string? CmsData { get; set; }
+
+    // Detailed expense line items (JSON blob, nullable)
+    public string? DetailedExpensesJson { get; set; }
     public decimal? RentRollSummary { get; set; }
     public decimal? T12Summary { get; set; }
     public decimal? LoanLtv { get; set; }

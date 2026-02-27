@@ -41,6 +41,7 @@
     <Compile Remove="Validators\**" />
     <Compile Remove="Claude\**" />
     <Compile Remove="Helpers\**" />
+    <Compile Remove="Integration\**" />
   </ItemGroup>
   <ItemGroup>
     <!-- Core Data Models track -->
@@ -187,6 +188,19 @@
     <!-- Bulk Portfolio Import -->
     <Compile Include="Parsing\PortfolioImportParserTests.cs" />
     <Compile Include="Services\BulkImportServiceTests.cs" />
+    <!-- Underwriting Upgrade — Fannie Mae Compliance -->
+    <Compile Include="Domain\FannieProductTests.cs" />
+    <Compile Include="Calculations\FannieComplianceTests.cs" />
+    <Compile Include="Calculations\FannieRiskRatingTests.cs" />
+    <!-- Additional Underwriting Upgrades track -->
+    <Compile Include="Domain\PropertyTypeExpansionTests.cs" />
+    <Compile Include="Constants\ProtocolDefaultsExpansionTests.cs" />
+    <Compile Include="Calculations\DscrLoanSizingTests.cs" />
+    <Compile Include="Calculations\DetailedExpenseTests.cs" />
+    <Compile Include="Validators\NewPropertyTypeValidatorTests.cs" />
+    <Compile Include="Claude\ExpandedPromptBuilderTests.cs" />
+    <Compile Include="Services\DealServiceDetailedExpensesTests.cs" />
+    <Compile Include="Integration\PropertyTypeIntegrationTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

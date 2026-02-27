@@ -15,8 +15,8 @@ public class DealInputValidator : AbstractValidator<DealInputDto>
         RuleFor(x => x.Address)
             .NotEmpty().WithMessage("Address is required.");
 
-        // UnitCount required for multifamily only
-        When(x => !x.IsSeniorHousing, () =>
+        // UnitCount required for non-senior, non-commercial types
+        When(x => !x.IsSeniorHousing && x.PropertyType != PropertyType.Commercial, () =>
         {
             RuleFor(x => x.UnitCount)
                 .NotNull().WithMessage("Unit count is required.")

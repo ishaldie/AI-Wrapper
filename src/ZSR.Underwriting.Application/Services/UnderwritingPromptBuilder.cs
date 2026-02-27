@@ -25,8 +25,46 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         "underwriting reports. Be precise with numbers, concise in language, and analytical in tone. " +
         "Do not use markdown headers or bullet points unless explicitly requested.";
 
-    private static string GetSystemRole(PropertyType type) =>
-        ProtocolDefaults.IsSeniorHousing(type) ? SeniorHousingSystemRole : MultifamilySystemRole;
+    private const string BridgeLoanSystemRole =
+        "You are a bridge loan underwriting analyst at ZSR Ventures specializing in short-term " +
+        "transitional financing for value-add multifamily and commercial assets. You understand " +
+        "bridge-to-permanent strategies, renovation scope analysis, lease-up projections, and " +
+        "interest reserve structuring. You produce institutional-quality prose for underwriting reports. " +
+        "Be precise with numbers, concise in language, and analytical in tone. " +
+        "Do not use markdown headers or bullet points unless explicitly requested.";
+
+    private const string HospitalitySystemRole =
+        "You are a hospitality real estate underwriting analyst at ZSR Ventures specializing in hotel " +
+        "and lodging acquisitions. You understand RevPAR dynamics, ADR trends, occupancy seasonality, " +
+        "franchise vs independent operations, PIP requirements, and room-based revenue models. " +
+        "You produce institutional-quality prose for underwriting reports. " +
+        "Be precise with numbers, concise in language, and analytical in tone. " +
+        "Do not use markdown headers or bullet points unless explicitly requested.";
+
+    private const string CommercialSystemRole =
+        "You are a commercial real estate underwriting analyst at ZSR Ventures specializing in office, " +
+        "retail, and mixed-use properties. You understand tenant credit analysis, lease rollover risk, " +
+        "NRA-based rent structures, CAM reconciliation, and net-lease vs gross-lease economics. " +
+        "You produce institutional-quality prose for underwriting reports. " +
+        "Be precise with numbers, concise in language, and analytical in tone. " +
+        "Do not use markdown headers or bullet points unless explicitly requested.";
+
+    private const string LihtcSystemRole =
+        "You are an affordable housing underwriting analyst at ZSR Ventures specializing in LIHTC " +
+        "(Low-Income Housing Tax Credit) properties. You understand tax credit compliance, AMI rent " +
+        "limits, LURA restrictions, qualified allocation plans, and regulatory agreement structures. " +
+        "You produce institutional-quality prose for underwriting reports. " +
+        "Be precise with numbers, concise in language, and analytical in tone. " +
+        "Do not use markdown headers or bullet points unless explicitly requested.";
+
+    private static string GetSystemRole(PropertyType type) => type switch
+    {
+        PropertyType.Bridge => BridgeLoanSystemRole,
+        PropertyType.Hospitality => HospitalitySystemRole,
+        PropertyType.Commercial => CommercialSystemRole,
+        PropertyType.LIHTC => LihtcSystemRole,
+        _ => ProtocolDefaults.IsSeniorHousing(type) ? SeniorHousingSystemRole : MultifamilySystemRole
+    };
 
     private static string GetAssetTypeLabel(PropertyType type) => type switch
     {
@@ -34,6 +72,13 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         PropertyType.SkilledNursing => "skilled nursing facility",
         PropertyType.MemoryCare => "memory care",
         PropertyType.CCRC => "continuing care retirement community (CCRC)",
+        PropertyType.Bridge => "bridge loan",
+        PropertyType.Hospitality => "hotel/hospitality",
+        PropertyType.Commercial => "commercial",
+        PropertyType.LIHTC => "affordable housing (LIHTC)",
+        PropertyType.BoardAndCare => "board and care",
+        PropertyType.IndependentLiving => "independent living",
+        PropertyType.SeniorApartment => "senior apartment",
         _ => "multifamily"
     };
 
@@ -240,6 +285,12 @@ public class UnderwritingPromptBuilder : IPromptBuilder
             sb.AppendLine($"- Licensed Beds: {deal.LicensedBeds ?? 0:N0}");
             if (deal.PurchasePrice > 0 && (deal.LicensedBeds ?? 0) > 0)
                 sb.AppendLine($"- Price/Bed: {FormatCurrency(deal.PurchasePrice / deal.LicensedBeds!.Value)}");
+        }
+        else if (deal.PropertyType == PropertyType.Hospitality)
+        {
+            sb.AppendLine($"- Rooms: {deal.UnitCount:N0}");
+            if (deal.PurchasePrice > 0 && deal.UnitCount > 0)
+                sb.AppendLine($"- Price/Room: {FormatCurrency(deal.PurchasePrice / deal.UnitCount)}");
         }
         else
         {

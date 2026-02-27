@@ -17,16 +17,16 @@ public class PortfolioImportParser
     {
         ["PropertyName"] = ["propertyname", "asset", "assetname", "dealname", "property", "name"],
         ["Address"] = ["address", "location", "propertyaddress", "streetaddress", "street"],
-        ["UnitCount"] = ["units", "totalunits", "unitcount", "numberofunits", "numunits", "noofunits"],
+        ["UnitCount"] = ["units", "totalunits", "unitcount", "numberofunits", "numunits", "noofunits", "rooms", "roomcount", "numberofrooms", "totalrooms"],
         ["PurchasePrice"] = ["purchaseprice", "price", "askingprice", "acquisitionprice", "listprice", "saleprice"],
         ["RentRollSummary"] = ["monthlyrent", "grossrent", "totalrent", "rentrollsummary", "monthlyincome", "grossincome"],
         ["T12Summary"] = ["t12noi", "noi", "netoperatingincome", "t12summary", "annualnoi", "trailingnoi"],
         ["LoanLtv"] = ["ltv", "ltv(%)", "loantovalueratio", "loanltv", "leverageratio"],
         ["LoanRate"] = ["interestrate", "interestrate(%)", "rate", "loanrate", "couponrate", "mortgagerate"],
         ["CapexBudget"] = ["capexbudget", "rehabbudget", "renovationbudget", "capex", "rehab", "capitalexpenditures"],
-        ["PropertyType"] = ["propertytype", "assettype", "type", "assetclass", "facilitytype"],
+        ["PropertyType"] = ["propertytype", "assettype", "type", "assetclass", "facilitytype", "producttype", "loantype"],
         ["LicensedBeds"] = ["licensedbeds", "beds", "totalbeds", "bedcount"],
-        ["AverageDailyRate"] = ["averagedailyrate", "adr", "dailyrate", "rateperday"],
+        ["AverageDailyRate"] = ["averagedailyrate", "adr", "dailyrate", "rateperday", "revpar"],
         ["PrivatePayPct"] = ["privatepaypct", "privatepay", "privatepay%", "privpay"],
     };
 

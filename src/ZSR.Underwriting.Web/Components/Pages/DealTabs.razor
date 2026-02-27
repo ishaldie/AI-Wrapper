@@ -154,7 +154,7 @@ else
                     </MudItem>
                 </MudGrid>
 
-                @if (_deal.PropertyType != PropertyType.Multifamily)
+                @if (ProtocolDefaults.IsSeniorHousing(_deal.PropertyType))
                 {
                     <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Senior Housing — Bed Configuration</MudText>
                     <MudGrid>
@@ -266,6 +266,71 @@ else
                         </MudButton>
                     }
                 }
+
+                @* Detailed Expense Line Items (optional override for ratio-based OpEx) *@
+                <MudExpansionPanels Class="mt-6" MultiExpansion="false">
+                    <MudExpansionPanel Text="Detailed Expenses (Optional)" MaxHeight="600"
+                                       Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <TitleContent>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@Icons.Material.Filled.Receipt" Size="Size.Small" Style="color: #6B7280;" />
+                                <MudText Style="font-weight: 600; color: #1A2332;">Detailed Expenses</MudText>
+                                <MudText Typo="Typo.caption" Style="color: #6B7280;">Override ratio-based OpEx with line items</MudText>
+                            </MudStack>
+                        </TitleContent>
+                        <ChildContent>
+                            <MudGrid>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.RealEstateTaxes" Label="Real Estate Taxes" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.Insurance" Label="Insurance" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.Utilities" Label="Utilities" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.RepairsAndMaintenance" Label="Repairs & Maintenance" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.Payroll" Label="Payroll" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.Marketing" Label="Marketing" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.GeneralAndAdmin" Label="General & Admin" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.ManagementFee" Label="Management Fee ($)" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.ManagementFeePct" Label="Mgmt Fee (% of EGI)" Variant="Variant.Outlined"
+                                                     Format="N2" Adornment="Adornment.End" AdornmentText="%" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.ReplacementReserves" Label="Replacement Reserves" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                                <MudItem xs="12" md="4">
+                                    <MudNumericField @bind-Value="DetailedExpenses.OtherExpenses" Label="Other Expenses" Variant="Variant.Outlined"
+                                                     Format="C0" Adornment="Adornment.Start" AdornmentText="$" />
+                                </MudItem>
+                            </MudGrid>
+                            <MudText Typo="Typo.caption" Class="mt-2" Style="color: #6B7280;">
+                                When provided, line-item totals replace ratio-based OpEx. PUPA minimums are enforced automatically.
+                            </MudText>
+                        </ChildContent>
+                    </MudExpansionPanel>
+                </MudExpansionPanels>
 
                 <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-6">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
@@ -1682,6 +1747,18 @@ else
     private bool _loading = true;
     private bool _saving;
     private bool _refreshingCms;
+    private DetailedExpenses _detailedExpenses = new();
+
+    /// <summary>
+    /// Provides two-way access to the Deal's DetailedExpenses JSON blob.
+    /// On load, deserializes from Deal.DetailedExpensesJson.
+    /// On save, serializes back if any values are set.
+    /// </summary>
+    private DetailedExpenses DetailedExpenses
+    {
+        get => _detailedExpenses;
+        set => _detailedExpenses = value;
+    }
     private int _activePanelIndex;
     private bool _chatOpen;
     private MarketContextDto? _marketContext;
@@ -1815,6 +1892,14 @@ else
 
             _documents = _deal.UploadedDocuments.OrderByDescending(d => d.UploadedAt).ToList();
             _investors = _deal.DealInvestors.OrderBy(i => i.Name).ToList();
+
+            // Load detailed expenses from JSON blob
+            if (!string.IsNullOrWhiteSpace(_deal.DetailedExpensesJson))
+            {
+                try { _detailedExpenses = System.Text.Json.JsonSerializer.Deserialize<DetailedExpenses>(_deal.DetailedExpensesJson) ?? new(); }
+                catch { _detailedExpenses = new(); }
+            }
+
             _ingestionLogs = await Db.EmailIngestionLogs
                 .Where(l => l.DealId == DealId)
                 .OrderByDescending(l => l.CreatedAt)
@@ -2255,6 +2340,11 @@ else
                 _deal.Property = _property;
             }
 
+            // Persist detailed expenses as JSON
+            _deal.DetailedExpensesJson = _detailedExpenses.HasAnyValues
+                ? System.Text.Json.JsonSerializer.Serialize(_detailedExpenses)
+                : null;
+
             await Db.SaveChangesAsync();
             Snackbar.Add("Changes saved", Severity.Success);
         }
@@ -2315,6 +2405,13 @@ else
         PropertyType.SkilledNursing => "Skilled Nursing",
         PropertyType.MemoryCare => "Memory Care",
         PropertyType.CCRC => "CCRC",
+        PropertyType.Bridge => "Bridge Loan",
+        PropertyType.Hospitality => "Hospitality",
+        PropertyType.Commercial => "Commercial",
+        PropertyType.LIHTC => "LIHTC (Affordable)",
+        PropertyType.BoardAndCare => "Board & Care",
+        PropertyType.IndependentLiving => "Independent Living",
+        PropertyType.SeniorApartment => "Senior Apartment",
         _ => "Multifamily"
     };
 

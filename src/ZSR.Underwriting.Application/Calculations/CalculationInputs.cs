@@ -1,3 +1,5 @@
+using ZSR.Underwriting.Domain.Enums;
+
 namespace ZSR.Underwriting.Application.Calculations;
 
 public class CalculationInputs
@@ -14,4 +16,8 @@ public class CalculationInputs
     public int HoldPeriodYears { get; set; }
     public decimal MarketCapRatePercent { get; set; }
     public decimal[] AnnualGrowthRatePercents { get; set; } = Array.Empty<decimal>();
+
+    // Fannie Mae compliance (null when ExecutionType != FannieMae)
+    public FannieProductType? FannieProductType { get; set; }
+    public FannieComplianceInputs? FannieInputs { get; set; }
 }

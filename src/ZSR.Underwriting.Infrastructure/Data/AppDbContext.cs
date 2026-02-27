@@ -144,6 +144,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
             // Deal classification
             entity.Property(e => e.ExecutionType).HasConversion<string>().HasMaxLength(20);
             entity.Property(e => e.TransactionType).HasMaxLength(50);
+            entity.Property(e => e.FannieProductType).HasConversion<string>().HasMaxLength(30);
         });
 
         // --- Property ---

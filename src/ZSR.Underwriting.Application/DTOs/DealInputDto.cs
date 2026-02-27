@@ -1,3 +1,5 @@
+using ZSR.Underwriting.Application.Constants;
+using ZSR.Underwriting.Domain.Entities;
 using ZSR.Underwriting.Domain.Enums;
 
 namespace ZSR.Underwriting.Application.DTOs;
@@ -28,7 +30,10 @@ public class DealInputDto
     public decimal? TargetOccupancy { get; set; }
     public string ValueAddPlans { get; set; } = string.Empty;
 
-    // Senior housing fields (null for multifamily)
+    // Detailed expense line items (optional — overrides ratio-based OpEx when provided)
+    public DetailedExpenses? DetailedExpenses { get; set; }
+
+    // Senior housing fields (null for non-senior types)
     public int? LicensedBeds { get; set; }
     public int? AlBeds { get; set; }
     public int? SnfBeds { get; set; }
@@ -42,5 +47,5 @@ public class DealInputDto
     public int? AverageLengthOfStayMonths { get; set; }
     public string? LicenseType { get; set; }
 
-    public bool IsSeniorHousing => PropertyType != PropertyType.Multifamily;
+    public bool IsSeniorHousing => ProtocolDefaults.IsSeniorHousing(PropertyType);
 }

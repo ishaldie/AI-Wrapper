@@ -1,3 +1,6 @@
+using ZSR.Underwriting.Application.Constants;
+using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
 using ZSR.Underwriting.Domain.Interfaces;
 
 namespace ZSR.Underwriting.Application.Calculations;
@@ -259,6 +262,108 @@ public class UnderwritingCalculator : IUnderwritingCalculator
         }
 
         return Math.Round((decimal)(rate * 100), 1);
+    }
+
+    // Detailed Expense Calculations
+
+    /// <summary>
+    /// Calculates total operating expenses from line-item detail.
+    /// Applies PUPA minimums from ProtocolDefaults for applicable categories.
+    /// When ManagementFeePct is set, calculates management fee as EGI × %.
+    /// Returns 0 when expenses is null or has no values.
+    /// </summary>
+    public decimal CalculateDetailedExpenses(
+        DetailedExpenses? expenses, int unitCount, decimal egi, PropertyType propertyType)
+    {
+        if (expenses == null || !expenses.HasAnyValues)
+            return 0m;
+
+        var minimums = ProtocolDefaults.ExpensePupaMinimums;
+
+        decimal ApplyFloor(decimal? value, string category)
+        {
+            if (!value.HasValue) return 0m;
+            if (unitCount > 0 && minimums.TryGetValue(category, out var pupaMin))
+            {
+                var floor = pupaMin * unitCount;
+                return Math.Max(value.Value, floor);
+            }
+            return value.Value;
+        }
+
+        var total = 0m;
+        total += expenses.RealEstateTaxes ?? 0m;
+        total += expenses.Insurance ?? 0m;
+        total += expenses.Utilities ?? 0m;
+        total += ApplyFloor(expenses.RepairsAndMaintenance, "RepairsAndMaintenance");
+        total += ApplyFloor(expenses.Payroll, "Payroll");
+        total += ApplyFloor(expenses.Marketing, "Marketing");
+        total += ApplyFloor(expenses.GeneralAndAdmin, "GeneralAndAdmin");
+        total += expenses.ReplacementReserves ?? 0m;
+        total += expenses.OtherExpenses ?? 0m;
+
+        // Management fee: % of EGI takes precedence over dollar amount
+        if (expenses.ManagementFeePct.HasValue)
+            total += Math.Round(egi * expenses.ManagementFeePct.Value / 100m, 2);
+        else
+            total += expenses.ManagementFee ?? 0m;
+
+        return total;
+    }
+
+    // DSCR Loan Sizing
+
+    /// <summary>
+    /// Returns the annual debt service per $1 of loan (mortgage constant).
+    /// For IO: equals annual rate. For amortizing: standard PMT formula / loan.
+    /// </summary>
+    public decimal CalculateMortgageConstant(decimal annualRatePercent, int amortizationYears, bool isInterestOnly)
+    {
+        var annualRate = annualRatePercent / 100m;
+
+        if (isInterestOnly || amortizationYears == 0)
+            return annualRate;
+
+        if (annualRate == 0m)
+            return 1m / amortizationYears;
+
+        var monthlyRate = annualRate / 12m;
+        var n = amortizationYears * 12;
+        var compoundFactor = (decimal)Math.Pow((double)(1m + monthlyRate), n);
+        var monthlyConstant = monthlyRate * compoundFactor / (compoundFactor - 1m);
+        return monthlyConstant * 12m;
+    }
+
+    /// <summary>
+    /// Maximum loan sized by DSCR = NOI / (minDscr × mortgageConstant).
+    /// </summary>
+    public decimal CalculateMaxLoanByDscr(decimal noi, decimal minDscr, decimal mortgageConstant)
+    {
+        if (minDscr <= 0m || mortgageConstant <= 0m)
+            return 0m;
+
+        return Math.Round(noi / (minDscr * mortgageConstant), 2);
+    }
+
+    /// <summary>
+    /// Dual-constraint loan sizing: returns MIN(LTV-based, DSCR-based) and labels the constraining test.
+    /// </summary>
+    public LoanSizingResult CalculateConstrainedLoan(
+        decimal purchasePrice, decimal maxLtvPercent, decimal noi, decimal minDscr,
+        decimal annualRatePercent, int amortizationYears, bool isInterestOnly)
+    {
+        var ltvBasedLoan = Math.Round(purchasePrice * maxLtvPercent / 100m, 2);
+        var mortgageConstant = CalculateMortgageConstant(annualRatePercent, amortizationYears, isInterestOnly);
+        var dscrBasedLoan = CalculateMaxLoanByDscr(noi, minDscr, mortgageConstant);
+
+        var constrainingTest = dscrBasedLoan <= ltvBasedLoan ? "DSCR" : "LTV";
+        var maxLoan = Math.Min(ltvBasedLoan, dscrBasedLoan);
+
+        return new LoanSizingResult(
+            MaxLoan: Math.Round(maxLoan, 2),
+            LtvBasedLoan: ltvBasedLoan,
+            DscrBasedLoan: Math.Round(dscrBasedLoan, 2),
+            ConstrainingTest: constrainingTest);
     }
 
     // Phase 4: Sales Comp Adjustments

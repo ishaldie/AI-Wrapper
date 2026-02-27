@@ -6,5 +6,12 @@ public enum PropertyType
     AssistedLiving,
     SkilledNursing,
     MemoryCare,
-    CCRC
+    CCRC,
+    Bridge,
+    Hospitality,
+    Commercial,
+    LIHTC,
+    BoardAndCare,
+    IndependentLiving,
+    SeniorApartment
 }

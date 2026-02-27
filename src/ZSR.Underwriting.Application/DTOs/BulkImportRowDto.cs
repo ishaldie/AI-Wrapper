@@ -25,7 +25,12 @@ public class BulkImportRowDto
     public bool IsValid => Errors.Count == 0;
     public List<string> Errors { get; set; } = new();
 
-    public bool IsSeniorType => PropertyType != null &&
-        !PropertyType.Equals("Multifamily", StringComparison.OrdinalIgnoreCase) &&
-        !string.IsNullOrWhiteSpace(PropertyType);
+    private static readonly HashSet<string> SeniorTypeNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "AssistedLiving", "SkilledNursing", "MemoryCare", "CCRC",
+        "BoardAndCare", "IndependentLiving", "SeniorApartment"
+    };
+
+    public bool IsSeniorType => !string.IsNullOrWhiteSpace(PropertyType) &&
+        SeniorTypeNames.Contains(PropertyType);
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
 
 namespace ZSR.Underwriting.Application.Calculations;
 
@@ -10,9 +11,14 @@ public static class CalculationResultAssembler
         var calc = new UnderwritingCalculator();
         var result = new CalculationResult(inputs.DealId);
 
+        // Task 6: MHC vacancy floor enforcement — cap occupancy at 95%
+        var effectiveOccupancy = inputs.FannieProductType == FannieProductType.ManufacturedHousing
+            ? FannieComplianceCalculator.EnforceMhcVacancyFloor(inputs.OccupancyPercent)
+            : inputs.OccupancyPercent;
+
         // Phase 1: Revenue & NOI
         var gpr = calc.CalculateGpr(inputs.RentPerUnit, inputs.UnitCount);
-        var vacancyLoss = calc.CalculateVacancyLoss(gpr, inputs.OccupancyPercent);
+        var vacancyLoss = calc.CalculateVacancyLoss(gpr, effectiveOccupancy);
         var netRent = calc.CalculateNetRent(gpr, vacancyLoss);
         var otherIncome = calc.CalculateOtherIncome(netRent);
         var egi = calc.CalculateEgi(netRent, otherIncome);
@@ -68,10 +74,26 @@ public static class CalculationResultAssembler
 
         // Sensitivity analysis
         var scenarios = SensitivityCalculator.RunScenarios(
-            gpr, inputs.OccupancyPercent, 0.135m, 0.5435m,
+            gpr, effectiveOccupancy, 0.135m, 0.5435m,
             inputs.PurchasePrice, debtService, reserves, equityRequired,
             exitCapRate, terminalNoi);
         result.SensitivityAnalysisJson = JsonSerializer.Serialize(scenarios);
+
+        // Fannie Mae compliance evaluation
+        if (inputs.FannieProductType.HasValue)
+        {
+            var compliance = FannieComplianceCalculator.Evaluate(
+                inputs.FannieProductType.Value,
+                dscr,
+                inputs.LtvPercent,
+                inputs.AmortizationYears,
+                noi,
+                debtService,
+                debtAmount,
+                inputs.PurchasePrice,
+                inputs.FannieInputs);
+            result.FannieComplianceJson = JsonSerializer.Serialize(compliance);
+        }
 
         return result;
     }

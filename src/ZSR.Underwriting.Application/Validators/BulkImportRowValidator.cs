@@ -7,7 +7,9 @@ public class BulkImportRowValidator : AbstractValidator<BulkImportRowDto>
 {
     private static readonly HashSet<string> ValidPropertyTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Multifamily", "AssistedLiving", "SkilledNursing", "MemoryCare", "CCRC"
+        "Multifamily", "AssistedLiving", "SkilledNursing", "MemoryCare", "CCRC",
+        "Bridge", "Hospitality", "Commercial", "LIHTC",
+        "BoardAndCare", "IndependentLiving", "SeniorApartment"
     };
 
     public BulkImportRowValidator()
@@ -22,7 +24,7 @@ public class BulkImportRowValidator : AbstractValidator<BulkImportRowDto>
         {
             RuleFor(x => x.PropertyType)
                 .Must(pt => ValidPropertyTypes.Contains(pt!))
-                .WithMessage("Property type must be one of: Multifamily, AssistedLiving, SkilledNursing, MemoryCare, CCRC.");
+                .WithMessage("Property type must be one of: " + string.Join(", ", ValidPropertyTypes) + ".");
         });
 
         // Senior housing: LicensedBeds required instead of UnitCount

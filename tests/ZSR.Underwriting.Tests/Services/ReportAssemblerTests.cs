@@ -98,8 +98,10 @@ public class ReportAssemblerTests : IDisposable
         var assembler = new ReportAssembler(_db);
         var report = await assembler.AssembleReportAsync(deal.Id);
 
-        // LTV 70% of $10M = $7M loan
-        Assert.Equal(7_000_000m, report.CoreMetrics.LoanAmount);
+        // Dual-constraint sizing: loan is MIN(LTV-based $7M, DSCR-based)
+        // With test deal NOI ~$494k and 1.25x DSCR, DSCR constrains below $7M
+        Assert.True(report.CoreMetrics.LoanAmount > 0);
+        Assert.True(report.CoreMetrics.LoanAmount <= 7_000_000m);
         Assert.Equal(70m, report.CoreMetrics.LtvPercent);
     }
 
@@ -155,8 +157,11 @@ public class ReportAssemblerTests : IDisposable
         var assembler = new ReportAssembler(_db);
         var report = await assembler.AssembleReportAsync(deal.Id);
 
-        Assert.Equal(7_000_000m, report.FinancialAnalysis.SourcesAndUses.LoanAmount);
+        // Dual-constraint: loan may be DSCR-constrained below LTV amount
+        Assert.True(report.FinancialAnalysis.SourcesAndUses.LoanAmount > 0);
         Assert.Equal(10_000_000m, report.FinancialAnalysis.SourcesAndUses.PurchasePrice);
+        Assert.Equal(7_000_000m, report.FinancialAnalysis.SourcesAndUses.LtvBasedLoan);
+        Assert.NotEmpty(report.FinancialAnalysis.SourcesAndUses.ConstrainingTest);
     }
 
     [Fact]

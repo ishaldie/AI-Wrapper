@@ -58,9 +58,6 @@ public class ReportAssembler : IReportAssembler
         var effectiveAmort = ProtocolDefaults.GetEffectiveAmortization(deal.AmortizationYears);
         var effectiveTerm = ProtocolDefaults.GetEffectiveLoanTerm(deal.LoanTermYears);
         var isSenior = ProtocolDefaults.IsSeniorHousing(deal.PropertyType);
-
-        var loanAmount = deal.PurchasePrice * effectiveLtv / 100m;
-        var equityRequired = deal.PurchasePrice - loanAmount;
         var sizeMetric = isSenior ? (deal.LicensedBeds ?? 0) : deal.UnitCount;
         var pricePerUnit = sizeMetric > 0 ? deal.PurchasePrice / sizeMetric : 0m;
 
@@ -133,6 +130,15 @@ public class ReportAssembler : IReportAssembler
 
         // Debt service calculation — prefer user rate, fall back to market rate
         var loanRate = MarketDataEnricher.GetEffectiveLoanRate(deal.LoanRate, marketContext ?? new MarketContextDto()) ?? 0m;
+
+        // Dual-constraint loan sizing: MIN(LTV-based, DSCR-based)
+        var minDscr = ProtocolDefaults.GetMinDscr(deal.PropertyType);
+        var loanSizing = _calc.CalculateConstrainedLoan(
+            deal.PurchasePrice, effectiveLtv, noi, minDscr,
+            loanRate, effectiveAmort, deal.IsInterestOnly);
+        var loanAmount = loanSizing.MaxLoan;
+        var equityRequired = deal.PurchasePrice - loanAmount;
+
         var debtService = _calc.CalculateAnnualDebtService(loanAmount, loanRate, deal.IsInterestOnly, effectiveAmort);
         var reserves = _calc.CalculateAnnualReserves(sizeMetric);
         var acqCosts = _calc.CalculateAcquisitionCosts(deal.PurchasePrice);
@@ -174,7 +180,7 @@ public class ReportAssembler : IReportAssembler
             TenantMarket = BuildTenantMarket(deal, effectiveOccupancy, marketContext, publicData?.TenantDemographics, affordability),
             Operations = BuildOperations(deal, gpr, vacancyLoss, netRent, otherIncome, egi, opEx, noi, noiMargin),
             FinancialAnalysis = BuildFinancialAnalysis(deal, loanAmount, equityRequired, noi, egi, opEx,
-                debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort),
+                debtService, reserves, totalEquity, capRate, loanRate, effectiveHold, effectiveAmort, loanSizing),
             ValueCreation = BuildValueCreation(deal, prose),
             RiskAssessment = BuildRiskAssessment(prose),
             InvestmentDecision = BuildInvestmentDecision(prose),
@@ -468,7 +474,7 @@ public class ReportAssembler : IReportAssembler
     private FinancialAnalysisSection BuildFinancialAnalysis(
         Deal deal, decimal loanAmount, decimal equityRequired, decimal noi, decimal egi, decimal opEx,
         decimal debtService, decimal reserves, decimal totalEquity, decimal capRate, decimal loanRate,
-        int holdPeriod, int amortYears)
+        int holdPeriod, int amortYears, LoanSizingResult? loanSizing = null)
     {
         // Default 3% annual NOI growth for projection
         var growthRates = Enumerable.Repeat(3m, holdPeriod).ToArray();
@@ -524,6 +530,9 @@ public class ReportAssembler : IReportAssembler
                 CapexReserve = deal.CapexBudget ?? 0m,
                 TotalUses = deal.PurchasePrice + (deal.CapexBudget ?? 0m),
                 TotalSources = loanAmount + equityRequired + (deal.CapexBudget ?? 0m),
+                LtvBasedLoan = loanSizing?.LtvBasedLoan ?? loanAmount,
+                DscrBasedLoan = loanSizing?.DscrBasedLoan ?? loanAmount,
+                ConstrainingTest = loanSizing?.ConstrainingTest ?? "LTV",
             },
             FiveYearCashFlow = fiveYearCf,
             Returns = new ReturnsAnalysis

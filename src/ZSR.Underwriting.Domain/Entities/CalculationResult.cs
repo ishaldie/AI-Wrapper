@@ -46,6 +46,9 @@ public class CalculationResult
     // Sensitivity analysis (stored as JSON)
     public string? SensitivityAnalysisJson { get; set; }
 
+    // Fannie Mae compliance results (stored as JSON)
+    public string? FannieComplianceJson { get; set; }
+
     // HUD Affordability metrics
     public int? AffordabilityPercentAmi { get; set; }
     public string? AffordabilityTier { get; set; }

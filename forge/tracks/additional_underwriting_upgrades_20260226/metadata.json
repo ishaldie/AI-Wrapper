@@ -1,8 +1,8 @@
 {
   "trackId": "additional_underwriting_upgrades_20260226",
   "type": "feature",
-  "status": "backlog",
-  "description": "Additional Underwriting Upgrades",
+  "status": "in_progress",
+  "description": "Comprehensive underwriting upgrade: 12 property types, detailed expense line items, DSCR+LTV loan sizing, property-type-calibrated AI prompts",
   "createdAt": "2026-02-26T23:31:08.500Z",
-  "updatedAt": "2026-02-26T23:31:08.500Z"
+  "updatedAt": "2026-02-27T00:00:00.000Z"
 }

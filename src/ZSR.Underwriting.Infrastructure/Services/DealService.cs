@@ -254,6 +254,11 @@ public class DealService : IDealService
         deal.AverageDailyRate = input.AverageDailyRate;
         deal.AverageLengthOfStayMonths = input.AverageLengthOfStayMonths;
         deal.LicenseType = input.LicenseType;
+
+        // Detailed expenses (JSON blob)
+        deal.DetailedExpensesJson = input.DetailedExpenses is { HasAnyValues: true }
+            ? JsonSerializer.Serialize(input.DetailedExpenses)
+            : null;
     }
 
     private static DealInputDto MapToDto(Deal deal)
@@ -289,6 +294,10 @@ public class DealService : IDealService
             AverageDailyRate = deal.AverageDailyRate,
             AverageLengthOfStayMonths = deal.AverageLengthOfStayMonths,
             LicenseType = deal.LicenseType,
+            // Detailed expenses (from JSON blob)
+            DetailedExpenses = string.IsNullOrWhiteSpace(deal.DetailedExpensesJson)
+                ? null
+                : JsonSerializer.Deserialize<DetailedExpenses>(deal.DetailedExpensesJson),
         };
     }
 }
