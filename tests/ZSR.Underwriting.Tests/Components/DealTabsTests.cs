@@ -55,6 +55,7 @@ public class DealTabsTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
 
         // Build a separate scope to seed data
         var sp = _ctx.Services.BuildServiceProvider();
@@ -258,6 +259,7 @@ public class DealTabsUnderwritingTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -424,6 +426,7 @@ public class DealTabsChecklistTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -551,6 +554,7 @@ public class DealTabsChecklistUploadTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -690,6 +694,7 @@ public class DealTabsInvestorTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
@@ -865,6 +870,7 @@ public class DealTabsChatTests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
         _ctx.Services.AddSingleton<ITokenUsageTracker>(new NoOpTokenUsageTracker());
         _ctx.Services.AddSingleton<ITokenBudgetService>(new NoOpTokenBudgetService());
         _ctx.Services.AddSingleton<IApiKeyService>(new NoOpApiKeyService());
@@ -967,6 +973,141 @@ public class DealTabsChatTests : IAsyncLifetime
 
         // Chat toggle button should be rendered in the header
         Assert.Contains("chat-toggle-btn", cut.Markup);
+    }
+}
+
+public class DealTabsSecuritizationCompTests : IAsyncLifetime
+{
+    private readonly BunitContext _ctx;
+    private readonly AppDbContext _db;
+    private readonly Guid _dealId;
+
+    public DealTabsSecuritizationCompTests()
+    {
+        _ctx = new BunitContext();
+        _ctx.JSInterop.Mode = JSRuntimeMode.Loose;
+        _ctx.Services.AddMudServices();
+
+        var dbName = $"DealTabsCompTests_{Guid.NewGuid()}";
+        _ctx.Services.AddDbContext<AppDbContext>(options =>
+            options.UseInMemoryDatabase(dbName));
+
+        var authCtx = _ctx.AddAuthorization();
+        authCtx.SetAuthorized("Test User");
+
+        _ctx.Services.AddSingleton<IDocumentUploadService>(new StubDocumentUploadService());
+        _ctx.Services.AddSingleton<IDocumentMatchingService>(new StubDocumentMatchingService());
+        _ctx.Services.AddSingleton<IActivityTracker>(new NoOpActivityTracker());
+        _ctx.Services.AddSingleton<ISensitivityCalculator>(new SensitivityCalculatorService());
+        _ctx.Services.AddSingleton<IMarketDataService>(new StubMarketDataService());
+        _ctx.Services.AddSingleton<IDealService>(new NoOpDealService());
+        _ctx.Services.AddSingleton<IContractService>(new NoOpContractService());
+        _ctx.Services.AddSingleton<IRentRollService>(new NoOpRentRollService());
+        _ctx.Services.AddSingleton<IPortfolioService>(new NoOpPortfolioService());
+        _ctx.Services.AddSingleton<IActualsService>(new NoOpActualsService());
+        _ctx.Services.AddSingleton<ICapExService>(new NoOpCapExService());
+        _ctx.Services.AddSingleton<IVarianceCalculator>(new NoOpVarianceCalculator());
+        _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
+        _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
+        _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new StubSecuritizationCompService());
+
+        var sp = _ctx.Services.BuildServiceProvider();
+        _db = sp.GetRequiredService<AppDbContext>();
+
+        var deal = new Deal("Test Property", "test-user-id");
+        deal.PropertyName = "Market Towers";
+        deal.Address = "789 Market St, Dallas, TX";
+        deal.UnitCount = 150;
+        deal.PurchasePrice = 15_000_000m;
+        deal.LoanLtv = 72m;
+        deal.LoanRate = 5.25m;
+        deal.TargetOccupancy = 94m;
+        _db.Deals.Add(deal);
+
+        var calc = new CalculationResult(deal.Id)
+        {
+            DebtServiceCoverageRatio = 1.35m,
+            GoingInCapRate = 0.055m,
+            NetOperatingIncome = 900_000m,
+            GrossPotentialRent = 1_200_000m,
+            EffectiveGrossIncome = 1_140_000m,
+            OperatingExpenses = 240_000m,
+        };
+        _db.CalculationResults.Add(calc);
+        _db.SaveChanges();
+        _dealId = deal.Id;
+    }
+
+    public Task InitializeAsync() => Task.CompletedTask;
+    public async Task DisposeAsync()
+    {
+        await _db.DisposeAsync();
+        await _ctx.DisposeAsync();
+    }
+
+    private RenderFragment RenderDealTabs(Guid dealId)
+    {
+        return builder =>
+        {
+            builder.OpenComponent<MudPopoverProvider>(0);
+            builder.CloseComponent();
+            builder.OpenComponent<DealTabs>(1);
+            builder.AddAttribute(2, "DealId", dealId);
+            builder.CloseComponent();
+        };
+    }
+
+    [Fact]
+    public void CompCard_ShowsMarketBenchmarksHeading()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Market Benchmarks"), TimeSpan.FromSeconds(3));
+
+        Assert.Contains("Market Benchmarks", cut.Markup);
+    }
+
+    [Fact]
+    public void CompCard_ShowsCompCount()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Market Benchmarks"), TimeSpan.FromSeconds(3));
+
+        Assert.Contains("3 comparable securitized loans found", cut.Markup);
+    }
+
+    [Fact]
+    public void CompCard_ShowsMetricLabels()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Market Benchmarks"), TimeSpan.FromSeconds(3));
+
+        Assert.Contains("DSCR", cut.Markup);
+        Assert.Contains("LTV", cut.Markup);
+        Assert.Contains("Cap Rate", cut.Markup);
+        Assert.Contains("Occupancy", cut.Markup);
+        Assert.Contains("Interest Rate", cut.Markup);
+    }
+
+    [Fact]
+    public void CompCard_ShowsMedianValues()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Market Benchmarks"), TimeSpan.FromSeconds(3));
+
+        // Median DSCR = 1.30x
+        Assert.Contains("1.30x", cut.Markup);
+        // Median LTV = 72.0%
+        Assert.Contains("72.0%", cut.Markup);
+    }
+
+    [Fact]
+    public void CompCard_ShowsExpandButton()
+    {
+        var cut = _ctx.Render(RenderDealTabs(_dealId));
+        cut.WaitForState(() => cut.Markup.Contains("Market Benchmarks"), TimeSpan.FromSeconds(3));
+
+        Assert.Contains("Show Individual Comps", cut.Markup);
     }
 }
 
@@ -1140,4 +1281,43 @@ internal class NoOpCmsProviderService : ICmsProviderService
     public Task<CmsProviderDto?> GetByCcnAsync(string ccn, CancellationToken ct = default) => Task.FromResult<CmsProviderDto?>(null);
     public Task<List<CmsDeficiencyDto>> GetDeficienciesAsync(string ccn, CancellationToken ct = default) => Task.FromResult(new List<CmsDeficiencyDto>());
     public Task<List<CmsPenaltyDto>> GetPenaltiesAsync(string ccn, CancellationToken ct = default) => Task.FromResult(new List<CmsPenaltyDto>());
+}
+
+internal class NoOpSecuritizationCompService : ISecuritizationCompService
+{
+    public Task<ComparisonResult> FindCompsAsync(Deal deal, int maxResults = 10, CancellationToken cancellationToken = default)
+        => Task.FromResult(new ComparisonResult { Comps = [] });
+}
+
+internal class StubSecuritizationCompService : ISecuritizationCompService
+{
+    public Task<ComparisonResult> FindCompsAsync(Deal deal, int maxResults = 10, CancellationToken cancellationToken = default)
+    {
+        var comps = new List<SecuritizationComp>
+        {
+            new(SecuritizationDataSource.CMBS) { State = "TX", City = "Dallas", Units = 120, DSCR = 1.25m, LTV = 70m, CapRate = 5.2m, Occupancy = 93m, InterestRate = 5.0m, LoanAmount = 12_000_000m, DealName = "Deal-A", OriginationDate = DateTime.UtcNow.AddMonths(-6) },
+            new(SecuritizationDataSource.FannieMae) { State = "TX", City = "Houston", Units = 180, DSCR = 1.30m, LTV = 72m, CapRate = 5.5m, Occupancy = 95m, InterestRate = 5.25m, LoanAmount = 18_000_000m, DealName = "Deal-B", OriginationDate = DateTime.UtcNow.AddMonths(-3) },
+            new(SecuritizationDataSource.FreddieMac) { State = "TX", City = "Austin", Units = 140, DSCR = 1.40m, LTV = 75m, CapRate = 5.8m, Occupancy = 96m, InterestRate = 5.50m, LoanAmount = 14_000_000m, DealName = "Deal-C", OriginationDate = DateTime.UtcNow.AddMonths(-12) },
+        };
+        return Task.FromResult(new ComparisonResult
+        {
+            Comps = comps,
+            TotalCompsFound = 3,
+            UserDSCR = 1.35m,
+            UserLTV = 72m,
+            UserCapRate = 5.5m,
+            UserOccupancy = 94m,
+            UserInterestRate = 5.25m,
+            MedianDSCR = 1.30m,
+            MedianLTV = 72m,
+            MedianCapRate = 5.5m,
+            MedianOccupancy = 95m,
+            MedianInterestRate = 5.25m,
+            MinDSCR = 1.25m, MaxDSCR = 1.40m,
+            MinLTV = 70m, MaxLTV = 75m,
+            MinCapRate = 5.2m, MaxCapRate = 5.8m,
+            MinOccupancy = 93m, MaxOccupancy = 96m,
+            MinInterestRate = 5.0m, MaxInterestRate = 5.50m,
+        });
+    }
 }

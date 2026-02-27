@@ -31,6 +31,7 @@
 @inject IAssetReportService AssetReportService
 @inject IDispositionService DispositionService
 @inject ICmsProviderService CmsProviderService
+@inject ISecuritizationCompService SecuritizationCompService
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -632,6 +633,101 @@ else
                             </tbody>
                         </MudSimpleTable>
                     }
+                }
+
+                @* Securitization Comps — Market Benchmarks *@
+                @if (_comparisonResult is not null && _comparisonResult.Comps.Count > 0)
+                {
+                    <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Market Benchmarks</MudText>
+                    <MudPaper Elevation="0" Class="pa-4 mb-6" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                        <MudText Typo="Typo.body2" Class="mb-3" Style="color: #6B7280;">
+                            @_comparisonResult.TotalCompsFound comparable securitized loans found (@_comparisonResult.Comps.Count shown)
+                        </MudText>
+                        <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                            <thead>
+                                <tr style="background: #F9FAFB;">
+                                    <th>Metric</th>
+                                    <th style="text-align: right;">Your Deal</th>
+                                    <th style="text-align: right;">Market Median</th>
+                                    <th style="text-align: right;">Market Range</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>DSCR</td>
+                                    <td style="@CompMetricStyle(_comparisonResult.UserDSCR, _comparisonResult.MinDSCR, _comparisonResult.MaxDSCR, true)">@FormatMultiple(_comparisonResult.UserDSCR)</td>
+                                    <td style="text-align: right;">@FormatMultiple(_comparisonResult.MedianDSCR)</td>
+                                    <td style="text-align: right; color: #6B7280;">@FormatMultiple(_comparisonResult.MinDSCR) — @FormatMultiple(_comparisonResult.MaxDSCR)</td>
+                                </tr>
+                                <tr>
+                                    <td>LTV</td>
+                                    <td style="@CompMetricStyle(_comparisonResult.UserLTV, _comparisonResult.MinLTV, _comparisonResult.MaxLTV, false)">@FormatPct(_comparisonResult.UserLTV)</td>
+                                    <td style="text-align: right;">@FormatPct(_comparisonResult.MedianLTV)</td>
+                                    <td style="text-align: right; color: #6B7280;">@FormatPct(_comparisonResult.MinLTV) — @FormatPct(_comparisonResult.MaxLTV)</td>
+                                </tr>
+                                <tr>
+                                    <td>Cap Rate</td>
+                                    <td style="@CompMetricStyle(_comparisonResult.UserCapRate, _comparisonResult.MinCapRate, _comparisonResult.MaxCapRate, true)">@FormatPct(_comparisonResult.UserCapRate)</td>
+                                    <td style="text-align: right;">@FormatPct(_comparisonResult.MedianCapRate)</td>
+                                    <td style="text-align: right; color: #6B7280;">@FormatPct(_comparisonResult.MinCapRate) — @FormatPct(_comparisonResult.MaxCapRate)</td>
+                                </tr>
+                                <tr>
+                                    <td>Occupancy</td>
+                                    <td style="@CompMetricStyle(_comparisonResult.UserOccupancy, _comparisonResult.MinOccupancy, _comparisonResult.MaxOccupancy, true)">@FormatPct(_comparisonResult.UserOccupancy)</td>
+                                    <td style="text-align: right;">@FormatPct(_comparisonResult.MedianOccupancy)</td>
+                                    <td style="text-align: right; color: #6B7280;">@FormatPct(_comparisonResult.MinOccupancy) — @FormatPct(_comparisonResult.MaxOccupancy)</td>
+                                </tr>
+                                <tr>
+                                    <td>Interest Rate</td>
+                                    <td style="@CompMetricStyle(_comparisonResult.UserInterestRate, _comparisonResult.MinInterestRate, _comparisonResult.MaxInterestRate, false)">@FormatPct(_comparisonResult.UserInterestRate)</td>
+                                    <td style="text-align: right;">@FormatPct(_comparisonResult.MedianInterestRate)</td>
+                                    <td style="text-align: right; color: #6B7280;">@FormatPct(_comparisonResult.MinInterestRate) — @FormatPct(_comparisonResult.MaxInterestRate)</td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+
+                        @* Expandable detail table *@
+                        <MudButton Variant="Variant.Text" Size="Size.Small" Class="mt-3"
+                                   StartIcon="@(_compsExpanded ? Icons.Material.Filled.ExpandLess : Icons.Material.Filled.ExpandMore)"
+                                   OnClick="@(() => _compsExpanded = !_compsExpanded)"
+                                   Style="text-transform: none; color: #6B7280;">
+                            @(_compsExpanded ? "Hide" : "Show") Individual Comps
+                        </MudButton>
+
+                        @if (_compsExpanded)
+                        {
+                            <MudSimpleTable Dense="true" Hover="true" Elevation="0" Class="mt-2"
+                                            Style="border: 1px solid #E5E7EB; border-radius: 8px; font-size: 0.85rem;">
+                                <thead>
+                                    <tr style="background: #F9FAFB;">
+                                        <th>Source</th>
+                                        <th>Deal</th>
+                                        <th>State</th>
+                                        <th style="text-align: right;">Units</th>
+                                        <th style="text-align: right;">DSCR</th>
+                                        <th style="text-align: right;">LTV</th>
+                                        <th style="text-align: right;">Rate</th>
+                                        <th style="text-align: right;">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var comp in _comparisonResult.Comps)
+                                    {
+                                        <tr>
+                                            <td>@comp.Source</td>
+                                            <td>@(comp.DealName ?? comp.SecuritizationId ?? "\u2014")</td>
+                                            <td>@(comp.State ?? "\u2014")</td>
+                                            <td style="text-align: right;">@(comp.Units?.ToString("N0") ?? "\u2014")</td>
+                                            <td style="text-align: right;">@FormatMultiple(comp.DSCR)</td>
+                                            <td style="text-align: right;">@FormatPct(comp.LTV)</td>
+                                            <td style="text-align: right;">@FormatPct(comp.InterestRate)</td>
+                                            <td style="text-align: right;">@(comp.OriginationDate?.ToString("MMM yyyy") ?? "\u2014")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </MudSimpleTable>
+                        }
+                    </MudPaper>
                 }
 
                 @* Capital Stack *@
@@ -1956,6 +2052,8 @@ else
     private Property _property = null!;
     private CalculationResult? _calc;
     private List<SensitivityScenario> _sensitivityScenarios = new();
+    private ComparisonResult? _comparisonResult;
+    private bool _compsExpanded;
     private List<CapitalStackItem> _capitalStack = new();
     private List<DealChecklistItem> _checklistItems = new();
     private List<UploadedDocument> _documents = new();
@@ -2092,6 +2190,7 @@ else
             _property = _deal.Property ?? new Property(_deal.Address, _deal.UnitCount > 0 ? _deal.UnitCount : 1);
             _calc = _deal.CalculationResult;
             ComputeSensitivityScenarios();
+            try { _comparisonResult = await SecuritizationCompService.FindCompsAsync(_deal); } catch { /* comps are supplementary */ }
             _capitalStack = _deal.CapitalStackItems.OrderBy(c => c.SortOrder).ToList();
 
             // Auto-generate checklist items on first visit
@@ -2961,11 +3060,42 @@ else
     private static string FormatMultiple(decimal? value)
         => value.HasValue ? $"{value.Value:F2}x" : "\u2014";
 
+    /// <summary>Formats a value that is already a percentage (e.g., 72 → "72.0%").</summary>
+    private static string FormatPct(decimal? value)
+        => value.HasValue ? $"{value.Value:F1}%" : "\u2014";
+
     private static string FormatDelta(decimal value)
         => value == 0m ? "\u2014" : $"{(value > 0 ? "+" : "")}{value:N0}";
 
     private static string DeltaColor(decimal value)
         => value > 0 ? "#16A34A" : value < 0 ? "#DC2626" : "#6B7280";
+
+    /// <summary>
+    /// Color-codes a user metric vs market range: green if within range, amber if near boundary (within 10%), red if outside.
+    /// higherIsBetter=true for DSCR/CapRate/Occupancy; false for LTV/InterestRate.
+    /// </summary>
+    private static string CompMetricStyle(decimal? userValue, decimal? min, decimal? max, bool higherIsBetter)
+    {
+        if (!userValue.HasValue || !min.HasValue || !max.HasValue)
+            return "text-align: right; font-weight: 600;";
+
+        var v = userValue.Value;
+        var range = max.Value - min.Value;
+        var margin = range > 0 ? range * 0.10m : 0;
+
+        bool inRange = v >= min.Value && v <= max.Value;
+        bool nearBoundary = v >= (min.Value - margin) && v <= (max.Value + margin);
+
+        string color;
+        if (inRange)
+            color = "#16A34A"; // green
+        else if (nearBoundary)
+            color = "#F97316"; // amber
+        else
+            color = "#DC2626"; // red
+
+        return $"text-align: right; font-weight: 600; color: {color};";
+    }
 
     private void ComputeSensitivityScenarios()
     {

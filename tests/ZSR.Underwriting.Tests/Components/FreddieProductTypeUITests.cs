@@ -57,6 +57,7 @@ public class FreddieProductTypeUITests : IAsyncLifetime
         _ctx.Services.AddSingleton<IAssetReportService>(new NoOpAssetReportService());
         _ctx.Services.AddSingleton<IDispositionService>(new NoOpDispositionService());
         _ctx.Services.AddSingleton<ICmsProviderService>(new NoOpCmsProviderService());
+        _ctx.Services.AddSingleton<ISecuritizationCompService>(new NoOpSecuritizationCompService());
 
         var sp = _ctx.Services.BuildServiceProvider();
         _db = sp.GetRequiredService<AppDbContext>();
