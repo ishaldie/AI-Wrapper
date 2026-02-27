@@ -18,5 +18,5 @@ public interface IAgencyDataImporter
     /// Imports CMBS data from SEC EDGAR (fetches and parses ABS-EE filings).
     /// Returns the number of records imported.
     /// </summary>
-    Task<int> ImportEdgarCmbsAsync(int monthsBack = 36, CancellationToken cancellationToken = default);
+    Task<int> ImportEdgarCmbsAsync(int monthsBack = 120, CancellationToken cancellationToken = default);
 }

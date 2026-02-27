@@ -36,7 +36,7 @@ public class EdgarCmbsClient : IEdgarCmbsClient
     }
 
     public async Task<IReadOnlyList<SecuritizationComp>> FetchRecentFilingsAsync(
-        int monthsBack = 36,
+        int monthsBack = 120,
         CancellationToken cancellationToken = default)
     {
         var comps = new List<SecuritizationComp>();

@@ -44,7 +44,7 @@ public static class SecuritizationDataEndpoints
             case "edgar":
             case "cmbs":
             {
-                var monthsBack = 36;
+                var monthsBack = 120;
                 if (int.TryParse(request.Query["monthsBack"], out var mb))
                     monthsBack = mb;
                 totalImported = await importer.ImportEdgarCmbsAsync(monthsBack, ct);

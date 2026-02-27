@@ -9,7 +9,7 @@ public interface IEdgarCmbsClient
     /// Downloads EX-102 XML exhibits and parses them into SecuritizationComp entities.
     /// </summary>
     Task<IReadOnlyList<SecuritizationComp>> FetchRecentFilingsAsync(
-        int monthsBack = 36,
+        int monthsBack = 120,
         CancellationToken cancellationToken = default);
 
     /// <summary>

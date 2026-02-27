@@ -252,11 +252,11 @@ public class SecuritizationCompServiceTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task FindComps_FiltersToLast3Years()
+    public async Task FindComps_FiltersToLast10Years()
     {
         await SeedComps(
-            CreateComp(state: "GA", monthsAgo: 6),   // recent — included
-            CreateComp(state: "GA", monthsAgo: 48)    // old — excluded
+            CreateComp(state: "GA", monthsAgo: 6),    // recent — included
+            CreateComp(state: "GA", monthsAgo: 130)    // older than 10 years — excluded
         );
 
         var deal = CreateDeal();

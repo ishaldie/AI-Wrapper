@@ -12,7 +12,7 @@ public class SecuritizationCompService : ISecuritizationCompService
     private readonly AppDbContext _db;
     private readonly ILogger<SecuritizationCompService> _logger;
 
-    private static readonly DateTime CutoffDate = DateTime.UtcNow.AddYears(-3);
+    private static readonly DateTime CutoffDate = DateTime.UtcNow.AddYears(-10);
 
     public SecuritizationCompService(AppDbContext db, ILogger<SecuritizationCompService> logger)
     {
@@ -27,8 +27,8 @@ public class SecuritizationCompService : ISecuritizationCompService
         var state = ParseState(deal.Address);
         var unitCount = deal.UnitCount;
 
-        // Step 1: Filter by property type + recent vintage (last 3 years)
-        var cutoff = DateTime.UtcNow.AddYears(-3);
+        // Step 1: Filter by property type + recent vintage (last 10 years)
+        var cutoff = DateTime.UtcNow.AddYears(-10);
         var baseQuery = _db.SecuritizationComps
             .Where(c => c.PropertyType == propertyType)
             .Where(c => c.OriginationDate == null || c.OriginationDate >= cutoff);

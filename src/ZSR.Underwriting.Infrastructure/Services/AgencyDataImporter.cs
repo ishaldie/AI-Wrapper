@@ -45,14 +45,11 @@ public class AgencyDataImporter : IAgencyDataImporter
 
     public async Task<int> ImportFannieMaeCsvAsync(Stream csvStream, CancellationToken cancellationToken = default)
     {
-        // Clear existing Fannie Mae data before re-import
-        var existing = await _db.SecuritizationComps
-            .Where(c => c.Source == SecuritizationDataSource.FannieMae)
-            .ToListAsync(cancellationToken);
-        if (existing.Count > 0)
-            _db.SecuritizationComps.RemoveRange(existing);
+        // Load existing keys for dedup (Source + DealName/SecuritizationId + LoanAmount + OriginationDate)
+        var existingKeys = await LoadExistingKeys(SecuritizationDataSource.FannieMae, cancellationToken);
 
         var comps = new List<SecuritizationComp>();
+        var added = 0;
         using var reader = new StreamReader(csvStream);
 
         // Read header line
@@ -70,6 +67,14 @@ public class AgencyDataImporter : IAgencyDataImporter
 
             var propertyTypeStr = GetField(fields, colMap, "property_type");
             var propertyType = MapPropertyType(propertyTypeStr);
+            var loanAmount = ParseDecimal(GetField(fields, colMap, "original_upb"));
+            var originationDate = ParseDate(GetField(fields, colMap, "origination_date"));
+            var poolNumber = GetField(fields, colMap, "pool_number");
+
+            // Skip duplicates
+            var key = MakeKey(poolNumber, loanAmount, originationDate);
+            if (existingKeys.Contains(key)) continue;
+            existingKeys.Add(key);
 
             var comp = new SecuritizationComp(SecuritizationDataSource.FannieMae)
             {
@@ -78,14 +83,14 @@ public class AgencyDataImporter : IAgencyDataImporter
                 City = GetField(fields, colMap, "city"),
                 MSA = GetField(fields, colMap, "msa"),
                 Units = ParseInt(GetField(fields, colMap, "units")),
-                LoanAmount = ParseDecimal(GetField(fields, colMap, "original_upb")),
+                LoanAmount = loanAmount,
                 InterestRate = ParseDecimal(GetField(fields, colMap, "note_rate")),
                 DSCR = ParseDecimal(GetField(fields, colMap, "dscr")),
                 LTV = ParseDecimal(GetField(fields, colMap, "ltv")),
                 Occupancy = ParseDecimal(GetField(fields, colMap, "occupancy_rate")),
-                OriginationDate = ParseDate(GetField(fields, colMap, "origination_date")),
+                OriginationDate = originationDate,
                 MaturityDate = ParseDate(GetField(fields, colMap, "maturity_date")),
-                SecuritizationId = GetField(fields, colMap, "pool_number"),
+                SecuritizationId = poolNumber,
             };
 
             comps.Add(comp);
@@ -94,6 +99,7 @@ public class AgencyDataImporter : IAgencyDataImporter
             {
                 await _db.SecuritizationComps.AddRangeAsync(comps, cancellationToken);
                 await _db.SaveChangesAsync(cancellationToken);
+                added += comps.Count;
                 comps.Clear();
             }
         }
@@ -102,25 +108,19 @@ public class AgencyDataImporter : IAgencyDataImporter
         {
             await _db.SecuritizationComps.AddRangeAsync(comps, cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
+            added += comps.Count;
         }
 
-        var total = await _db.SecuritizationComps
-            .CountAsync(c => c.Source == SecuritizationDataSource.FannieMae, cancellationToken);
-
-        _logger.LogInformation("Imported {Count} Fannie Mae comps", total);
-        return total;
+        _logger.LogInformation("Imported {Added} new Fannie Mae comps (skipped duplicates)", added);
+        return added;
     }
 
     public async Task<int> ImportFreddieMacCsvAsync(Stream csvStream, CancellationToken cancellationToken = default)
     {
-        // Clear existing Freddie Mac data before re-import
-        var existing = await _db.SecuritizationComps
-            .Where(c => c.Source == SecuritizationDataSource.FreddieMac)
-            .ToListAsync(cancellationToken);
-        if (existing.Count > 0)
-            _db.SecuritizationComps.RemoveRange(existing);
+        var existingKeys = await LoadExistingKeys(SecuritizationDataSource.FreddieMac, cancellationToken);
 
         var comps = new List<SecuritizationComp>();
+        var added = 0;
         using var reader = new StreamReader(csvStream);
 
         var header = await reader.ReadLineAsync(cancellationToken);
@@ -137,6 +137,14 @@ public class AgencyDataImporter : IAgencyDataImporter
 
             var propertyTypeStr = GetField(fields, colMap, "property_type");
             var propertyType = MapPropertyType(propertyTypeStr);
+            var loanAmount = ParseDecimal(GetField(fields, colMap, "original_loan_amount"));
+            var originationDate = ParseDate(GetField(fields, colMap, "origination_date"));
+            var dealName = GetField(fields, colMap, "deal_name");
+
+            // Skip duplicates
+            var key = MakeKey(dealName, loanAmount, originationDate);
+            if (existingKeys.Contains(key)) continue;
+            existingKeys.Add(key);
 
             var comp = new SecuritizationComp(SecuritizationDataSource.FreddieMac)
             {
@@ -145,14 +153,14 @@ public class AgencyDataImporter : IAgencyDataImporter
                 City = GetField(fields, colMap, "property_city"),
                 MSA = GetField(fields, colMap, "metropolitan_area"),
                 Units = ParseInt(GetField(fields, colMap, "number_of_units")),
-                LoanAmount = ParseDecimal(GetField(fields, colMap, "original_loan_amount")),
+                LoanAmount = loanAmount,
                 InterestRate = ParseDecimal(GetField(fields, colMap, "note_rate")),
                 DSCR = ParseDecimal(GetField(fields, colMap, "dscr_at_origination")),
                 LTV = ParseDecimal(GetField(fields, colMap, "ltv_at_origination")),
                 Occupancy = ParseDecimal(GetField(fields, colMap, "occupancy")),
-                OriginationDate = ParseDate(GetField(fields, colMap, "origination_date")),
+                OriginationDate = originationDate,
                 MaturityDate = ParseDate(GetField(fields, colMap, "maturity_date")),
-                DealName = GetField(fields, colMap, "deal_name"),
+                DealName = dealName,
             };
 
             comps.Add(comp);
@@ -161,6 +169,7 @@ public class AgencyDataImporter : IAgencyDataImporter
             {
                 await _db.SecuritizationComps.AddRangeAsync(comps, cancellationToken);
                 await _db.SaveChangesAsync(cancellationToken);
+                added += comps.Count;
                 comps.Clear();
             }
         }
@@ -169,16 +178,14 @@ public class AgencyDataImporter : IAgencyDataImporter
         {
             await _db.SecuritizationComps.AddRangeAsync(comps, cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
+            added += comps.Count;
         }
 
-        var total = await _db.SecuritizationComps
-            .CountAsync(c => c.Source == SecuritizationDataSource.FreddieMac, cancellationToken);
-
-        _logger.LogInformation("Imported {Count} Freddie Mac comps", total);
-        return total;
+        _logger.LogInformation("Imported {Added} new Freddie Mac comps (skipped duplicates)", added);
+        return added;
     }
 
-    public async Task<int> ImportEdgarCmbsAsync(int monthsBack = 36, CancellationToken cancellationToken = default)
+    public async Task<int> ImportEdgarCmbsAsync(int monthsBack = 120, CancellationToken cancellationToken = default)
     {
         if (_edgarClient is null)
         {
@@ -186,24 +193,25 @@ public class AgencyDataImporter : IAgencyDataImporter
             return 0;
         }
 
-        // Clear existing CMBS data before re-import
-        var existing = await _db.SecuritizationComps
-            .Where(c => c.Source == SecuritizationDataSource.CMBS)
-            .ToListAsync(cancellationToken);
-        if (existing.Count > 0)
-            _db.SecuritizationComps.RemoveRange(existing);
+        var existingKeys = await LoadExistingKeys(SecuritizationDataSource.CMBS, cancellationToken);
 
         var comps = await _edgarClient.FetchRecentFilingsAsync(monthsBack, cancellationToken);
 
-        // Batch insert
+        // Batch insert — skip duplicates
         var batch = new List<SecuritizationComp>();
+        var added = 0;
         foreach (var comp in comps)
         {
+            var key = MakeKey(comp.DealName ?? comp.SecuritizationId, comp.LoanAmount, comp.OriginationDate);
+            if (existingKeys.Contains(key)) continue;
+            existingKeys.Add(key);
+
             batch.Add(comp);
             if (batch.Count >= BatchSize)
             {
                 await _db.SecuritizationComps.AddRangeAsync(batch, cancellationToken);
                 await _db.SaveChangesAsync(cancellationToken);
+                added += batch.Count;
                 batch.Clear();
             }
         }
@@ -212,11 +220,32 @@ public class AgencyDataImporter : IAgencyDataImporter
         {
             await _db.SecuritizationComps.AddRangeAsync(batch, cancellationToken);
             await _db.SaveChangesAsync(cancellationToken);
+            added += batch.Count;
         }
 
-        _logger.LogInformation("Imported {Count} CMBS comps from EDGAR", comps.Count);
-        return comps.Count;
+        _logger.LogInformation("Imported {Added} new CMBS comps from EDGAR (skipped duplicates)", added);
+        return added;
     }
+
+    /// <summary>
+    /// Loads existing comp fingerprints for a given source so we can skip duplicates on re-import.
+    /// Key = DealName|LoanAmount|OriginationDate — cheap in-memory dedup.
+    /// </summary>
+    private async Task<HashSet<string>> LoadExistingKeys(SecuritizationDataSource source, CancellationToken ct)
+    {
+        var rows = await _db.SecuritizationComps
+            .Where(c => c.Source == source)
+            .Select(c => new { c.DealName, c.SecuritizationId, c.LoanAmount, c.OriginationDate })
+            .ToListAsync(ct);
+
+        var keys = new HashSet<string>(rows.Count, StringComparer.OrdinalIgnoreCase);
+        foreach (var r in rows)
+            keys.Add(MakeKey(r.DealName ?? r.SecuritizationId, r.LoanAmount, r.OriginationDate));
+        return keys;
+    }
+
+    private static string MakeKey(string? name, decimal? amount, DateTime? date)
+        => $"{name ?? ""}|{amount?.ToString("F0") ?? ""}|{date?.ToString("yyyy-MM-dd") ?? ""}";
 
     private static Dictionary<string, int> BuildColumnMap(string[] columns)
     {
