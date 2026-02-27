@@ -49,19 +49,19 @@
 
 ## Phase 5: Deal Entry UI — Product Type Selection
 
-- [~] Task: Add `FannieProductType` dropdown to DealTabs.razor, visible only when ExecutionType = FannieMae
-- [~] Task: Implement auto-suggestion logic: when user selects PropertyType, pre-populate FannieProductType (Multifamily→Conventional, AssistedLiving→SeniorsAL, etc.) with ability to override
-- [~] Task: Add conditional fields per product type: Student Housing → enrollment count, university distance; MHC → pad site count, tenant-occupied %; Green → projected energy savings, improvement budget; Cooperative → operating reserve balance, sponsor ownership %; SARM → cap strike rate, index
-- [~] Task: Show product-specific compliance summary card on the Analysis tab — displays LTV cap, DSCR min, amortization max, and pass/fail status for each applicable test
-- [ ] Task: Phase 5 Manual Verification
+- [x] Task: Add `FannieProductType` dropdown to DealTabs.razor, visible only when ExecutionType = FannieMae
+- [x] Task: Implement auto-suggestion logic: when user selects PropertyType, pre-populate FannieProductType (Multifamily→Conventional, AssistedLiving→SeniorsAL, etc.) with ability to override
+- [x] Task: Add conditional fields per product type: Student Housing → enrollment count, university distance; MHC → pad site count, tenant-occupied %; Green → projected energy savings, improvement budget; Cooperative → operating reserve balance, sponsor ownership %; SARM → cap strike rate, index
+- [x] Task: Show product-specific compliance summary card on the Analysis tab — displays LTV cap, DSCR min, amortization max, and pass/fail status for each applicable test
+- [x] Task: Phase 5 Manual Verification [checkpoint: ebcb9f8]
 
 ## Phase 6: Checklist Enhancement
 
-- [ ] Task: Add `FannieProductType` filter column to `ChecklistTemplate` entity alongside existing ExecutionType and TransactionType
-- [ ] Task: Update `ChecklistTemplateSeed` to tag existing items with applicable FannieProductType values and add new product-specific required documents (Seniors: Mgmt/Ops/Regulatory reports; Student: enrollment verification; MHC: flood zone analysis; Cooperative: operating reserve verification; Green: HPB Report)
-- [ ] Task: Update checklist filtering logic in DealTabs to include FannieProductType matching
-- [ ] Task: Add visual indicator for required-but-missing documents per Fannie Mae product type
-- [ ] Task: Write unit tests for checklist filtering with product type
+- [x] Task: Add `FannieProductType` filter column to `ChecklistTemplate` entity alongside existing ExecutionType and TransactionType
+- [x] Task: Update `ChecklistTemplateSeed` to tag existing items with applicable FannieProductType values and add new product-specific required documents (Seniors: Mgmt/Ops/Regulatory reports; Student: enrollment verification; MHC: flood zone analysis; Cooperative: operating reserve verification; Green: HPB Report)
+- [x] Task: Update checklist filtering logic in DealTabs to include FannieProductType matching
+- [x] Task: Add visual indicator for required-but-missing documents per Fannie Mae product type
+- [x] Task: Write unit tests for checklist filtering with product type
 - [ ] Task: Phase 6 Manual Verification
 
 ---
