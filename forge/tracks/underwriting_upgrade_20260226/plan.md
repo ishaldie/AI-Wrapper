@@ -62,6 +62,6 @@
 - [x] Task: Update checklist filtering logic in DealTabs to include FannieProductType matching
 - [x] Task: Add visual indicator for required-but-missing documents per Fannie Mae product type
 - [x] Task: Write unit tests for checklist filtering with product type
-- [ ] Task: Phase 6 Manual Verification
+- [x] Task: Phase 6 Manual Verification [checkpoint: da4ba66]
 
 ---
