@@ -13,36 +13,36 @@
 
 Unified bulk import architecture: all three data sources (CMBS, Fannie Mae, Freddie Mac) are imported into the local SecuritizationComps table. Data is refreshed monthly via admin endpoint or background job.
 
-- [ ] Task: Create `IEdgarCmbsClient` interface with `FetchRecentFilingsAsync(int monthsBack)` returning parsed comps from ABS-EE EX-102 XML
-- [ ] Task: Implement `EdgarCmbsClient` — search EDGAR EFTS for ABS-EE filings, download EX-102 XML exhibits, parse loan-level CMBS fields
-- [ ] Task: Implement EX-102 XML parser to extract: propertyTypeCode, mostRecentDebtServiceCoverageNOI, mostRecentNOIAmount, mostRecentValuationAmount, originalLoanAmount, originalInterestRatePercentage, mostRecentPhysicalOccupancy, numberOfUnitsBedsRooms, propertyState, propertyCity, originationDate, maturityDate
-- [ ] Task: Map CMBS property type codes to app PropertyType enum (MF→Multifamily, HC→SeniorHousing, MH→ManufacturedHousing)
-- [ ] Task: Create `IAgencyDataImporter` interface with `ImportFannieMaeCsvAsync(Stream)` and `ImportFreddieMacCsvAsync(Stream)`
-- [ ] Task: Implement Fannie Mae CSV parser — map MFLPD columns to SecuritizationComp entity
-- [ ] Task: Implement Freddie Mac CSV parser (same pattern, different column mapping)
-- [ ] Task: Implement batch insert with chunked AddRange (5K batch size) for all sources
-- [ ] Task: Add admin-only import endpoint: `POST /api/admin/import-securitization-data` with source selector and file upload for CSV sources
-- [ ] Task: Add Polly retry policy for SEC EDGAR rate limiting (10 req/sec) and register HttpClient in DI
-- [ ] Task: Write unit tests: EDGAR XML parsing with fixtures, CSV parsing with fixtures, batch insert logic
-- [ ] Task: Phase 2 Manual Verification
+- [x] Task: Create `IEdgarCmbsClient` interface with `FetchRecentFilingsAsync(int monthsBack)` returning parsed comps from ABS-EE EX-102 XML `af17026`
+- [x] Task: Implement `EdgarCmbsClient` — search EDGAR EFTS for ABS-EE filings, download EX-102 XML exhibits, parse loan-level CMBS fields `af17026`
+- [x] Task: Implement EX-102 XML parser to extract: propertyTypeCode, mostRecentDebtServiceCoverageNOI, mostRecentNOIAmount, mostRecentValuationAmount, originalLoanAmount, originalInterestRatePercentage, mostRecentPhysicalOccupancy, numberOfUnitsBedsRooms, propertyState, propertyCity, originationDate, maturityDate `af17026`
+- [x] Task: Map CMBS property type codes to app PropertyType enum (MF→Multifamily, HC→SeniorHousing, MH→ManufacturedHousing) `af17026`
+- [x] Task: Create `IAgencyDataImporter` interface with `ImportFannieMaeCsvAsync(Stream)` and `ImportFreddieMacCsvAsync(Stream)` `af17026`
+- [x] Task: Implement Fannie Mae CSV parser — map MFLPD columns to SecuritizationComp entity `af17026`
+- [x] Task: Implement Freddie Mac CSV parser (same pattern, different column mapping) `af17026`
+- [x] Task: Implement batch insert with chunked AddRange (5K batch size) for all sources `af17026`
+- [x] Task: Add admin-only import endpoint: `POST /api/admin/import-securitization-data` with source selector and file upload for CSV sources `af17026`
+- [x] Task: Add Polly retry policy for SEC EDGAR rate limiting (10 req/sec) and register HttpClient in DI `af17026`
+- [x] Task: Write unit tests: EDGAR XML parsing with fixtures, CSV parsing with fixtures, batch insert logic `af17026`
+- [x] Task: Phase 2 Manual Verification `af17026`
 
 ## Phase 3: Comp Matching Service
 
-- [ ] Task: Create `ISecuritizationCompService` interface with `FindCompsAsync(deal, maxResults)` returning ranked comps
-- [ ] Task: Implement comp matching logic: filter by property type + state, then rank by similarity score (unit count proximity, recency, DSCR range)
-- [ ] Task: Add fallback: if <5 comps in same state, expand to adjacent states or nationwide for same property type
-- [ ] Task: Create `ComparisonResult` DTO with user metrics vs comp median/average/range
-- [ ] Task: Write unit tests for matching and ranking logic with edge cases (no comps, exact matches, cross-state fallback)
-- [ ] Task: Phase 3 Manual Verification
+- [x] Task: Create `ISecuritizationCompService` interface with `FindCompsAsync(deal, maxResults)` returning ranked comps `dd5f015`
+- [x] Task: Implement comp matching logic: filter by property type + state, then rank by similarity score (unit count proximity, recency, DSCR range) `dd5f015`
+- [x] Task: Add fallback: if <5 comps in same state, expand to adjacent states or nationwide for same property type `dd5f015`
+- [x] Task: Create `ComparisonResult` DTO with user metrics vs comp median/average/range `dd5f015`
+- [x] Task: Write unit tests for matching and ranking logic with edge cases (no comps, exact matches, cross-state fallback) `dd5f015`
+- [x] Task: Phase 3 Manual Verification `dd5f015`
 
 ## Phase 4: UI — Comparison Card
 
-- [ ] Task: Add `ISecuritizationCompService` to DealTabs DI and call `FindCompsAsync` when loading Underwriting tab
-- [ ] Task: Create securitization comps comparison card on Underwriting tab showing: user metric | market median | market range for DSCR, LTV, Cap Rate, Occupancy, Rate
-- [ ] Task: Add expandable detail table showing individual comp loans (source, deal name, state, units, DSCR, LTV, rate, date)
-- [ ] Task: Color-code user metrics vs market: green if within range, amber if near boundary, red if outside
-- [ ] Task: Write bUnit tests for comp card rendering
-- [ ] Task: Phase 4 Manual Verification
+- [x] Task: Add `ISecuritizationCompService` to DealTabs DI and call `FindCompsAsync` when loading Underwriting tab `70b7718`
+- [x] Task: Create securitization comps comparison card on Underwriting tab showing: user metric | market median | market range for DSCR, LTV, Cap Rate, Occupancy, Rate `70b7718`
+- [x] Task: Add expandable detail table showing individual comp loans (source, deal name, state, units, DSCR, LTV, rate, date) `70b7718`
+- [x] Task: Color-code user metrics vs market: green if within range, amber if near boundary, red if outside `70b7718`
+- [x] Task: Write bUnit tests for comp card rendering `70b7718`
+- [x] Task: Phase 4 Manual Verification `70b7718`
 
 ## Phase 5: Prompt Integration
 

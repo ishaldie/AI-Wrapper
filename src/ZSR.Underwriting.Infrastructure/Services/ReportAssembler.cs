@@ -23,6 +23,7 @@ public class ReportAssembler : IReportAssembler
     private readonly IHudApiClient? _hudApiClient;
     private readonly ITokenUsageTracker? _tokenTracker;
     private readonly ITokenBudgetService? _budgetService;
+    private readonly ISecuritizationCompService? _securitizationCompService;
     private readonly UnderwritingCalculator _calc = new();
     private readonly AffordabilityCalculator _affordabilityCalc = new();
 
@@ -34,7 +35,8 @@ public class ReportAssembler : IReportAssembler
         IReportProseGenerator? proseGenerator = null,
         IHudApiClient? hudApiClient = null,
         ITokenUsageTracker? tokenTracker = null,
-        ITokenBudgetService? budgetService = null)
+        ITokenBudgetService? budgetService = null,
+        ISecuritizationCompService? securitizationCompService = null)
     {
         _db = db;
         _marketDataService = marketDataService;
@@ -44,6 +46,7 @@ public class ReportAssembler : IReportAssembler
         _hudApiClient = hudApiClient;
         _tokenTracker = tokenTracker;
         _budgetService = budgetService;
+        _securitizationCompService = securitizationCompService;
     }
 
     public async Task<UnderwritingReportDto> AssembleReportAsync(
@@ -425,12 +428,21 @@ public class ReportAssembler : IReportAssembler
             calcResult.InternalRateOfReturn = _calc.CalculateIrr(totalEquity, projectedCashFlows, netProceeds);
             calcResult.EquityMultiple = _calc.CalculateEquityMultiple(projectedCashFlows, netProceeds, totalEquity);
 
+            // Fetch securitization comps (supplementary — failure is non-fatal)
+            ComparisonResult? securitizationComps = null;
+            if (_securitizationCompService is not null)
+            {
+                try { securitizationComps = await _securitizationCompService.FindCompsAsync(deal, maxResults: 5, cancellationToken); }
+                catch { /* comps are supplementary */ }
+            }
+
             var context = new ProseGenerationContext
             {
                 Deal = deal,
                 Calculations = calcResult,
                 MarketContext = marketContext,
                 PublicData = publicData,
+                SecuritizationComps = securitizationComps,
                 UserId = deal.UserId
             };
 

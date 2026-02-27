@@ -82,6 +82,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         AppendFinancialMetrics(sb, context);
         AppendFannieComplianceSummaryLine(sb, context);
         AppendFreddieComplianceSummaryLine(sb, context);
+        AppendSecuritizationComps(sb, context);
         sb.AppendLine();
         sb.AppendLine("The executive summary should include:");
         sb.AppendLine("1. A one-line investment thesis");
@@ -201,6 +202,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         AppendFinancialMetrics(sb, context);
         AppendFannieComplianceSection(sb, context);
         AppendFreddieComplianceSection(sb, context);
+        AppendSecuritizationComps(sb, context);
 
         sb.AppendLine();
         sb.AppendLine("Identify and analyze the key risks. For each risk provide:");
@@ -237,6 +239,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         AppendFannieProductHeader(sb, context);
         AppendFreddieProductHeader(sb, context);
         AppendFinancialMetrics(sb, context);
+        AppendSecuritizationComps(sb, context);
 
         if (isFannie)
         {
@@ -493,6 +496,30 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     private static string FormatDecimalOrNa(decimal? value) =>
         value.HasValue ? value.Value.ToString("N2") : "N/A";
+
+    // --- Securitization comp benchmarks ---
+
+    private static void AppendSecuritizationComps(StringBuilder sb, ProseGenerationContext context)
+    {
+        if (context.SecuritizationComps is not { } comps || comps.Comps.Count == 0) return;
+
+        sb.AppendLine("## Market Benchmarks (Securitized Loan Comps)");
+        sb.AppendLine($"Based on {comps.TotalCompsFound} comparable securitized loans:");
+        sb.AppendLine();
+
+        if (comps.MedianDSCR.HasValue)
+            sb.AppendLine($"- DSCR: User {comps.UserDSCR?.ToString("F2") ?? "N/A"}x | Market median {comps.MedianDSCR.Value:F2}x (range {comps.MinDSCR:F2}x–{comps.MaxDSCR:F2}x)");
+        if (comps.MedianLTV.HasValue)
+            sb.AppendLine($"- LTV: User {comps.UserLTV?.ToString("F1") ?? "N/A"}% | Market median {comps.MedianLTV.Value:F1}% (range {comps.MinLTV:F1}%–{comps.MaxLTV:F1}%)");
+        if (comps.MedianCapRate.HasValue)
+            sb.AppendLine($"- Cap Rate: User {comps.UserCapRate?.ToString("F1") ?? "N/A"}% | Market median {comps.MedianCapRate.Value:F1}% (range {comps.MinCapRate:F1}%–{comps.MaxCapRate:F1}%)");
+        if (comps.MedianOccupancy.HasValue)
+            sb.AppendLine($"- Occupancy: User {comps.UserOccupancy?.ToString("F1") ?? "N/A"}% | Market median {comps.MedianOccupancy.Value:F1}% (range {comps.MinOccupancy:F1}%–{comps.MaxOccupancy:F1}%)");
+        if (comps.MedianInterestRate.HasValue)
+            sb.AppendLine($"- Interest Rate: User {comps.UserInterestRate?.ToString("F2") ?? "N/A"}% | Market median {comps.MedianInterestRate.Value:F2}% (range {comps.MinInterestRate:F2}%–{comps.MaxInterestRate:F2}%)");
+
+        sb.AppendLine();
+    }
 
     // --- One-line compliance summary for Executive Summary ---
 

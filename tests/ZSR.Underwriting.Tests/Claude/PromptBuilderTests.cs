@@ -1,6 +1,7 @@
 using ZSR.Underwriting.Application.DTOs;
 using ZSR.Underwriting.Application.Services;
 using ZSR.Underwriting.Domain.Entities;
+using ZSR.Underwriting.Domain.Enums;
 
 namespace ZSR.Underwriting.Tests.Claude;
 
@@ -264,5 +265,109 @@ public class PromptBuilderTests
         Assert.NotNull(_builder.BuildRiskAssessmentPrompt(ctx).MaxTokens);
         Assert.NotNull(_builder.BuildInvestmentDecisionPrompt(ctx).MaxTokens);
         Assert.NotNull(_builder.BuildPropertyOverviewPrompt(ctx).MaxTokens);
+    }
+
+    // === Securitization Comps Integration ===
+
+    private static ProseGenerationContext CreateContextWithComps()
+    {
+        var deal = new Deal("Sunrise Apartments");
+        deal.PropertyName = "Sunrise Apartments";
+        deal.Address = "123 Main St, Dallas TX 75201";
+        deal.UnitCount = 120;
+        deal.PurchasePrice = 12_000_000m;
+
+        var calc = new CalculationResult(deal.Id)
+        {
+            DebtServiceCoverageRatio = 1.58m,
+            GoingInCapRate = 7.0m,
+            NetOperatingIncome = 840_000m,
+            InternalRateOfReturn = 18.5m,
+        };
+
+        var comps = new List<SecuritizationComp>
+        {
+            new(SecuritizationDataSource.CMBS) { State = "TX", City = "Dallas", Units = 110, DSCR = 1.25m, LTV = 70m, CapRate = 5.2m, Occupancy = 93m, InterestRate = 5.0m, LoanAmount = 11_000_000m, DealName = "CMBS-Deal-1" },
+            new(SecuritizationDataSource.FannieMae) { State = "TX", City = "Houston", Units = 150, DSCR = 1.35m, LTV = 72m, CapRate = 5.5m, Occupancy = 95m, InterestRate = 5.25m, LoanAmount = 15_000_000m, DealName = "Agency-Deal-2" },
+            new(SecuritizationDataSource.FreddieMac) { State = "TX", City = "Austin", Units = 130, DSCR = 1.40m, LTV = 75m, CapRate = 5.8m, Occupancy = 96m, InterestRate = 5.50m, LoanAmount = 13_000_000m, DealName = "Freddie-Deal-3" },
+        };
+
+        var compResult = new ComparisonResult
+        {
+            Comps = comps,
+            TotalCompsFound = 3,
+            UserDSCR = 1.58m,
+            UserLTV = 65m,
+            UserCapRate = 7.0m,
+            UserOccupancy = 95m,
+            UserInterestRate = 5.5m,
+            MedianDSCR = 1.35m,
+            MedianLTV = 72m,
+            MedianCapRate = 5.5m,
+            MedianOccupancy = 95m,
+            MedianInterestRate = 5.25m,
+            MinDSCR = 1.25m, MaxDSCR = 1.40m,
+            MinLTV = 70m, MaxLTV = 75m,
+            MinCapRate = 5.2m, MaxCapRate = 5.8m,
+            MinOccupancy = 93m, MaxOccupancy = 96m,
+            MinInterestRate = 5.0m, MaxInterestRate = 5.50m,
+        };
+
+        return new ProseGenerationContext
+        {
+            Deal = deal,
+            Calculations = calc,
+            SecuritizationComps = compResult,
+        };
+    }
+
+    [Fact]
+    public void BuildExecutiveSummaryPrompt_WithComps_IncludesMarketBenchmarks()
+    {
+        var ctx = CreateContextWithComps();
+        var result = _builder.BuildExecutiveSummaryPrompt(ctx);
+
+        Assert.Contains("Market Benchmarks", result.UserMessage);
+        Assert.Contains("1.35", result.UserMessage); // Median DSCR
+    }
+
+    [Fact]
+    public void BuildRiskAssessmentPrompt_WithComps_IncludesCompData()
+    {
+        var ctx = CreateContextWithComps();
+        var result = _builder.BuildRiskAssessmentPrompt(ctx);
+
+        Assert.Contains("Market Benchmarks", result.UserMessage);
+        Assert.Contains("DSCR", result.UserMessage);
+        Assert.Contains("1.35", result.UserMessage); // Median DSCR
+        Assert.Contains("LTV", result.UserMessage);
+    }
+
+    [Fact]
+    public void BuildInvestmentDecisionPrompt_WithComps_IncludesMarketPositioning()
+    {
+        var ctx = CreateContextWithComps();
+        var result = _builder.BuildInvestmentDecisionPrompt(ctx);
+
+        Assert.Contains("Market Benchmarks", result.UserMessage);
+        Assert.Contains("median", result.UserMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void BuildExecutiveSummaryPrompt_WithoutComps_OmitsMarketBenchmarks()
+    {
+        var ctx = CreateFullContext(); // No comps set
+        var result = _builder.BuildExecutiveSummaryPrompt(ctx);
+
+        Assert.DoesNotContain("Market Benchmarks", result.UserMessage);
+    }
+
+    [Fact]
+    public void BuildRiskAssessmentPrompt_WithComps_ShowsCompCount()
+    {
+        var ctx = CreateContextWithComps();
+        var result = _builder.BuildRiskAssessmentPrompt(ctx);
+
+        Assert.Contains("3", result.UserMessage); // 3 comps found
     }
 }
