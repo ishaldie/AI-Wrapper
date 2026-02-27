@@ -80,8 +80,8 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         AppendFreddieProductHeader(sb, context);
         AppendSeniorHousingMetrics(sb, context);
         AppendFinancialMetrics(sb, context);
-        AppendFannieComplianceSection(sb, context);
-        AppendFreddieComplianceSection(sb, context);
+        AppendFannieComplianceSummaryLine(sb, context);
+        AppendFreddieComplianceSummaryLine(sb, context);
         sb.AppendLine();
         sb.AppendLine("The executive summary should include:");
         sb.AppendLine("1. A one-line investment thesis");
@@ -105,7 +105,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         var sb = new StringBuilder();
         sb.AppendLine($"Write a market context analysis for the following {assetType} acquisition.");
         sb.AppendLine();
-        AppendPropertyHeader(sb, context);
+        AppendCompactPropertyLine(sb, context);
         AppendSeniorHousingMetrics(sb, context);
 
         if (context.MarketContext is { } mc)
@@ -154,7 +154,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         var sb = new StringBuilder();
         sb.AppendLine($"Write a value creation strategy for the following {assetType} acquisition.");
         sb.AppendLine();
-        AppendPropertyHeader(sb, context);
+        AppendCompactPropertyLine(sb, context);
 
         sb.AppendLine("## Value-Add Plans");
         if (!string.IsNullOrWhiteSpace(context.Deal.ValueAddPlans))
@@ -197,6 +197,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         AppendPropertyHeader(sb, context);
         AppendFannieProductHeader(sb, context);
         AppendFreddieProductHeader(sb, context);
+        AppendSeniorHousingMetrics(sb, context, includeCms: true);
         AppendFinancialMetrics(sb, context);
         AppendFannieComplianceSection(sb, context);
         AppendFreddieComplianceSection(sb, context);
@@ -232,7 +233,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         var sb = new StringBuilder();
         sb.AppendLine($"Make an investment decision for the following {assetType} acquisition.");
         sb.AppendLine();
-        AppendPropertyHeader(sb, context);
+        AppendCompactPropertyLine(sb, context);
         AppendFannieProductHeader(sb, context);
         AppendFreddieProductHeader(sb, context);
         AppendFinancialMetrics(sb, context);
@@ -359,6 +360,19 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     // --- Helper methods ---
 
+    private static void AppendCompactPropertyLine(StringBuilder sb, ProseGenerationContext context)
+    {
+        var deal = context.Deal;
+        var isSenior = ProtocolDefaults.IsSeniorHousing(deal.PropertyType);
+        var unitLabel = isSenior
+            ? $"{deal.LicensedBeds ?? 0} beds"
+            : deal.PropertyType == PropertyType.Hospitality
+                ? $"{deal.UnitCount} rooms"
+                : $"{deal.UnitCount} units";
+        sb.AppendLine($"Property: {deal.PropertyName}, {deal.Address}, {unitLabel}");
+        sb.AppendLine();
+    }
+
     private static void AppendPropertyHeader(StringBuilder sb, ProseGenerationContext context)
     {
         var deal = context.Deal;
@@ -389,7 +403,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine();
     }
 
-    private static void AppendSeniorHousingMetrics(StringBuilder sb, ProseGenerationContext context)
+    private static void AppendSeniorHousingMetrics(StringBuilder sb, ProseGenerationContext context, bool includeCms = false)
     {
         var deal = context.Deal;
         if (!ProtocolDefaults.IsSeniorHousing(deal.PropertyType)) return;
@@ -406,8 +420,8 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         if (!string.IsNullOrWhiteSpace(deal.LicenseType)) sb.AppendLine($"- License Type: {deal.LicenseType}");
         if (deal.AverageLengthOfStayMonths.HasValue) sb.AppendLine($"- Average Length of Stay: {deal.AverageLengthOfStayMonths.Value} months");
 
-        // Include CMS data if available
-        if (!string.IsNullOrWhiteSpace(deal.CmsData))
+        // Include CMS data only in Risk Assessment
+        if (includeCms && !string.IsNullOrWhiteSpace(deal.CmsData))
         {
             try
             {
@@ -479,6 +493,40 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
     private static string FormatDecimalOrNa(decimal? value) =>
         value.HasValue ? value.Value.ToString("N2") : "N/A";
+
+    // --- One-line compliance summary for Executive Summary ---
+
+    private static void AppendFannieComplianceSummaryLine(StringBuilder sb, ProseGenerationContext context)
+    {
+        if (!context.Deal.FannieProductType.HasValue) return;
+        var compliance = DeserializeFannieCompliance(context);
+        if (compliance == null) return;
+
+        var parts = new List<string>();
+        parts.Add(compliance.OverallPass ? "PASS" : "FAIL");
+        if (compliance.DscrTest != null)
+            parts.Add($"DSCR {compliance.DscrTest.ActualValue:F2}x vs {compliance.DscrTest.RequiredValue:F2}x min");
+        if (compliance.LtvTest != null)
+            parts.Add($"LTV {compliance.LtvTest.ActualValue:F0}% vs {compliance.LtvTest.RequiredValue:F0}% max");
+
+        sb.AppendLine($"Fannie Mae Compliance: {string.Join(" | ", parts)}");
+    }
+
+    private static void AppendFreddieComplianceSummaryLine(StringBuilder sb, ProseGenerationContext context)
+    {
+        if (!context.Deal.FreddieProductType.HasValue) return;
+        var compliance = DeserializeFreddieCompliance(context);
+        if (compliance == null) return;
+
+        var parts = new List<string>();
+        parts.Add(compliance.OverallPass ? "PASS" : "FAIL");
+        if (compliance.DscrTest != null)
+            parts.Add($"DSCR {compliance.DscrTest.ActualValue:F2}x vs {compliance.DscrTest.RequiredValue:F2}x min");
+        if (compliance.LtvTest != null)
+            parts.Add($"LTV {compliance.LtvTest.ActualValue:F0}% vs {compliance.LtvTest.RequiredValue:F0}% max");
+
+        sb.AppendLine($"Freddie Mac Compliance: {string.Join(" | ", parts)}");
+    }
 
     // --- Fannie Mae compliance helpers ---
 

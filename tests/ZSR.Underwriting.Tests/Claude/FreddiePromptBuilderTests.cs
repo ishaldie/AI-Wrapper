@@ -100,7 +100,7 @@ public class FreddiePromptBuilderTests
             freddieComplianceJson: json);
         var request = _builder.BuildExecutiveSummaryPrompt(context);
 
-        Assert.Contains("Freddie Mac Compliance Results", request.UserMessage);
+        Assert.Contains("Freddie Mac Compliance:", request.UserMessage);
         Assert.Contains("PASS", request.UserMessage);
     }
 
