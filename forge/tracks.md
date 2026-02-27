@@ -127,7 +127,7 @@ _Link: [./tracks/underwriting_upgrade_20260226/](./tracks/underwriting_upgrade_2
 
 ---
 
-### [ ] Track: Additional Underwriting Upgrades
+### [x] Track: Additional Underwriting Upgrades (completed 2026-02-27)
 _Link: [./tracks/additional_underwriting_upgrades_20260226/](./tracks/additional_underwriting_upgrades_20260226/)_
 
 ---
