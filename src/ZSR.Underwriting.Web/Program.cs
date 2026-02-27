@@ -238,6 +238,20 @@ try
     // Add bulk import service
     builder.Services.AddScoped<IBulkImportService, BulkImportService>();
 
+    // Add securitization comp import services (SEC EDGAR + Agency data)
+    builder.Services.AddHttpClient<IEdgarCmbsClient, EdgarCmbsClient>(client =>
+    {
+        client.BaseAddress = new Uri("https://efts.sec.gov/");
+        client.DefaultRequestHeaders.UserAgent.ParseAdd("ZSR-Underwriting/1.0 (support@zsrventures.com)");
+        client.Timeout = TimeSpan.FromSeconds(60);
+    })
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(
+            retryCount: 3,
+            sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+    builder.Services.AddScoped<IAgencyDataImporter, AgencyDataImporter>();
+
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
     builder.Services.AddScoped<IPortfolioService, PortfolioService>();
@@ -363,6 +377,7 @@ try
     app.MapExternalAuthEndpoints();
     app.MapDocumentEndpoints();
     app.MapEmailIngestEndpoints();
+    app.MapSecuritizationDataEndpoints();
 
     app.MapStaticAssets().AllowAnonymous();
     app.MapRazorComponents<App>()

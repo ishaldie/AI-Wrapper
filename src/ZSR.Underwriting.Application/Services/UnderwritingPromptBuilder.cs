@@ -17,6 +17,9 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         "Be precise with numbers, concise in language, and analytical in tone. " +
         "Do not use markdown headers or bullet points unless explicitly requested.";
 
+    private const string ConcisenessDirective =
+        "Keep each point to 2-3 sentences. No preamble or recap. Start directly with analysis.";
+
     private static string BuildSystemRole(PropertyType type, string sectionFocus)
     {
         var intro = type switch
@@ -85,12 +88,14 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine("2. A 2-3 paragraph narrative covering the deal highlights, financial profile, and market positioning");
         sb.AppendLine("3. Top 3 key highlights (strengths)");
         sb.AppendLine("4. Top 3 key risks");
+        sb.AppendLine();
+        sb.AppendLine(ConcisenessDirective);
 
         return new ClaudeRequest
         {
             SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Focus on the executive summary for this underwriting report."),
             UserMessage = sb.ToString(),
-            MaxTokens = 2048
+            MaxTokens = 1024
         };
     }
 
@@ -132,12 +137,14 @@ public class UnderwritingPromptBuilder : IPromptBuilder
             sb.AppendLine("Write a 2-3 paragraph market context covering senior housing supply-demand dynamics, demographic trends (aging population), regulatory environment, and rate growth outlook.");
         else
             sb.AppendLine("Write a 2-3 paragraph market context covering supply-demand dynamics, economic drivers, and rent growth outlook.");
+        sb.AppendLine();
+        sb.AppendLine(ConcisenessDirective);
 
         return new ClaudeRequest
         {
             SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Focus on market context and economic analysis."),
             UserMessage = sb.ToString(),
-            MaxTokens = 1536
+            MaxTokens = 1024
         };
     }
 
@@ -168,12 +175,14 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         sb.AppendLine();
         sb.AppendLine("Write a value creation strategy including execution timeline, capital requirements, and expected return impact.");
+        sb.AppendLine();
+        sb.AppendLine(ConcisenessDirective);
 
         return new ClaudeRequest
         {
             SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Focus on value creation strategy and execution planning."),
             UserMessage = sb.ToString(),
-            MaxTokens = 1536
+            MaxTokens = 1024
         };
     }
 
@@ -198,6 +207,8 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine("- Description of the risk");
         sb.AppendLine("- Severity level (Low, Medium, High)");
         sb.AppendLine("- Mitigation strategy");
+        sb.AppendLine();
+        sb.AppendLine(ConcisenessDirective);
 
         var systemSuffix = isFannie
             ? " Focus on risk assessment. Identify risks with specific severity levels (Low, Medium, High) and mitigation strategies. Include Fannie Mae compliance risks and product-specific regulatory requirements."
@@ -209,7 +220,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         {
             SystemPrompt = BuildSystemRole(context.Deal.PropertyType, systemSuffix),
             UserMessage = sb.ToString(),
-            MaxTokens = 2048
+            MaxTokens = 1536
         };
     }
 
@@ -314,12 +325,14 @@ public class UnderwritingPromptBuilder : IPromptBuilder
         sb.AppendLine("2. Investment thesis (2-3 sentences)");
         sb.AppendLine("3. Conditions precedent (if CONDITIONAL GO)");
         sb.AppendLine("4. Recommended next steps");
+        sb.AppendLine();
+        sb.AppendLine(ConcisenessDirective);
 
         return new ClaudeRequest
         {
             SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Make a GO, CONDITIONAL GO, or NO GO investment decision based on the ZSR Ventures underwriting protocol."),
             UserMessage = sb.ToString(),
-            MaxTokens = 1536
+            MaxTokens = 1024
         };
     }
 
@@ -333,12 +346,14 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         sb.AppendLine();
         sb.AppendLine("Write a concise property overview paragraph (3-5 sentences) describing the physical asset, location, and market positioning.");
+        sb.AppendLine();
+        sb.AppendLine(ConcisenessDirective);
 
         return new ClaudeRequest
         {
             SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Write a concise property overview for the underwriting report."),
             UserMessage = sb.ToString(),
-            MaxTokens = 512
+            MaxTokens = 256
         };
     }
 

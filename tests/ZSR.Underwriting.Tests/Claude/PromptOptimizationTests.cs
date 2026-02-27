@@ -94,4 +94,86 @@ public class PromptOptimizationTests
         Assert.Contains("GO", invest.SystemPrompt);
         Assert.Contains("property overview", overview.SystemPrompt, StringComparison.OrdinalIgnoreCase);
     }
+
+    // === Phase 2: Conciseness directive appears in all user messages ===
+
+    [Fact]
+    public void AllPrompts_UserMessage_ContainsConcisenesDirective()
+    {
+        var ctx = CreateContext();
+        var prompts = new[]
+        {
+            _builder.BuildExecutiveSummaryPrompt(ctx),
+            _builder.BuildMarketContextPrompt(ctx),
+            _builder.BuildValueCreationPrompt(ctx),
+            _builder.BuildRiskAssessmentPrompt(ctx),
+            _builder.BuildInvestmentDecisionPrompt(ctx),
+            _builder.BuildPropertyOverviewPrompt(ctx),
+        };
+
+        foreach (var prompt in prompts)
+        {
+            Assert.Contains("2-3 sentences", prompt.UserMessage);
+            Assert.Contains("No preamble", prompt.UserMessage);
+        }
+    }
+
+    // === Phase 2: max_tokens reduced to tighter caps ===
+
+    [Fact]
+    public void ExecutiveSummary_MaxTokens_Is1024()
+    {
+        var ctx = CreateContext();
+        Assert.Equal(1024, _builder.BuildExecutiveSummaryPrompt(ctx).MaxTokens);
+    }
+
+    [Fact]
+    public void MarketContext_MaxTokens_Is1024()
+    {
+        var ctx = CreateContext();
+        Assert.Equal(1024, _builder.BuildMarketContextPrompt(ctx).MaxTokens);
+    }
+
+    [Fact]
+    public void ValueCreation_MaxTokens_Is1024()
+    {
+        var ctx = CreateContext();
+        Assert.Equal(1024, _builder.BuildValueCreationPrompt(ctx).MaxTokens);
+    }
+
+    [Fact]
+    public void RiskAssessment_MaxTokens_Is1536()
+    {
+        var ctx = CreateContext();
+        Assert.Equal(1536, _builder.BuildRiskAssessmentPrompt(ctx).MaxTokens);
+    }
+
+    [Fact]
+    public void InvestmentDecision_MaxTokens_Is1024()
+    {
+        var ctx = CreateContext();
+        Assert.Equal(1024, _builder.BuildInvestmentDecisionPrompt(ctx).MaxTokens);
+    }
+
+    [Fact]
+    public void PropertyOverview_MaxTokens_Is256()
+    {
+        var ctx = CreateContext();
+        Assert.Equal(256, _builder.BuildPropertyOverviewPrompt(ctx).MaxTokens);
+    }
+
+    [Fact]
+    public void TotalMaxTokens_DoesNotExceed6400()
+    {
+        var ctx = CreateContext();
+        var total =
+            _builder.BuildExecutiveSummaryPrompt(ctx).MaxTokens +
+            _builder.BuildMarketContextPrompt(ctx).MaxTokens +
+            _builder.BuildValueCreationPrompt(ctx).MaxTokens +
+            _builder.BuildRiskAssessmentPrompt(ctx).MaxTokens +
+            _builder.BuildInvestmentDecisionPrompt(ctx).MaxTokens +
+            _builder.BuildPropertyOverviewPrompt(ctx).MaxTokens;
+
+        Assert.True(total <= 6400, $"Total max_tokens {total} exceeds 6,400 budget");
+    }
 }
