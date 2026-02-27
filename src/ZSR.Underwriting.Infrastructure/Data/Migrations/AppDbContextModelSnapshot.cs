@@ -1447,6 +1447,91 @@ namespace ZSR.Underwriting.Infrastructure.Data.Migrations
                     b.ToTable("RentRollUnits");
                 });
 
+            modelBuilder.Entity("ZSR.Underwriting.Domain.Entities.SecuritizationComp", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("CapRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("DSCR")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DealName")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("InterestRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("LTV")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("LoanAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MSA")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("MaturityDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("NOI")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("Occupancy")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("OriginationDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PropertyType")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("SecuritizationId")
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("State")
+                        .HasMaxLength(2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Units")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OriginationDate");
+
+                    b.HasIndex("PropertyType");
+
+                    b.HasIndex("Source");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("SecuritizationComps");
+                });
+
             modelBuilder.Entity("ZSR.Underwriting.Domain.Entities.TokenUsageRecord", b =>
                 {
                     b.Property<Guid>("Id")
