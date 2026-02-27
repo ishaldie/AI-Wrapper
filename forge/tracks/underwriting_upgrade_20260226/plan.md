@@ -39,12 +39,12 @@
 
 ## Phase 4: Report Prose — Fannie Mae Compliance Context
 
-- [ ] Task: Update `UnderwritingPromptBuilder` to include `FannieProductType` and its key parameters (DSCR, LTV, amortization) in all prompt templates
-- [ ] Task: Update `BuildRiskAssessmentPrompt()` to include product-specific compliance test results (SNF cap, dual DSCR, stress test) so Claude can narrate compliance status
-- [ ] Task: Update `BuildInvestmentDecisionPrompt()` to use product-aware GO/NO GO logic — replace hardcoded IRR > 15% / DSCR > 1.5x with product min DSCR and Fannie compliance pass/fail
-- [ ] Task: Update `BuildExecutiveSummaryPrompt()` to identify the Fannie Mae product type, execution path, and key compliance metrics in the header
-- [ ] Task: Add `BuildFannieComplianceSummary()` helper that formats compliance test results as structured text for prompt injection
-- [ ] Task: Write integration tests verifying prompts include product-specific data for Seniors, Student, SARM, and Cooperative deal types
+- [~] Task: Update `UnderwritingPromptBuilder` to include `FannieProductType` and its key parameters (DSCR, LTV, amortization) in all prompt templates
+- [~] Task: Update `BuildRiskAssessmentPrompt()` to include product-specific compliance test results (SNF cap, dual DSCR, stress test) so Claude can narrate compliance status
+- [~] Task: Update `BuildInvestmentDecisionPrompt()` to use product-aware GO/NO GO logic — replace hardcoded IRR > 15% / DSCR > 1.5x with product min DSCR and Fannie compliance pass/fail
+- [~] Task: Update `BuildExecutiveSummaryPrompt()` to identify the Fannie Mae product type, execution path, and key compliance metrics in the header
+- [~] Task: Add `BuildFannieComplianceSummary()` helper that formats compliance test results as structured text for prompt injection
+- [~] Task: Write integration tests verifying prompts include product-specific data for Seniors, Student, SARM, and Cooperative deal types
 - [ ] Task: Phase 4 Manual Verification
 
 ## Phase 5: Deal Entry UI — Product Type Selection

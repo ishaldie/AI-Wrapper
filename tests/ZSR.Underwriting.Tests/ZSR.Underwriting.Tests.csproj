@@ -192,6 +192,7 @@
     <Compile Include="Domain\FannieProductTests.cs" />
     <Compile Include="Calculations\FannieComplianceTests.cs" />
     <Compile Include="Calculations\FannieRiskRatingTests.cs" />
+    <Compile Include="Claude\FanniePromptBuilderTests.cs" />
     <!-- Additional Underwriting Upgrades track -->
     <Compile Include="Domain\PropertyTypeExpansionTests.cs" />
     <Compile Include="Constants\ProtocolDefaultsExpansionTests.cs" />
