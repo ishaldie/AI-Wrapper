@@ -46,11 +46,11 @@ Unified bulk import architecture: all three data sources (CMBS, Fannie Mae, Fred
 
 ## Phase 5: Prompt Integration
 
-- [ ] Task: Add `SecuritizationComps` property to `ProseGenerationContext` — list of top 5 matched comps
-- [ ] Task: Create `AppendSecuritizationComps(StringBuilder, comps)` helper in `UnderwritingPromptBuilder` — formats comp summary as "Market Benchmarks" section
-- [ ] Task: Include comp benchmarks in Executive Summary, Risk Assessment, and Investment Decision prompts
-- [ ] Task: Update Investment Decision GO/NO GO logic to reference market positioning ("DSCR exceeds market median by X basis points")
-- [ ] Task: Write unit tests for prompt content with and without comps
-- [ ] Task: Phase 5 Manual Verification
+- [x] Task: Add `SecuritizationComps` property to `ProseGenerationContext` — list of top 5 matched comps `21a0940`
+- [x] Task: Create `AppendSecuritizationComps(StringBuilder, comps)` helper in `UnderwritingPromptBuilder` — formats comp summary as "Market Benchmarks" section `21a0940`
+- [x] Task: Include comp benchmarks in Executive Summary, Risk Assessment, and Investment Decision prompts `21a0940`
+- [x] Task: Update Investment Decision GO/NO GO logic to reference market positioning ("DSCR exceeds market median by X basis points") `21a0940`
+- [x] Task: Write unit tests for prompt content with and without comps `21a0940`
+- [x] Task: Phase 5 Manual Verification `21a0940`
 
 ---
