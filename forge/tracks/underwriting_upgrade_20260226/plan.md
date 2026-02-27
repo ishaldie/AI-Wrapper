@@ -65,3 +65,48 @@
 - [x] Task: Phase 6 Manual Verification [checkpoint: da4ba66]
 
 ---
+
+## Phase 7: Freddie Mac Domain Types + Product Profiles [checkpoint: bec07a0]
+
+- [x] bec07a0 Task: Create `FreddieProductType` enum with 16 values (Conventional, SmallBalanceLoan, TargetedAffordable, SeniorsIL, SeniorsAL, SeniorsSN, StudentHousing, ManufacturedHousing, FloatingRate, ValueAdd, ModerateRehab, LeaseUp, Supplemental, TaxExemptLIHTC, Section8, NOAHPreservation)
+- [x] bec07a0 Task: Create `FreddieProductProfile` value object with Freddie-specific fields (SBL tiers, floating rate cap, lease-up minimums, value-add rehab ranges, nonprofit required)
+- [x] bec07a0 Task: Create `FreddieComplianceResult` value object with core 3 tests + 10 Freddie-specific nullable tests
+- [x] bec07a0 Task: Add `FreddieProductType` nullable property to Deal entity
+- [x] bec07a0 Task: Add `FreddieComplianceJson` nullable property to CalculationResult entity
+- [x] bec07a0 Task: Create `FreddieProductProfiles` static registry with 16 product profiles, Get/TryGet/SuggestFromPropertyType/CalculateSeniorsBlendedMinDscr
+
+---
+
+## Phase 8: Freddie Mac Compliance Calculator + Risk Assessment [checkpoint: bec07a0]
+
+- [x] bec07a0 Task: Create `FreddieComplianceInputs` input bag with SBL tier, seniors beds, SNF NOI, MHC rental %, floating rate cap, lease-up, supplemental, rehab fields
+- [x] bec07a0 Task: Create `FreddieComplianceCalculator` with Evaluate() + individual test methods (SBL tiers, blended DSCR, SNF NOI cap, MHC rental homes, floating rate cap, value-add rehab, lease-up, supplemental combined)
+- [x] bec07a0 Task: Update CalculationInputs with FreddieProductType and FreddieComplianceInputs
+- [x] bec07a0 Task: Update CalculationResultAssembler with Freddie compliance eval block + MHC vacancy floor for Freddie
+- [x] bec07a0 Task: Create `FreddieComplianceRiskAssessment` with product-specific risk ratings (SNF concentration, MHC rental homes, student enrollment, floating rate cap, value-add rehab DSCR)
+
+---
+
+## Phase 9: Freddie Mac AI Prompts + UI + Migration [checkpoint: bec07a0]
+
+- [x] bec07a0 Task: Update UnderwritingPromptBuilder with AppendFreddieProductHeader, AppendFreddieComplianceSection, BuildFreddieComplianceSummary, DeserializeFreddieCompliance
+- [x] bec07a0 Task: Update all 3 prompt builders with Freddie Mac decision thresholds
+- [x] bec07a0 Task: Update DealTabs.razor with Freddie product dropdown, requirements card, compliance card
+- [x] bec07a0 Task: Create EF Core migration for FreddieProductType and FreddieComplianceJson columns
+- [x] bec07a0 Task: Update AppDbContext with FreddieProductType string conversion
+- [x] bec07a0 Task: Update AppDbContextModelSnapshot with both new columns
+
+---
+
+## Phase 10: Freddie Mac Integration Testing [checkpoint: bec07a0]
+
+- [x] bec07a0 Task: Write FreddieProductTests — 16 enum values, Deal field, ComplianceResult JSON roundtrip, all profiles, SuggestFromPropertyType, blended DSCR
+- [x] bec07a0 Task: Write FreddieComplianceTests — core pass/fail, SBL tiers, seniors blended, SNF NOI, MHC rental homes, floating rate cap, value-add rehab, lease-up, supplemental, assembler integration
+- [x] bec07a0 Task: Write FreddieRiskRatingTests — DSCR thresholds, SNF concentration, MHC rental homes, student enrollment, floating rate cap, value-add rehab, overall severity
+- [x] bec07a0 Task: Write FreddiePromptBuilderTests — Freddie header, compliance summary, decision thresholds, risk suffix, Fannie unchanged
+- [x] bec07a0 Task: Write FreddieProductTypeUITests — bUnit tests for dropdown show/hide, compliance card, thresholds
+- [x] bec07a0 Task: Write FreddieIntegrationTests — all 16 products valid, backward compat, co-existence, prompt builder per execution type
+- [x] bec07a0 Task: Full test suite passes (1,788 tests, 0 failures)
+- [x] bec07a0 Task: Phase 10 Manual Verification
+
+---
