@@ -35,6 +35,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<CapExLineItem> CapExLineItems => Set<CapExLineItem>();
     public DbSet<AssetReport> AssetReports => Set<AssetReport>();
     public DbSet<DispositionAnalysis> DispositionAnalyses => Set<DispositionAnalysis>();
+    public DbSet<SecuritizationComp> SecuritizationComps => Set<SecuritizationComp>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -531,6 +532,31 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany()
                 .HasForeignKey(e => e.DealId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // --- SecuritizationComp ---
+        modelBuilder.Entity<SecuritizationComp>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Source).HasConversion<string>().HasMaxLength(20);
+            entity.Property(e => e.PropertyType).HasConversion<string>().HasMaxLength(30);
+            entity.Property(e => e.State).HasMaxLength(2);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.MSA).HasMaxLength(200);
+            entity.Property(e => e.LoanAmount).HasPrecision(18, 2);
+            entity.Property(e => e.InterestRate).HasPrecision(5, 2);
+            entity.Property(e => e.DSCR).HasPrecision(8, 4);
+            entity.Property(e => e.LTV).HasPrecision(5, 2);
+            entity.Property(e => e.NOI).HasPrecision(18, 2);
+            entity.Property(e => e.Occupancy).HasPrecision(5, 2);
+            entity.Property(e => e.CapRate).HasPrecision(5, 2);
+            entity.Property(e => e.DealName).HasMaxLength(500);
+            entity.Property(e => e.SecuritizationId).HasMaxLength(100);
+
+            entity.HasIndex(e => e.PropertyType);
+            entity.HasIndex(e => e.State);
+            entity.HasIndex(e => e.OriginationDate);
+            entity.HasIndex(e => e.Source);
         });
     }
 }

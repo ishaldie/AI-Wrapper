@@ -12,60 +12,43 @@ namespace ZSR.Underwriting.Application.Services;
 
 public class UnderwritingPromptBuilder : IPromptBuilder
 {
-    private const string MultifamilySystemRole =
-        "You are a senior multifamily real estate underwriting analyst at ZSR Ventures. " +
+    private const string BaseSystemSuffix =
         "You produce institutional-quality prose for underwriting reports. " +
         "Be precise with numbers, concise in language, and analytical in tone. " +
         "Do not use markdown headers or bullet points unless explicitly requested.";
 
-    private const string SeniorHousingSystemRole =
-        "You are a senior housing underwriting analyst at ZSR Ventures specializing in assisted living, " +
-        "skilled nursing, memory care, and CCRC facilities. You understand payer mix dynamics (private pay, " +
-        "Medicaid, Medicare), staffing-driven cost structures, regulatory compliance (CMS star ratings, " +
-        "deficiency citations), and bed-based revenue models. You produce institutional-quality prose for " +
-        "underwriting reports. Be precise with numbers, concise in language, and analytical in tone. " +
-        "Do not use markdown headers or bullet points unless explicitly requested.";
-
-    private const string BridgeLoanSystemRole =
-        "You are a bridge loan underwriting analyst at ZSR Ventures specializing in short-term " +
-        "transitional financing for value-add multifamily and commercial assets. You understand " +
-        "bridge-to-permanent strategies, renovation scope analysis, lease-up projections, and " +
-        "interest reserve structuring. You produce institutional-quality prose for underwriting reports. " +
-        "Be precise with numbers, concise in language, and analytical in tone. " +
-        "Do not use markdown headers or bullet points unless explicitly requested.";
-
-    private const string HospitalitySystemRole =
-        "You are a hospitality real estate underwriting analyst at ZSR Ventures specializing in hotel " +
-        "and lodging acquisitions. You understand RevPAR dynamics, ADR trends, occupancy seasonality, " +
-        "franchise vs independent operations, PIP requirements, and room-based revenue models. " +
-        "You produce institutional-quality prose for underwriting reports. " +
-        "Be precise with numbers, concise in language, and analytical in tone. " +
-        "Do not use markdown headers or bullet points unless explicitly requested.";
-
-    private const string CommercialSystemRole =
-        "You are a commercial real estate underwriting analyst at ZSR Ventures specializing in office, " +
-        "retail, and mixed-use properties. You understand tenant credit analysis, lease rollover risk, " +
-        "NRA-based rent structures, CAM reconciliation, and net-lease vs gross-lease economics. " +
-        "You produce institutional-quality prose for underwriting reports. " +
-        "Be precise with numbers, concise in language, and analytical in tone. " +
-        "Do not use markdown headers or bullet points unless explicitly requested.";
-
-    private const string LihtcSystemRole =
-        "You are an affordable housing underwriting analyst at ZSR Ventures specializing in LIHTC " +
-        "(Low-Income Housing Tax Credit) properties. You understand tax credit compliance, AMI rent " +
-        "limits, LURA restrictions, qualified allocation plans, and regulatory agreement structures. " +
-        "You produce institutional-quality prose for underwriting reports. " +
-        "Be precise with numbers, concise in language, and analytical in tone. " +
-        "Do not use markdown headers or bullet points unless explicitly requested.";
-
-    private static string GetSystemRole(PropertyType type) => type switch
+    private static string BuildSystemRole(PropertyType type, string sectionFocus)
     {
-        PropertyType.Bridge => BridgeLoanSystemRole,
-        PropertyType.Hospitality => HospitalitySystemRole,
-        PropertyType.Commercial => CommercialSystemRole,
-        PropertyType.LIHTC => LihtcSystemRole,
-        _ => ProtocolDefaults.IsSeniorHousing(type) ? SeniorHousingSystemRole : MultifamilySystemRole
-    };
+        var intro = type switch
+        {
+            PropertyType.Bridge =>
+                "You are a bridge loan underwriting analyst at ZSR Ventures specializing in short-term " +
+                "transitional financing for value-add multifamily and commercial assets. You understand " +
+                "bridge-to-permanent strategies, renovation scope analysis, lease-up projections, and " +
+                "interest reserve structuring. ",
+            PropertyType.Hospitality =>
+                "You are a hospitality real estate underwriting analyst at ZSR Ventures specializing in hotel " +
+                "and lodging acquisitions. You understand RevPAR dynamics, ADR trends, occupancy seasonality, " +
+                "franchise vs independent operations, PIP requirements, and room-based revenue models. ",
+            PropertyType.Commercial =>
+                "You are a commercial real estate underwriting analyst at ZSR Ventures specializing in office, " +
+                "retail, and mixed-use properties. You understand tenant credit analysis, lease rollover risk, " +
+                "NRA-based rent structures, CAM reconciliation, and net-lease vs gross-lease economics. ",
+            PropertyType.LIHTC =>
+                "You are an affordable housing underwriting analyst at ZSR Ventures specializing in LIHTC " +
+                "(Low-Income Housing Tax Credit) properties. You understand tax credit compliance, AMI rent " +
+                "limits, LURA restrictions, qualified allocation plans, and regulatory agreement structures. ",
+            _ when ProtocolDefaults.IsSeniorHousing(type) =>
+                "You are a senior housing underwriting analyst at ZSR Ventures specializing in assisted living, " +
+                "skilled nursing, memory care, and CCRC facilities. You understand payer mix dynamics (private pay, " +
+                "Medicaid, Medicare), staffing-driven cost structures, regulatory compliance (CMS star ratings, " +
+                "deficiency citations), and bed-based revenue models. ",
+            _ =>
+                "You are a senior multifamily real estate underwriting analyst at ZSR Ventures. ",
+        };
+
+        return intro + BaseSystemSuffix + sectionFocus;
+    }
 
     private static string GetAssetTypeLabel(PropertyType type) => type switch
     {
@@ -86,7 +69,6 @@ public class UnderwritingPromptBuilder : IPromptBuilder
     public ClaudeRequest BuildExecutiveSummaryPrompt(ProseGenerationContext context)
     {
         var assetType = GetAssetTypeLabel(context.Deal.PropertyType);
-        var systemRole = GetSystemRole(context.Deal.PropertyType);
         var sb = new StringBuilder();
         sb.AppendLine($"Write an executive summary for the following {assetType} acquisition opportunity.");
         sb.AppendLine();
@@ -106,7 +88,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = systemRole + " Focus on the executive summary for this underwriting report.",
+            SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Focus on the executive summary for this underwriting report."),
             UserMessage = sb.ToString(),
             MaxTokens = 2048
         };
@@ -153,7 +135,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Focus on market context and economic analysis.",
+            SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Focus on market context and economic analysis."),
             UserMessage = sb.ToString(),
             MaxTokens = 1536
         };
@@ -189,7 +171,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Focus on value creation strategy and execution planning.",
+            SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Focus on value creation strategy and execution planning."),
             UserMessage = sb.ToString(),
             MaxTokens = 1536
         };
@@ -225,7 +207,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + systemSuffix,
+            SystemPrompt = BuildSystemRole(context.Deal.PropertyType, systemSuffix),
             UserMessage = sb.ToString(),
             MaxTokens = 2048
         };
@@ -335,7 +317,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Make a GO, CONDITIONAL GO, or NO GO investment decision based on the ZSR Ventures underwriting protocol.",
+            SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Make a GO, CONDITIONAL GO, or NO GO investment decision based on the ZSR Ventures underwriting protocol."),
             UserMessage = sb.ToString(),
             MaxTokens = 1536
         };
@@ -354,7 +336,7 @@ public class UnderwritingPromptBuilder : IPromptBuilder
 
         return new ClaudeRequest
         {
-            SystemPrompt = GetSystemRole(context.Deal.PropertyType) + " Write a concise property overview for the underwriting report.",
+            SystemPrompt = BuildSystemRole(context.Deal.PropertyType, " Write a concise property overview for the underwriting report."),
             UserMessage = sb.ToString(),
             MaxTokens = 512
         };

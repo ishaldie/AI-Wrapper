@@ -211,6 +211,10 @@
     <Compile Include="Claude\FreddiePromptBuilderTests.cs" />
     <Compile Include="Components\FreddieProductTypeUITests.cs" />
     <Compile Include="Integration\FreddieIntegrationTests.cs" />
+    <!-- Prompt Token Optimization track -->
+    <Compile Include="Claude\PromptOptimizationTests.cs" />
+    <!-- Securitization Comps track -->
+    <Compile Include="Domain\SecuritizationCompTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
