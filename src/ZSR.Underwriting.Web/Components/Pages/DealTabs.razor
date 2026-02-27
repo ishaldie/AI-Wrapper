@@ -6,6 +6,7 @@
 @using ZSR.Underwriting.Application.DTOs
 @using ZSR.Underwriting.Application.Interfaces
 @using ZSR.Underwriting.Application.Calculations
+@using ZSR.Underwriting.Domain.ValueObjects
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.EntityFrameworkCore
 @using System.Security.Claims
@@ -153,6 +154,41 @@ else
                         <MudTextField @bind-Value="_deal.TransactionType" Label="Transaction Type" Variant="Variant.Outlined" />
                     </MudItem>
                 </MudGrid>
+
+                @if (_deal.ExecutionType == ExecutionType.FannieMae)
+                {
+                    <MudText Typo="Typo.h6" Class="mt-6 mb-4" Style="font-weight: 600; color: #1A2332;">Fannie Mae Product</MudText>
+                    <MudGrid>
+                        <MudItem xs="12" md="6">
+                            <MudSelect @bind-Value="_deal.FannieProductType" Label="Fannie Mae Product Type" Variant="Variant.Outlined"
+                                       T="FannieProductType?" Clearable="true">
+                                @foreach (var fpt in Enum.GetValues<FannieProductType>())
+                                {
+                                    <MudSelectItem Value="@((FannieProductType?)fpt)">@FormatFannieProductType(fpt)</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </MudItem>
+                        @if (_deal.FannieProductType.HasValue)
+                        {
+                            var profile = FannieProductProfiles.TryGet(_deal.FannieProductType);
+                            @if (profile != null)
+                            {
+                                <MudItem xs="12" md="6">
+                                    <MudPaper Elevation="0" Class="pa-3" Style="border: 1px solid #E5E7EB; border-radius: 8px; background: #F9FAFB;">
+                                        <MudText Typo="Typo.caption" Style="color: #6B7280;">Product Requirements</MudText>
+                                        <MudText Typo="Typo.body2" Style="color: #1A2332;">
+                                            Min DSCR: @(profile.MinDscr.ToString("F2"))x | Max LTV: @(profile.MaxLtvPercent.ToString("F0"))% | Max Amort: @(profile.MaxAmortizationYears) yrs
+                                        </MudText>
+                                        @if (!string.IsNullOrWhiteSpace(profile.Notes))
+                                        {
+                                            <MudText Typo="Typo.caption" Style="color: #9CA3AF; margin-top: 4px;">@profile.Notes</MudText>
+                                        }
+                                    </MudPaper>
+                                </MudItem>
+                            }
+                        }
+                    </MudGrid>
+                }
 
                 @if (ProtocolDefaults.IsSeniorHousing(_deal.PropertyType))
                 {
@@ -421,6 +457,62 @@ else
                             <tr><td>DSCR</td><td style="text-align: right;">@FormatMultiple(_calc.DebtServiceCoverageRatio)</td></tr>
                         </tbody>
                     </MudSimpleTable>
+
+                    @* Fannie Mae Compliance Summary *@
+                    @if (_deal.FannieProductType.HasValue && _calc.FannieComplianceJson is not null)
+                    {
+                        var compliance = DeserializeFannieCompliance(_calc.FannieComplianceJson);
+                        @if (compliance != null)
+                        {
+                            var profile = FannieProductProfiles.TryGet(_deal.FannieProductType);
+                            var borderColor = compliance.OverallPass ? "#16A34A" : "#DC2626";
+                            var statusIcon = compliance.OverallPass ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Cancel;
+                            var statusColor = compliance.OverallPass ? Color.Success : Color.Error;
+                            var statusLabel = compliance.OverallPass ? "PASS" : "FAIL";
+                            <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight: 600; color: #1A2332;">Fannie Mae Compliance</MudText>
+                            <MudPaper Elevation="0" Class="pa-4 mb-6" Style="@($"border: 1px solid {borderColor}; border-radius: 8px;")">
+                                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                        <MudIcon Icon="@statusIcon" Color="@statusColor" />
+                                        <MudText Typo="Typo.h6" Style="@($"font-weight: 700; color: {borderColor};")">
+                                            @statusLabel
+                                        </MudText>
+                                    </MudStack>
+                                    @if (profile != null)
+                                    {
+                                        <MudText Typo="Typo.body2" Style="color: #6B7280;">
+                                            @profile.DisplayName — Min DSCR: @(profile.MinDscr.ToString("F2"))x | Max LTV: @(profile.MaxLtvPercent.ToString("F0"))% | Max Amort: @(profile.MaxAmortizationYears) yrs
+                                        </MudText>
+                                    }
+                                </MudStack>
+                                <MudSimpleTable Dense="true" Hover="true" Elevation="0" Style="border: 1px solid #E5E7EB; border-radius: 8px;">
+                                    <thead>
+                                        <tr style="background: #F9FAFB;">
+                                            <th>Test</th>
+                                            <th style="text-align: center;">Status</th>
+                                            <th style="text-align: right;">Actual</th>
+                                            <th style="text-align: right;">Required</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var test in GetComplianceTests(compliance))
+                                        {
+                                            var testColor = test.Pass ? "#16A34A" : "#DC2626";
+                                            var testStatus = test.Pass ? "PASS" : "FAIL";
+                                            <tr>
+                                                <td>@test.Name</td>
+                                                <td style="@($"text-align: center; color: {testColor}; font-weight: 600;")">
+                                                    @testStatus
+                                                </td>
+                                                <td style="text-align: right;">@test.ActualValue.ToString("F2")</td>
+                                                <td style="text-align: right;">@test.RequiredValue.ToString("F2")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                            </MudPaper>
+                        }
+                    }
 
                     @* Sensitivity Analysis *@
                     @if (_sensitivityScenarios?.Count > 0)
@@ -2414,6 +2506,37 @@ else
         PropertyType.SeniorApartment => "Senior Apartment",
         _ => "Multifamily"
     };
+
+    private static string FormatFannieProductType(FannieProductType fpt)
+    {
+        var profile = FannieProductProfiles.TryGet(fpt);
+        return profile?.DisplayName ?? fpt.ToString();
+    }
+
+    private static FannieComplianceResult? DeserializeFannieCompliance(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return System.Text.Json.JsonSerializer.Deserialize<FannieComplianceResult>(json); }
+        catch { return null; }
+    }
+
+    private static List<ComplianceTest> GetComplianceTests(FannieComplianceResult compliance)
+    {
+        var tests = new List<ComplianceTest>();
+        if (compliance.DscrTest is not null) tests.Add(compliance.DscrTest);
+        if (compliance.LtvTest is not null) tests.Add(compliance.LtvTest);
+        if (compliance.AmortizationTest is not null) tests.Add(compliance.AmortizationTest);
+        if (compliance.SeniorsBlendedDscrTest is not null) tests.Add(compliance.SeniorsBlendedDscrTest);
+        if (compliance.CoopActualDscrTest is not null) tests.Add(compliance.CoopActualDscrTest);
+        if (compliance.CoopMarketRentalDscrTest is not null) tests.Add(compliance.CoopMarketRentalDscrTest);
+        if (compliance.SarmStressDscrTest is not null) tests.Add(compliance.SarmStressDscrTest);
+        if (compliance.SnfNcfCapTest is not null) tests.Add(compliance.SnfNcfCapTest);
+        if (compliance.MhcVacancyFloorTest is not null) tests.Add(compliance.MhcVacancyFloorTest);
+        if (compliance.RoarRehabDscrTest is not null) tests.Add(compliance.RoarRehabDscrTest);
+        if (compliance.SupplementalCombinedDscrTest is not null) tests.Add(compliance.SupplementalCombinedDscrTest);
+        if (compliance.SupplementalCombinedLtvTest is not null) tests.Add(compliance.SupplementalCombinedLtvTest);
+        return tests;
+    }
 
     private async Task AddCapitalStackItem()
     {

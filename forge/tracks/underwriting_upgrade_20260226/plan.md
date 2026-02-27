@@ -39,20 +39,20 @@
 
 ## Phase 4: Report Prose — Fannie Mae Compliance Context
 
-- [~] Task: Update `UnderwritingPromptBuilder` to include `FannieProductType` and its key parameters (DSCR, LTV, amortization) in all prompt templates
-- [~] Task: Update `BuildRiskAssessmentPrompt()` to include product-specific compliance test results (SNF cap, dual DSCR, stress test) so Claude can narrate compliance status
-- [~] Task: Update `BuildInvestmentDecisionPrompt()` to use product-aware GO/NO GO logic — replace hardcoded IRR > 15% / DSCR > 1.5x with product min DSCR and Fannie compliance pass/fail
-- [~] Task: Update `BuildExecutiveSummaryPrompt()` to identify the Fannie Mae product type, execution path, and key compliance metrics in the header
-- [~] Task: Add `BuildFannieComplianceSummary()` helper that formats compliance test results as structured text for prompt injection
-- [~] Task: Write integration tests verifying prompts include product-specific data for Seniors, Student, SARM, and Cooperative deal types
-- [ ] Task: Phase 4 Manual Verification
+- [x] Task: Update `UnderwritingPromptBuilder` to include `FannieProductType` and its key parameters (DSCR, LTV, amortization) in all prompt templates
+- [x] Task: Update `BuildRiskAssessmentPrompt()` to include product-specific compliance test results (SNF cap, dual DSCR, stress test) so Claude can narrate compliance status
+- [x] Task: Update `BuildInvestmentDecisionPrompt()` to use product-aware GO/NO GO logic — replace hardcoded IRR > 15% / DSCR > 1.5x with product min DSCR and Fannie compliance pass/fail
+- [x] Task: Update `BuildExecutiveSummaryPrompt()` to identify the Fannie Mae product type, execution path, and key compliance metrics in the header
+- [x] Task: Add `BuildFannieComplianceSummary()` helper that formats compliance test results as structured text for prompt injection
+- [x] Task: Write integration tests verifying prompts include product-specific data for Seniors, Student, SARM, and Cooperative deal types
+- [x] Task: Phase 4 Manual Verification [checkpoint: f650a07]
 
 ## Phase 5: Deal Entry UI — Product Type Selection
 
-- [ ] Task: Add `FannieProductType` dropdown to DealTabs.razor, visible only when ExecutionType = FannieMae
-- [ ] Task: Implement auto-suggestion logic: when user selects PropertyType, pre-populate FannieProductType (Multifamily→Conventional, AssistedLiving→SeniorsAL, etc.) with ability to override
-- [ ] Task: Add conditional fields per product type: Student Housing → enrollment count, university distance; MHC → pad site count, tenant-occupied %; Green → projected energy savings, improvement budget; Cooperative → operating reserve balance, sponsor ownership %; SARM → cap strike rate, index
-- [ ] Task: Show product-specific compliance summary card on the Analysis tab — displays LTV cap, DSCR min, amortization max, and pass/fail status for each applicable test
+- [~] Task: Add `FannieProductType` dropdown to DealTabs.razor, visible only when ExecutionType = FannieMae
+- [~] Task: Implement auto-suggestion logic: when user selects PropertyType, pre-populate FannieProductType (Multifamily→Conventional, AssistedLiving→SeniorsAL, etc.) with ability to override
+- [~] Task: Add conditional fields per product type: Student Housing → enrollment count, university distance; MHC → pad site count, tenant-occupied %; Green → projected energy savings, improvement budget; Cooperative → operating reserve balance, sponsor ownership %; SARM → cap strike rate, index
+- [~] Task: Show product-specific compliance summary card on the Analysis tab — displays LTV cap, DSCR min, amortization max, and pass/fail status for each applicable test
 - [ ] Task: Phase 5 Manual Verification
 
 ## Phase 6: Checklist Enhancement
