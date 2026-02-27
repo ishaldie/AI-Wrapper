@@ -131,3 +131,13 @@ _Link: [./tracks/underwriting_upgrade_20260226/](./tracks/underwriting_upgrade_2
 _Link: [./tracks/additional_underwriting_upgrades_20260226/](./tracks/additional_underwriting_upgrades_20260226/)_
 
 ---
+
+### [ ] Track: Prompt Token Optimization
+_Link: [./tracks/prompt_token_optimization_20260227/](./tracks/prompt_token_optimization_20260227/)_
+
+---
+
+### [ ] Track: Securitization Comps — SEC EDGAR + Agency Data
+_Link: [./tracks/securitization_comps_20260227/](./tracks/securitization_comps_20260227/)_
+
+---
