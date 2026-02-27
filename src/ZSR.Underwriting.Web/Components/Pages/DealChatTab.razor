@@ -30,6 +30,7 @@
 @inject ITokenUsageTracker TokenTracker
 @inject ITokenBudgetService BudgetService
 @inject IApiKeyService ApiKeyService
+@inject ISecuritizationCompService SecuritizationCompService
 
 <div class="deal-chat-tab-container">
     @if (_isByok)
@@ -423,6 +424,7 @@
     // Budget warning state
     private bool _dealBudgetWarning;
     private bool _isByok;
+    private ComparisonResult? _securitizationComps;
 
     protected override async Task OnInitializedAsync()
     {
@@ -438,6 +440,10 @@
         }
 
         _dealName = deal.PropertyName;
+
+        // Fetch securitization comps for context (non-fatal if it fails)
+        try { _securitizationComps = await SecuritizationCompService.FindCompsAsync(deal, maxResults: 5); }
+        catch { /* comps are supplementary */ }
 
         _messages = await Db.ChatMessages
             .AsNoTracking()
@@ -1134,13 +1140,14 @@
         sb.Append("""
         You are a commercial real estate underwriting analyst. You help investors analyze multifamily and commercial properties for acquisition.
 
-        IMPORTANT: When given a property name or address, you MUST use web search to research it before responding.
-        Search for the property listing, public records, and market data. Look for:
-        - The property listing (LoopNet, CoStar, Crexi, Apartments.com, Zillow, Redfin)
-        - Property details: unit count, year built, square footage, recent sale price, current asking price
-        - Submarket data: average rents, cap rates, vacancy rates, employment trends
-        - Comparable sales in the area
-        - Neighborhood context: major employers, transportation, development pipeline
+        CRITICAL INSTRUCTIONS — ALWAYS FOLLOW THESE:
+        1. ALWAYS search the web FIRST before responding. Do NOT ask the user for information you can find yourself.
+        2. Search for the property by name and address on LoopNet, CoStar, Crexi, Apartments.com, Zillow, Redfin, and public records.
+        3. Search for submarket data: average rents, cap rates, vacancy rates, employment trends for that city/neighborhood.
+        4. NEVER respond with a list of questions asking the user for basic property details. Find the data yourself via web search.
+        5. If you cannot find a specific property, search for comparable properties in the same submarket to establish benchmarks.
+        6. When the user uploads documents (T-12, rent roll, etc.), READ THE ENTIRE DOCUMENT CAREFULLY. Extract ALL line items — do NOT say data is missing or truncated if it is present in the attached data. Parse every row of the spreadsheet.
+        7. You MUST include a ```deal-update``` JSON block at the END of EVERY response that contains property data. This is NOT optional — the block auto-populates the deal tabs. If you skip it, the tabs stay empty.
 
         After researching, provide a comprehensive analysis covering:
         - Property overview with REAL data found online (not estimates)
@@ -1150,6 +1157,7 @@
         - Preliminary investment recommendation (GO / CAUTION / NO GO)
 
         Always cite your sources when presenting data you found online.
+        If some data points are missing, note them as "TBD — request from broker" but still provide your analysis with what you found.
 
         STRUCTURED DATA OUTPUT (REQUIRED):
         In EVERY response where you discover or calculate property data, you MUST include a deal-update JSON block.
@@ -1206,13 +1214,17 @@
         For .pdf files, the structured parser attempts to extract financial data.
 
         When the user attaches documents, their data appears between "--- ATTACHED DOCUMENT DATA ---" and
-        "--- END DOCUMENT DATA ---" markers in the user message. Analyze thoroughly:
+        "--- END DOCUMENT DATA ---" markers in the user message. The COMPLETE document content is provided — read ALL of it.
+        Analyze thoroughly:
         - Rent rolls: unit mix, occupancy, average rent vs. market, lease rollover
-        - T12 P&L: NOI, expense ratios, revenue growth, expense reduction opportunities
+        - T12 P&L: Parse EVERY line item including management fees, taxes, insurance, utilities, payroll. Sum to total expenses. Calculate NOI = EGI - Total Expenses.
         - Loan term sheets: LTV, DSCR, interest rate risk, prepayment flexibility
-        Cross-reference multiple documents when available. Update the deal-update block with any new data found.
+        Cross-reference multiple documents when available.
+
+        REMINDER: You MUST end your response with a ```deal-update``` JSON block containing all financial data you extracted or calculated. This populates the deal's underwriting tabs. Without it, the tabs remain empty. Include general info (propertyName, address, unitCount, purchasePrice) AND underwriting metrics (GPR, vacancyLoss, EGI, operatingExpenses, NOI, capRate, pricePerUnit).
 
         Format responses in markdown. Be data-informed, conversational, and professional.
+        Do NOT use emojis anywhere in your responses. Use plain text headers and bullet points only.
         Build on previous messages rather than repeating information already discussed.
         """);
 
@@ -1231,6 +1243,25 @@
                 sb.AppendLine($"Current Fannie Mae Rate: {MarketContext.CurrentFannieMaeRate.Value:F2}%");
         }
 
+        // Append securitization comp benchmarks if available
+        if (_securitizationComps is { Comps.Count: > 0 } comps)
+        {
+            sb.AppendLine();
+            sb.AppendLine("INTERNAL CMBS/AGENCY COMP DATA (from our securitization database — reference this in your analysis):");
+            sb.AppendLine($"Found {comps.TotalCompsFound} comparable securitized loans in our records.");
+            if (comps.MedianDSCR.HasValue)
+                sb.AppendLine($"- DSCR: median {comps.MedianDSCR.Value:F2}x (range {comps.MinDSCR:F2}x–{comps.MaxDSCR:F2}x)");
+            if (comps.MedianLTV.HasValue)
+                sb.AppendLine($"- LTV: median {comps.MedianLTV.Value:F1}% (range {comps.MinLTV:F1}%–{comps.MaxLTV:F1}%)");
+            if (comps.MedianCapRate.HasValue)
+                sb.AppendLine($"- Cap Rate: median {comps.MedianCapRate.Value:F1}% (range {comps.MinCapRate:F1}%–{comps.MaxCapRate:F1}%)");
+            if (comps.MedianOccupancy.HasValue)
+                sb.AppendLine($"- Occupancy: median {comps.MedianOccupancy.Value:F1}% (range {comps.MinOccupancy:F1}%–{comps.MaxOccupancy:F1}%)");
+            if (comps.MedianInterestRate.HasValue)
+                sb.AppendLine($"- Interest Rate: median {comps.MedianInterestRate.Value:F2}% (range {comps.MinInterestRate:F2}%–{comps.MaxInterestRate:F2}%)");
+            sb.AppendLine("Use these benchmarks to contextualize the deal's financial metrics against recent securitized loan performance.");
+        }
+
         return sb.ToString();
     }
 
@@ -1247,7 +1278,7 @@
             {
                 using var reader = new StreamReader(ms, leaveOpen: true);
                 var text = reader.ReadToEnd();
-                return text.Length > 20000 ? text[..20000] + "\n... (truncated)" : text;
+                return text.Length > 100000 ? text[..100000] + "\n... (truncated)" : text;
             }
 
             if (ext == ".xlsx")
@@ -1301,7 +1332,7 @@
 
                 sb.AppendLine(string.Join('\t', values));
 
-                if (sb.Length > 20000)
+                if (sb.Length > 100000)
                 {
                     sb.AppendLine("... (truncated)");
                     return sb.ToString();
@@ -1327,7 +1358,7 @@
             if (!string.IsNullOrWhiteSpace(text))
                 sb.AppendLine(text);
 
-            if (sb.Length > 20000)
+            if (sb.Length > 100000)
             {
                 sb.AppendLine("... (truncated)");
                 return sb.ToString();

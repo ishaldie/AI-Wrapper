@@ -135,36 +135,47 @@ public class DealService : IDealService
 
     /// <summary>
     /// Defines legal status transitions. Archived can be reached from any status.
+    /// Backward transitions are allowed so users can correct accidental advances.
     /// </summary>
     public static bool IsValidTransition(DealStatus from, DealStatus to)
     {
+        if (from == to) return false;
+
         // Archived is always a valid target (passing on a deal)
         if (to == DealStatus.Archived) return true;
 
         return (from, to) switch
         {
-            // Acquisition phase transitions
+            // Acquisition phase — forward
             (DealStatus.Draft, DealStatus.Screening) => true,
             (DealStatus.Draft, DealStatus.InProgress) => true,  // backward compat alias
             (DealStatus.InProgress, DealStatus.Screening) => true,
             (DealStatus.InProgress, DealStatus.Complete) => true,
             (DealStatus.Screening, DealStatus.Complete) => true,
 
-            // Contract phase transitions
+            // Contract phase — forward
             (DealStatus.Complete, DealStatus.UnderContract) => true,
 
-            // Closing transitions
+            // Closing — forward
             (DealStatus.UnderContract, DealStatus.Closed) => true,
 
-            // Ownership phase transitions
+            // Ownership — forward
             (DealStatus.Closed, DealStatus.Active) => true,
 
-            // Exit phase transitions
+            // Exit — forward
             (DealStatus.Active, DealStatus.Disposition) => true,
             (DealStatus.Disposition, DealStatus.Sold) => true,
 
             // Re-activate from archived
             (DealStatus.Archived, DealStatus.Draft) => true,
+
+            // Backward transitions (undo accidental advances)
+            (DealStatus.Screening, DealStatus.Draft) => true,
+            (DealStatus.Complete, DealStatus.Screening) => true,
+            (DealStatus.UnderContract, DealStatus.Complete) => true,
+            (DealStatus.Closed, DealStatus.UnderContract) => true,
+            (DealStatus.Active, DealStatus.Closed) => true,
+            (DealStatus.Disposition, DealStatus.Active) => true,
 
             _ => false
         };

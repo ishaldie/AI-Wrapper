@@ -32,6 +32,7 @@
 @inject IDispositionService DispositionService
 @inject ICmsProviderService CmsProviderService
 @inject ISecuritizationCompService SecuritizationCompService
+@inject IExcelModelExporter ExcelModelExporter
 @rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>@(_deal?.PropertyName ?? "Deal") - Underwriting Analyst</PageTitle>
@@ -72,6 +73,16 @@ else
         <MudChip T="string" Size="Size.Small" Color="@GetStatusColor(_deal.Status.ToString())">
             @GetStatusDisplayName(_deal.Status)
         </MudChip>
+        @if (GetPreviousTransition(_deal.Status) is var (backLabel, backTarget) && backLabel is not null)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.ArrowBack"
+                       OnClick="@(() => TransitionStatus(backTarget, isBackward: true))"
+                       Style="text-transform: none; font-weight: 500; border-radius: 12px; color: #6B7280;">
+                @backLabel
+            </MudButton>
+        }
         @if (GetNextTransition(_deal.Status) is var (label, target) && label is not null)
         {
             <MudButton Variant="Variant.Outlined" Color="Color.Primary"
@@ -88,6 +99,13 @@ else
                    Class="generate-report-btn"
                    Style="text-transform: none; font-weight: 500; border-radius: 12px;">
             Generate Report
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Success"
+                   StartIcon="@Icons.Material.Filled.TableChart"
+                   OnClick="ExportExcelModel"
+                   Disabled="_exporting"
+                   Style="text-transform: none; font-weight: 500; border-radius: 12px;">
+            @(_exporting ? "Exporting..." : "Export Model")
         </MudButton>
         <MudTooltip Text="@(_chatOpen ? "Close Chat" : "Open Chat")">
             <MudIconButton Icon="@Icons.Material.Filled.Chat"
@@ -2061,6 +2079,7 @@ else
     private List<EmailIngestionLog> _ingestionLogs = new();
     private bool _loading = true;
     private bool _saving;
+    private bool _exporting;
     private bool _refreshingCms;
     private DetailedExpenses _detailedExpenses = new();
 
@@ -3176,18 +3195,67 @@ else
         _ => (null, default)
     };
 
-    private async Task TransitionStatus(DealStatus target)
+    /// <summary>
+    /// Returns the previous status so users can undo accidental advances.
+    /// </summary>
+    private static (string? Label, DealStatus Target) GetPreviousTransition(DealStatus current) => current switch
+    {
+        DealStatus.Screening => ("Back to Draft", DealStatus.Draft),
+        DealStatus.Complete => ("Back to Screening", DealStatus.Screening),
+        DealStatus.UnderContract => ("Back to Complete", DealStatus.Complete),
+        DealStatus.Closed => ("Back to Under Contract", DealStatus.UnderContract),
+        DealStatus.Active => ("Back to Closed", DealStatus.Closed),
+        DealStatus.Disposition => ("Back to Active", DealStatus.Active),
+        _ => (null, default)
+    };
+
+    private async Task ExportExcelModel()
+    {
+        if (_deal is null) return;
+        _exporting = true;
+        StateHasChanged();
+        try
+        {
+            var bytes = await ExcelModelExporter.ExportAsync(DealId);
+            var safeName = _deal.PropertyName.Replace(" ", "_").Replace("/", "-");
+            var fileName = $"{safeName}_UW_Model_{DateTime.Now:yyyyMMdd}.xlsx";
+            using var stream = new MemoryStream(bytes);
+            using var streamRef = new DotNetStreamReference(stream);
+            await JS.InvokeVoidAsync("downloadFileFromStream", fileName, streamRef);
+            Snackbar.Add("Excel model exported", Severity.Success);
+            await ActivityTracker.TrackEventAsync(ActivityEventType.PdfExported, dealId: DealId, metadata: $"Excel: {_deal.PropertyName}");
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _exporting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task TransitionStatus(DealStatus target, bool isBackward = false)
     {
         if (_deal is null) return;
 
-        // Confirmation for significant transitions
-        var confirmed = target switch
+        bool confirmed;
+        if (isBackward)
         {
-            DealStatus.Closed => await ConfirmClosingTransition(),
-            DealStatus.Sold => await ConfirmSimpleTransition("Mark as Sold", "This will mark the deal as sold and complete the lifecycle. Continue?"),
-            DealStatus.UnderContract => await ConfirmSimpleTransition("Move to Under Contract", "This deal will enter the contract phase. Continue?"),
-            _ => true
-        };
+            confirmed = await ConfirmSimpleTransition("Move Back",
+                $"Move this deal back to {GetStatusDisplayName(target)}? This will undo the current stage.");
+        }
+        else
+        {
+            confirmed = target switch
+            {
+                DealStatus.Closed => await ConfirmClosingTransition(),
+                DealStatus.Sold => await ConfirmSimpleTransition("Mark as Sold", "This will mark the deal as sold and complete the lifecycle. Continue?"),
+                DealStatus.UnderContract => await ConfirmSimpleTransition("Move to Under Contract", "This deal will enter the contract phase. Continue?"),
+                _ => true
+            };
+        }
 
         if (!confirmed) return;
 

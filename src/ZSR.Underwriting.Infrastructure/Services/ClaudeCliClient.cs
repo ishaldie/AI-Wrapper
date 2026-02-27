@@ -104,8 +104,7 @@ public class ClaudeCliClient : IClaudeClient
         psi.ArgumentList.Add("--model");
         psi.ArgumentList.Add(_options.Model);
         psi.ArgumentList.Add("--max-turns");
-        psi.ArgumentList.Add("5");
-        // Allow web search/fetch so the model can research properties and markets
+        psi.ArgumentList.Add("50");
         psi.ArgumentList.Add("--allowedTools");
         psi.ArgumentList.Add("WebSearch,WebFetch");
 
@@ -118,9 +117,13 @@ public class ClaudeCliClient : IClaudeClient
         _logger.LogInformation("Claude CLI call: {Path} with {ArgCount} args (stdin: {StdinLen} chars)",
             _claudePath, psi.ArgumentList.Count, stdinContent.Length);
 
-        // Clear env vars to allow running inside a Claude Code terminal session
-        psi.Environment.Remove("CLAUDECODE");
-        psi.Environment.Remove("CLAUDE_CODE_ENTRYPOINT");
+        // Clear ALL Claude env vars to allow running inside a Claude Code terminal session.
+        // The CLI checks CLAUDECODE to detect nested sessions and refuses to start.
+        var claudeKeys = psi.Environment.Keys
+            .Where(k => k.StartsWith("CLAUDE", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        foreach (var key in claudeKeys)
+            psi.Environment.Remove(key);
 
         using var process = new Process { StartInfo = psi };
         process.Start();
@@ -147,10 +150,12 @@ public class ClaudeCliClient : IClaudeClient
 
         if (process.ExitCode != 0)
         {
+            // stderr may be empty on Windows .cmd wrappers; check stdout for error JSON too
+            var errorDetail = !string.IsNullOrWhiteSpace(error) ? error : output;
             _logger.LogError("Claude CLI failed (exit code {ExitCode}): {Error}",
-                process.ExitCode, error);
+                process.ExitCode, errorDetail);
             throw new InvalidOperationException(
-                $"Claude CLI exited with code {process.ExitCode}: {error}");
+                $"Claude CLI exited with code {process.ExitCode}: {errorDetail}");
         }
 
         return ParseJsonResponse(output);
@@ -166,7 +171,8 @@ public class ClaudeCliClient : IClaudeClient
             // Log key field values for debugging
             var subtype = root.TryGetProperty("subtype", out var subtypeEl) ? subtypeEl.GetString() : "n/a";
             var isErrorVal = root.TryGetProperty("is_error", out var isErrEl) ? isErrEl.ToString() : "n/a";
-            _logger.LogInformation("Claude CLI response: subtype={Subtype}, is_error={IsError}", subtype, isErrorVal);
+            var keys = string.Join(", ", root.EnumerateObject().Select(p => $"{p.Name}:{p.Value.ValueKind}"));
+            _logger.LogInformation("Claude CLI response: subtype={Subtype}, is_error={IsError}, keys=[{Keys}]", subtype, isErrorVal, keys);
 
             // Check for error response — CLI returns is_error=true with errors array,
             // but also check subtype for "error_*" since is_error can be false for error_max_turns
@@ -195,7 +201,7 @@ public class ClaudeCliClient : IClaudeClient
                     ? string.Join("; ", errorMessages)
                     : $"CLI error (subtype: {errSubtype})";
 
-                _logger.LogError("Claude CLI returned error: subtype={Subtype}, errors={Errors}",
+                _logger.LogWarning("Claude CLI returned error: subtype={Subtype}, errors={Errors}",
                     errSubtype, errText);
 
                 // If there's a result despite the error (e.g. partial), use it
@@ -204,6 +210,19 @@ public class ClaudeCliClient : IClaudeClient
                 {
                     _logger.LogWarning("Claude CLI error but found partial result ({Length} chars), using it",
                         partialText.Length);
+                }
+                else if (subtype == "error_max_turns")
+                {
+                    // max_turns exhausted with no result — return a helpful fallback
+                    _logger.LogWarning("Claude CLI exhausted max turns with no result, returning fallback");
+                    return new ClaudeResponse
+                    {
+                        Content = "I wasn't able to complete my research in time. Could you try a more specific question, or provide more details about the property?",
+                        Model = _options.Model,
+                        StopReason = "max_turns",
+                        InputTokens = 0,
+                        OutputTokens = 0
+                    };
                 }
                 else
                 {

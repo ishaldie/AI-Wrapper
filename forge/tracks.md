@@ -72,8 +72,8 @@
 
 ---
 
-## [~] Track: Bug Fixes
-*Link: [./conductor/tracks/bug_fixes_20260216/](./conductor/tracks/bug_fixes_20260216/)*
+## [x] Track: Bug Fixes (completed 2026-02-22)
+*Link: [./tracks/bug_fixes_20260216/](./tracks/bug_fixes_20260216/)*
 
 ---
 
@@ -137,7 +137,12 @@ _Link: [./tracks/prompt_token_optimization_20260227/](./tracks/prompt_token_opti
 
 ---
 
-### [ ] Track: Securitization Comps — SEC EDGAR + Agency Data
+### [x] Track: Securitization Comps — SEC EDGAR + Agency Data (completed 2026-02-27)
 _Link: [./tracks/securitization_comps_20260227/](./tracks/securitization_comps_20260227/)_
+
+---
+
+### [ ] Track: Excel Model Export
+_Link: [./forge/tracks/excel_model_export_20260227/](./forge/tracks/excel_model_export_20260227/)_
 
 ---

@@ -203,6 +203,24 @@ public class DealStatusTransitionTests : IAsyncLifetime
             () => _service.SetStatusAsync(deal.Id, "Screening", "wrong-user"));
     }
 
+    // === Backward transitions (undo accidental advances) ===
+
+    [Theory]
+    [InlineData(DealStatus.Screening, "Draft", DealStatus.Draft)]
+    [InlineData(DealStatus.Complete, "Screening", DealStatus.Screening)]
+    [InlineData(DealStatus.UnderContract, "Complete", DealStatus.Complete)]
+    [InlineData(DealStatus.Closed, "UnderContract", DealStatus.UnderContract)]
+    [InlineData(DealStatus.Active, "Closed", DealStatus.Closed)]
+    [InlineData(DealStatus.Disposition, "Active", DealStatus.Active)]
+    public async Task SetStatus_Backward_Succeeds(DealStatus from, string toStr, DealStatus expected)
+    {
+        var deal = await SeedDeal(from);
+        await _service.SetStatusAsync(deal.Id, toStr, _userId);
+
+        var updated = await _db.Deals.FindAsync(deal.Id);
+        Assert.Equal(expected, updated!.Status);
+    }
+
     // === Backward compat: InProgress still works ===
 
     [Fact]
