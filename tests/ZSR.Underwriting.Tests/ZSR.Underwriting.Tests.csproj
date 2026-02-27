@@ -217,6 +217,7 @@
     <Compile Include="Domain\SecuritizationCompTests.cs" />
     <Compile Include="Services\EdgarCmbsClientTests.cs" />
     <Compile Include="Services\AgencyDataImporterTests.cs" />
+    <Compile Include="Services\SecuritizationCompServiceTests.cs" />
   </ItemGroup>
 
   <ItemGroup>

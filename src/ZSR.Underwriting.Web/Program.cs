@@ -251,6 +251,7 @@ try
             retryCount: 3,
             sleepDurationProvider: attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
     builder.Services.AddScoped<IAgencyDataImporter, AgencyDataImporter>();
+    builder.Services.AddScoped<ISecuritizationCompService, SecuritizationCompService>();
 
     // Add application services
     builder.Services.AddScoped<IDealService, DealService>();
