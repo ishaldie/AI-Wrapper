@@ -1,9 +1,8 @@
 {
-  "id": "byok-api-key-support",
+  "trackId": "byok-api-key-support",
   "type": "feature",
-  "status": "completed",
-  "created": "2026-02-25",
+  "status": "archived",
   "description": "Allow users to provide their own Anthropic API key via paste or JSON file upload, with encrypted storage and per-request key resolution",
-  "updatedAt": "2026-02-25T23:48:12.775Z",
-  "isArchived": true
+  "createdAt": "2026-02-25T00:00:00.000Z",
+  "updatedAt": "2026-02-25T23:48:12.775Z"
 }

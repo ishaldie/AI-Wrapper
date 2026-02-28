@@ -426,6 +426,9 @@
     private bool _isByok;
     private ComparisonResult? _securitizationComps;
 
+    // CLI session ID for persistent conversation (avoids resending full history)
+    private string? _cliSessionId;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -593,8 +596,9 @@
             };
 
             var response = await ClaudeClient.SendMessageAsync(request);
-            Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
-                DealId, response.Content?.Length ?? 0);
+            _cliSessionId = response.SessionId;
+            Logger.LogInformation("Claude response for deal {DealId}: {Length} chars, session={SessionId}",
+                DealId, response.Content?.Length ?? 0, _cliSessionId ?? "none");
 
             _ = TokenTracker.RecordUsageAsync(
                 _userId, DealId, Domain.Enums.OperationType.Chat,
@@ -747,12 +751,14 @@
                 SystemPrompt = BuildSystemPrompt(),
                 ConversationHistory = truncatedHistory,
                 MaxTokens = 4000,
-                UserId = _userId
+                UserId = _userId,
+                SessionId = _cliSessionId
             };
 
             var response = await ClaudeClient.SendMessageAsync(request);
-            Logger.LogInformation("Claude response for deal {DealId}: {Length} chars",
-                DealId, response.Content?.Length ?? 0);
+            _cliSessionId = response.SessionId;
+            Logger.LogInformation("Claude response for deal {DealId}: {Length} chars, session={SessionId}",
+                DealId, response.Content?.Length ?? 0, _cliSessionId ?? "none");
 
             _ = TokenTracker.RecordUsageAsync(
                 _userId, DealId, Domain.Enums.OperationType.Chat,

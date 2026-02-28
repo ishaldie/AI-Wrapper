@@ -29,6 +29,13 @@ public class ClaudeRequest
     /// will attempt to use the user's own API key instead of the shared key.
     /// </summary>
     public string? UserId { get; init; }
+
+    /// <summary>
+    /// CLI session ID for multi-turn conversations. When set, the CLI client
+    /// resumes the existing session instead of replaying the full history.
+    /// Ignored by the HTTP API client.
+    /// </summary>
+    public string? SessionId { get; init; }
 }
 
 /// <summary>
@@ -41,4 +48,10 @@ public class ClaudeResponse
     public int OutputTokens { get; init; }
     public string Model { get; init; } = string.Empty;
     public string? StopReason { get; init; }
+
+    /// <summary>
+    /// CLI session ID returned from the CLI client. The caller should persist
+    /// this and pass it back in subsequent requests to resume the session.
+    /// </summary>
+    public string? SessionId { get; init; }
 }

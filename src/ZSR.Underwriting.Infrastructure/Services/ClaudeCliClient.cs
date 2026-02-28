@@ -69,11 +69,27 @@ public class ClaudeCliClient : IClaudeClient
 
     public async Task<ClaudeResponse> SendMessageAsync(ClaudeRequest request, CancellationToken ct = default)
     {
-        // Build stdin content (the user message / conversation)
+        var hasSession = !string.IsNullOrEmpty(request.SessionId);
+        var isMultiTurn = request.ConversationHistory is { Count: > 0 };
+
+        // Determine the session ID to use (or create a new one)
+        string? sessionId = hasSession
+            ? request.SessionId
+            : isMultiTurn ? Guid.NewGuid().ToString() : null;
+
+        // Build stdin content based on whether we're resuming a session
         var stdinContent = new StringBuilder();
-        if (request.ConversationHistory is { Count: > 0 })
+        if (hasSession)
         {
-            foreach (var msg in request.ConversationHistory)
+            // Resuming — only send the latest user message (CLI remembers the rest)
+            var lastUserMsg = request.ConversationHistory?
+                .LastOrDefault(m => m.Role == "user")?.Content ?? request.UserMessage;
+            stdinContent.AppendLine(lastUserMsg);
+        }
+        else if (isMultiTurn)
+        {
+            // New session — send full conversation history for the first call
+            foreach (var msg in request.ConversationHistory!)
             {
                 var prefix = msg.Role == "user" ? "User" : "Assistant";
                 stdinContent.AppendLine($"[{prefix}]: {msg.Content}");
@@ -108,14 +124,30 @@ public class ClaudeCliClient : IClaudeClient
         psi.ArgumentList.Add("--allowedTools");
         psi.ArgumentList.Add("WebSearch,WebFetch");
 
-        if (!string.IsNullOrWhiteSpace(request.SystemPrompt))
+        // Session management
+        if (hasSession)
         {
+            // Resume existing CLI session
+            psi.ArgumentList.Add("--resume");
+            psi.ArgumentList.Add(sessionId!);
+        }
+        else if (sessionId is not null)
+        {
+            // Start a new named session for multi-turn conversations
+            psi.ArgumentList.Add("--session-id");
+            psi.ArgumentList.Add(sessionId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.SystemPrompt) && !hasSession)
+        {
+            // Only send system prompt on first call; CLI remembers it for resumed sessions
             psi.ArgumentList.Add("--system-prompt");
             psi.ArgumentList.Add(request.SystemPrompt);
         }
 
-        _logger.LogInformation("Claude CLI call: {Path} with {ArgCount} args (stdin: {StdinLen} chars)",
-            _claudePath, psi.ArgumentList.Count, stdinContent.Length);
+        _logger.LogInformation(
+            "Claude CLI call: {Path} with {ArgCount} args, session={SessionId}, resume={IsResume} (stdin: {StdinLen} chars)",
+            _claudePath, psi.ArgumentList.Count, sessionId ?? "none", hasSession, stdinContent.Length);
 
         // Clear ALL Claude env vars to allow running inside a Claude Code terminal session.
         // The CLI checks CLAUDECODE to detect nested sessions and refuses to start.
@@ -150,6 +182,24 @@ public class ClaudeCliClient : IClaudeClient
 
         if (process.ExitCode != 0)
         {
+            // If resume failed, invalidate session and retry without it
+            if (hasSession)
+            {
+                _logger.LogWarning(
+                    "Claude CLI resume failed for session {SessionId}, falling back to full history",
+                    sessionId);
+                var fallbackRequest = new ClaudeRequest
+                {
+                    SystemPrompt = request.SystemPrompt,
+                    ConversationHistory = request.ConversationHistory,
+                    UserMessage = request.UserMessage,
+                    MaxTokens = request.MaxTokens,
+                    UserId = request.UserId,
+                    SessionId = null // Force new session
+                };
+                return await SendMessageAsync(fallbackRequest, ct);
+            }
+
             // stderr may be empty on Windows .cmd wrappers; check stdout for error JSON too
             var errorDetail = !string.IsNullOrWhiteSpace(error) ? error : output;
             _logger.LogError("Claude CLI failed (exit code {ExitCode}): {Error}",
@@ -158,10 +208,10 @@ public class ClaudeCliClient : IClaudeClient
                 $"Claude CLI exited with code {process.ExitCode}: {errorDetail}");
         }
 
-        return ParseJsonResponse(output);
+        return ParseJsonResponse(output, sessionId);
     }
 
-    private ClaudeResponse ParseJsonResponse(string output)
+    private ClaudeResponse ParseJsonResponse(string output, string? sessionId)
     {
         try
         {
@@ -221,7 +271,8 @@ public class ClaudeCliClient : IClaudeClient
                         Model = _options.Model,
                         StopReason = "max_turns",
                         InputTokens = 0,
-                        OutputTokens = 0
+                        OutputTokens = 0,
+                        SessionId = sessionId
                     };
                 }
                 else
@@ -264,19 +315,25 @@ public class ClaudeCliClient : IClaudeClient
                 "Claude CLI done: model={Model}, input_tokens={InputTokens}, output_tokens={OutputTokens}, stop_reason={StopReason}, text_length={TextLength}",
                 model, inputTokens, outputTokens, stopReason, text.Length);
 
+            // Try to extract session_id from response JSON (CLI may return it)
+            var responseSessionId = sessionId;
+            if (root.TryGetProperty("session_id", out var sidProp) && sidProp.ValueKind == JsonValueKind.String)
+                responseSessionId = sidProp.GetString() ?? sessionId;
+
             return new ClaudeResponse
             {
                 Content = text.Trim(),
                 Model = model,
                 StopReason = stopReason,
                 InputTokens = inputTokens,
-                OutputTokens = outputTokens
+                OutputTokens = outputTokens,
+                SessionId = responseSessionId
             };
         }
         catch (JsonException ex)
         {
             _logger.LogWarning(ex, "Failed to parse Claude CLI JSON output, falling back to raw text");
-            return FallbackResponse(output);
+            return FallbackResponse(output, sessionId);
         }
     }
 
@@ -347,7 +404,7 @@ public class ClaudeCliClient : IClaudeClient
         return string.Join("\n", parts);
     }
 
-    private ClaudeResponse FallbackResponse(string output)
+    private ClaudeResponse FallbackResponse(string output, string? sessionId = null)
     {
         _logger.LogInformation("Claude CLI fallback: {Length} chars returned", output.Length);
         return new ClaudeResponse
@@ -356,7 +413,8 @@ public class ClaudeCliClient : IClaudeClient
             Model = _options.Model,
             StopReason = "end_turn",
             InputTokens = 0,
-            OutputTokens = 0
+            OutputTokens = 0,
+            SessionId = sessionId
         };
     }
 
